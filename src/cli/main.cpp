@@ -1,31 +1,44 @@
-#include <iostream>
-
-#include <spdlog/spdlog.h>
-#include <embree3/rtcore.h>
-
-#include <radiantium/static_buffer.h>
-#include <radiantium/spectrum.h>
-#include <radiantium/image_utility.h>
-#include <type_traits>
-#include <random>
+#include "radiantium/logger.h"
+#include <radiantium/radiantium.h>
+#include <radiantium/transform.h>
 
 int main(int argc, char** argv) {
-  spdlog::info("Spectrum size {0}", sizeof(rad::Spectrum));
-  spdlog::info("Spectrum is standard layout {0}", std::is_standard_layout<rad::Spectrum>::value);
+  rad::InitLogger();
 
-  std::mt19937 rnd;
-  std::uniform_real_distribution<float> dist;
+  rad::Vec2 a(1.00001f, 2.10002f);
+  rad::GetLogger()->info("test {}", a);
 
-  rad::StaticBuffer<rad::Spectrum> a(256, 128);
-  for (uint32_t y = 0; y < a.Height(); y++) {
-    for (uint32_t x = 0; x < a.Width(); x++) {
-      a(x,y) = rad::Spectrum(dist(rnd), dist(rnd), dist(rnd));
-    }
-  }
-  
-  rad::SaveOpenExr("C:\\Users\\ksgfk\\Desktop\\test.exr", a);
+  Eigen::Translation<rad::Float, 3> trans(0, 0, 0);
+  Eigen::DiagonalMatrix<rad::Float, 3> scale(rad::Vec3(1, 1, 1));
+  Eigen::AngleAxis<rad::Float> rot(rad::Radian(90), rad::Vec3(0, 1, 0));
 
-  return 0;
+  Eigen::Transform<rad::Float, 3, Eigen::Affine> aff = trans * (rot * scale);
+  rad::Transform t(aff.matrix());
+
+  rad::GetLogger()->info("1: {}", t.ApplyAffineToWorld(rad::Vec3(1, 0, 0)));
+  rad::GetLogger()->info("2: {}", t.ApplyAffineToLocal(rad::Vec3(1, -2, 3)));
+  rad::GetLogger()->info("3: has scale? {}", t.HasScale());
+  rad::GetLogger()->info("4: trans {}", t.TranslationToWorld());
+
+  rad::ShutdownLogger();
+
+  // spdlog::info("Spectrum size {0}", sizeof(rad::Spectrum));
+  // spdlog::info("Spectrum is standard layout {0}", std::is_standard_layout<rad::Spectrum>::value);
+
+  // std::mt19937 rnd(123);
+  // std::uniform_real_distribution<float> dist;
+
+  // rad::StaticBuffer<rad::Spectrum> a(256, 128);
+  // for (uint32_t y = 0; y < a.Height(); y++) {
+  //   for (uint32_t x = 0; x < a.Width(); x++) {
+  //     a(x,y) = rad::Spectrum(dist(rnd), dist(rnd), dist(rnd));
+  //   }
+  // }
+
+  // rad::StaticBuffer<rad::Spectrum> b = a;
+  // rad::SaveOpenExr("C:\\Users\\ksgfk\\Desktop\\test.exr", b);
+
+  // return 0;
 
   // rad::StaticBuffer<int> a(4, 4);
   // uint32_t i = a.GetIndex(0, 1);
@@ -93,59 +106,59 @@ int main(int argc, char** argv) {
   // return 0;
 }
 
-void errorFunction(void* userPtr, enum RTCError error, const char* str) {
-  // spdlog::error("Embree log error: {0}, {1}", error, str);
-}
+// void errorFunction(void* userPtr, enum RTCError error, const char* str) {
+// spdlog::error("Embree log error: {0}, {1}", error, str);
+// }
 
-void castRay(RTCScene scene,
-             float ox, float oy, float oz,
-             float dx, float dy, float dz) {
-  // /*
-  //  * The intersect context can be used to set intersection
-  //  * filters or flags, and it also contains the instance ID stack
-  //  * used in multi-level instancing.
-  //  */
-  // struct RTCIntersectContext context;
-  // rtcInitIntersectContext(&context);
+// void castRay(RTCScene scene,
+//              float ox, float oy, float oz,
+//              float dx, float dy, float dz) {
+// /*
+//  * The intersect context can be used to set intersection
+//  * filters or flags, and it also contains the instance ID stack
+//  * used in multi-level instancing.
+//  */
+// struct RTCIntersectContext context;
+// rtcInitIntersectContext(&context);
 
-  // /*
-  //  * The ray hit structure holds both the ray and the hit.
-  //  * The user must initialize it properly -- see API documentation
-  //  * for rtcIntersect1() for details.
-  //  */
-  // struct RTCRayHit rayhit;
-  // rayhit.ray.org_x = ox;
-  // rayhit.ray.org_y = oy;
-  // rayhit.ray.org_z = oz;
-  // rayhit.ray.dir_x = dx;
-  // rayhit.ray.dir_y = dy;
-  // rayhit.ray.dir_z = dz;
-  // rayhit.ray.tnear = 0;
-  // rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-  // rayhit.ray.mask = -1;
-  // rayhit.ray.flags = 0;
-  // rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-  // rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+// /*
+//  * The ray hit structure holds both the ray and the hit.
+//  * The user must initialize it properly -- see API documentation
+//  * for rtcIntersect1() for details.
+//  */
+// struct RTCRayHit rayhit;
+// rayhit.ray.org_x = ox;
+// rayhit.ray.org_y = oy;
+// rayhit.ray.org_z = oz;
+// rayhit.ray.dir_x = dx;
+// rayhit.ray.dir_y = dy;
+// rayhit.ray.dir_z = dz;
+// rayhit.ray.tnear = 0;
+// rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+// rayhit.ray.mask = -1;
+// rayhit.ray.flags = 0;
+// rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+// rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-  // /*
-  //  * There are multiple variants of rtcIntersect. This one
-  //  * intersects a single ray with the scene.
-  //  */
-  // rtcIntersect1(scene, &context, &rayhit);
+// /*
+//  * There are multiple variants of rtcIntersect. This one
+//  * intersects a single ray with the scene.
+//  */
+// rtcIntersect1(scene, &context, &rayhit);
 
-  // spdlog::info("{0}, {1}, {2}: ", ox, oy, oz);
-  // if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-  //   /* Note how geomID and primID identify the geometry we just hit.
-  //    * We could use them here to interpolate geometry information,
-  //    * compute shading, etc.
-  //    * Since there is only a single triangle in this scene, we will
-  //    * get geomID=0 / primID=0 for all hits.
-  //    * There is also instID, used for instancing. See
-  //    * the instancing tutorials for more information */
-  //   spdlog::info("Found intersection on geometry {0}, primitive {1} at tfar={2}",
-  //                rayhit.hit.geomID,
-  //                rayhit.hit.primID,
-  //                rayhit.ray.tfar);
-  // } else
-  //   spdlog::info("Did not find any intersection.");
-}
+// spdlog::info("{0}, {1}, {2}: ", ox, oy, oz);
+// if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+//   /* Note how geomID and primID identify the geometry we just hit.
+//    * We could use them here to interpolate geometry information,
+//    * compute shading, etc.
+//    * Since there is only a single triangle in this scene, we will
+//    * get geomID=0 / primID=0 for all hits.
+//    * There is also instID, used for instancing. See
+//    * the instancing tutorials for more information */
+//   spdlog::info("Found intersection on geometry {0}, primitive {1} at tfar={2}",
+//                rayhit.hit.geomID,
+//                rayhit.hit.primID,
+//                rayhit.ray.tfar);
+// } else
+//   spdlog::info("Did not find any intersection.");
+// }

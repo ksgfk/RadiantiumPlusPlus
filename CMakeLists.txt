@@ -20,6 +20,9 @@ add_library(radiantium.core
     src/core/ray.cpp
     src/core/spectrum.cpp
     src/core/image_utility.cpp
+    src/core/model.cpp
+    src/core/logger.cpp
+    src/core/transform.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp)
 

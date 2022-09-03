@@ -2,6 +2,7 @@
 
 #include "radiantium.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -10,10 +11,11 @@
 #endif
 
 namespace rad {
+
 template <typename T>
 class StaticBuffer {
  public:
-  StaticBuffer(uint32_t width, uint32_t height) noexcept {
+  StaticBuffer(UInt32 width, UInt32 height) noexcept {
     _width = width;
     _height = height;
     _count = _width * _height;
@@ -25,9 +27,7 @@ class StaticBuffer {
     _width = other._width;
     _height = other._height;
     _count = other._count;
-    for (size_t i = 0; i < _count; i++) {
-      _buffer[i] = other._buffer[i];
-    }
+    std::copy(other._buffer.get(), other._buffer.get() + _count, _buffer.get());
   }
 
   StaticBuffer(StaticBuffer&& other) noexcept {
@@ -38,12 +38,12 @@ class StaticBuffer {
   }
 
   /* Properties */
-  uint32_t Width() const { return _width; }
-  uint32_t Height() const { return _height; }
+  UInt32 Width() const { return _width; }
+  UInt32 Height() const { return _height; }
   T* Data() const { return _buffer.get(); }
 
   /* Methods */
-  uint32_t GetIndex(uint32_t x, uint32_t y) const {
+  UInt32 GetIndex(UInt32 x, UInt32 y) const {
 #ifdef RAD_DEBUG_MODE
     if (x >= _width) {
       throw std::out_of_range("x");
@@ -54,18 +54,18 @@ class StaticBuffer {
 #endif
     return y * _width + x;
   }
-  std::pair<T*, uint32_t> GetRowSpan(uint32_t y) const {
+  std::pair<T*, UInt32> GetRowSpan(UInt32 y) const {
 #ifdef RAD_DEBUG_MODE
     if (y >= _height) {
       throw std::out_of_range("y");
     }
 #endif
-    uint32_t start = y * _width;
+    UInt32 start = y * _width;
     T* startPtr = &_buffer[start];
     return std::make_pair(startPtr, _width);
   }
 
-  const T& operator[](uint32_t i) const {
+  const T& operator[](UInt32 i) const {
 #ifdef RAD_DEBUG_MODE
     if (i >= _count) {
       throw std::out_of_range("i");
@@ -73,7 +73,7 @@ class StaticBuffer {
 #endif
     return _buffer[i];
   }
-  T& operator[](uint32_t i) {
+  T& operator[](UInt32 i) {
 #ifdef RAD_DEBUG_MODE
     if (i >= _count) {
       throw std::out_of_range("i");
@@ -81,19 +81,19 @@ class StaticBuffer {
 #endif
     return _buffer[i];
   }
-  const T& operator()(uint32_t x, uint32_t y) const {
-    uint32_t index = GetIndex(x, y);
+  const T& operator()(UInt32 x, UInt32 y) const {
+    UInt32 index = GetIndex(x, y);
     return _buffer[index];
   }
-  T& operator()(uint32_t x, uint32_t y) {
-    uint32_t index = GetIndex(x, y);
+  T& operator()(UInt32 x, UInt32 y) {
+    UInt32 index = GetIndex(x, y);
     return _buffer[index];
   }
 
  private:
-  uint32_t _width;
-  uint32_t _height;
-  uint32_t _count;
+  UInt32 _width;
+  UInt32 _height;
+  UInt32 _count;
   std::unique_ptr<T[]> _buffer;
 };
 
