@@ -28,7 +28,8 @@ add_library(radiantium.core
     src/core/math_ext.cpp
     src/core/wavefront_obj_reader.cpp
     src/core/accel/embree_accel.cpp
-    src/core/shape/mesh.cpp)
+    src/core/shape/mesh.cpp
+    src/core/camera/perspective.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT32)

@@ -2,6 +2,8 @@
 #include "radiantium/radiantium.h"
 #include <radiantium/transform.h>
 
+#include <stdexcept>
+
 namespace rad {
 
 Transform::Transform() {
@@ -16,7 +18,7 @@ Transform::Transform(const Mat4& toWorld) {
   if (!canInv) {
     ToWorld = Mat4::Zero();
     ToLocal = Mat4::Zero();
-    GetLogger()->error("mat hasn't inv mat");
+    throw std::invalid_argument("mat hasn't inv mat");
   }
 }
 

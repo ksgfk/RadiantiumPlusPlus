@@ -2,6 +2,10 @@
 #include <radiantium/wavefront_obj_reader.h>
 #include <radiantium/tracing_accel.h>
 #include <radiantium/shape.h>
+#include <radiantium/static_buffer.h>
+#include <radiantium/spectrum.h>
+#include <radiantium/camera.h>
+#include <radiantium/image_utility.h>
 #include <string>
 #include <chrono>
 
@@ -26,9 +30,33 @@ int main(int argc, char** argv) {
   std::unique_ptr<rad::IShape> mesh = rad::CreateMesh(model, {});
   accel->Build({mesh.get()});
 
-  rad::Ray ray{{0, 0, -3}, {0, 1, 0}, 0, 100000};
-  bool anyHit = accel->RayIntersect(ray);
-  logger->info("hit? {}", anyHit);
+  rad::UInt32 x = 256;
+  rad::UInt32 y = 128;
+  auto camera = rad::CreatePerspective(
+      60,
+      0.001f,
+      15,
+      rad::Vec3(5, 5, 5),
+      rad::Vec3(0, 0, 0),
+      rad::Vec3(0, 1, 0),
+      {x, y});
+  rad::StaticBuffer<rad::Spectrum>
+      fb(x, y);
+  for (rad::UInt32 j = 0; j < y; j++) {
+    auto [ptr, len] = fb.GetRowSpan(j);
+    for (rad::UInt32 i = 0; i < len; i++) {
+      rad::Ray ray = camera->SampleRay({i, j});
+      rad::HitShapeRecord rec;
+      bool anyHit = accel->RayIntersect(ray, rec);
+      if (anyHit) {
+        ptr[i] = rad::Spectrum(rec.T / 15.0f);
+      } else {
+        ptr[i] = rad::Spectrum(0);
+      }
+    }
+  }
+
+  rad::SaveOpenExr("C:\\Users\\ksgfk\\Desktop\\test.exr", fb);
 
   rad::ShutdownLogger();
 }
