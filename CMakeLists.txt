@@ -23,6 +23,7 @@ add_library(radiantium.core
     src/core/model.cpp
     src/core/logger.cpp
     src/core/transform.cpp
+    src/core/wavefront_obj_reader.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp)
 

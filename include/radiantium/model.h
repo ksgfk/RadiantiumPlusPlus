@@ -10,12 +10,15 @@
 namespace rad {
 
 class TriangleModel {
+ public:
   TriangleModel(std::vector<Vec3>&& pos,
-        std::vector<UInt32>&& indices,
-        std::vector<Vec3>&& normal = {},
-        std::vector<Vec2>&& uv = {});
+                std::vector<UInt32>&& indices,
+                std::vector<Vec3>&& normal = {},
+                std::vector<Vec2>&& uv = {});
   TriangleModel(const TriangleModel&);
   TriangleModel(TriangleModel&&) noexcept;
+  TriangleModel& operator=(const TriangleModel&);
+  TriangleModel& operator=(TriangleModel&&) noexcept;
 
   const std::vector<Vec3>& GetPosition() const { return _pos; }
   const std::vector<Vec3>& GetNormal() const { return _normal; }

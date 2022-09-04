@@ -1,26 +1,44 @@
-#include "radiantium/logger.h"
 #include <radiantium/radiantium.h>
-#include <radiantium/transform.h>
+#include <radiantium/wavefront_obj_reader.h>
+#include <string>
+#include <chrono>
 
 int main(int argc, char** argv) {
   rad::InitLogger();
-
-  rad::Vec2 a(1.00001f, 2.10002f);
-  rad::GetLogger()->info("test {}", a);
-
-  Eigen::Translation<rad::Float, 3> trans(0, 0, 0);
-  Eigen::DiagonalMatrix<rad::Float, 3> scale(rad::Vec3(1, 1, 1));
-  Eigen::AngleAxis<rad::Float> rot(rad::Radian(90), rad::Vec3(0, 1, 0));
-
-  Eigen::Transform<rad::Float, 3, Eigen::Affine> aff = trans * (rot * scale);
-  rad::Transform t(aff.matrix());
-
-  rad::GetLogger()->info("1: {}", t.ApplyAffineToWorld(rad::Vec3(1, 0, 0)));
-  rad::GetLogger()->info("2: {}", t.ApplyAffineToLocal(rad::Vec3(1, -2, 3)));
-  rad::GetLogger()->info("3: has scale? {}", t.HasScale());
-  rad::GetLogger()->info("4: trans {}", t.TranslationToWorld());
-
+  std::filesystem::path a("C:\\Users\\ksgfk\\Desktop\\ajax.obj");
+  // std::string a("f 1/1         4/3 1/6");
+  rad::WavefrontObjReader o(a);
+  std::chrono::time_point<std::chrono::high_resolution_clock> st = std::chrono::high_resolution_clock::now();
+  o.Read();
+  std::chrono::time_point<std::chrono::high_resolution_clock> ed = std::chrono::high_resolution_clock::now();
+  rad::Int64 r = std::chrono::duration_cast<std::chrono::milliseconds>(ed - st).count();
+  rad::GetLogger()->info("use time: {} ms", r);
+  // rad::GetLogger()->info("face: {}, v: {}, n: {}, uv: {}");
+  if (o.HasError()) {
+    rad::GetLogger()->error("objReader err: {}", o.Error());
+  }
+  rad::TriangleModel model = o.ToModel();
+  
   rad::ShutdownLogger();
+
+  // rad::InitLogger();
+
+  // rad::Vec2 a(1.00001f, 2.10002f);
+  // rad::GetLogger()->info("test {}", a);
+
+  // Eigen::Translation<rad::Float, 3> trans(0, 0, 0);
+  // Eigen::DiagonalMatrix<rad::Float, 3> scale(rad::Vec3(1, 1, 1));
+  // Eigen::AngleAxis<rad::Float> rot(rad::Radian(90), rad::Vec3(0, 1, 0));
+
+  // Eigen::Transform<rad::Float, 3, Eigen::Affine> aff = trans * (rot * scale);
+  // rad::Transform t(aff.matrix());
+
+  // rad::GetLogger()->info("1: {}", t.ApplyAffineToWorld(rad::Vec3(1, 0, 0)));
+  // rad::GetLogger()->info("2: {}", t.ApplyAffineToLocal(rad::Vec3(1, -2, 3)));
+  // rad::GetLogger()->info("3: has scale? {}", t.HasScale());
+  // rad::GetLogger()->info("4: trans {}", t.TranslationToWorld());
+
+  // rad::ShutdownLogger();
 
   // spdlog::info("Spectrum size {0}", sizeof(rad::Spectrum));
   // spdlog::info("Spectrum is standard layout {0}", std::is_standard_layout<rad::Spectrum>::value);
