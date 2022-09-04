@@ -2,29 +2,23 @@
 
 #include <cstdint>
 #include <stdint.h>
+#include <memory>
 
 #include "radiantium.h"
+#include "model.h"
+#include "transform.h"
 
 namespace rad {
-
-struct ShapeHitInfo {
-  Vec2 UV;
-  Float T;
-  UInt32 PrimitiveId;
-  UInt32 ShapeId;
-};
 
 class IShape {
  public:
   virtual ~IShape() noexcept = default;
 
-  UInt32 GetId() const { return _id; }
-  void SetId(UInt32 id) { _id = id; }
-
   virtual size_t PrimitiveCount() = 0;
 
- protected:
-  UInt32 _id;
+  virtual void SubmitToEmbree(RTCDevice device, RTCScene scene, UInt32 id) = 0;
 };
+
+std::unique_ptr<IShape> CreateMesh(const TriangleModel& model, const Transform& transform);
 
 }  // namespace rad

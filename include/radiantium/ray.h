@@ -5,10 +5,10 @@
 namespace rad {
 
 struct Ray {
-  Vec3 o;
-  Vec3 d;
-  Float minT;
-  Float maxT;
+  Vec3 O;
+  Vec3 D;
+  Float MinT;
+  Float MaxT;
 
   Vec3 operator()(Float t) const;
 };

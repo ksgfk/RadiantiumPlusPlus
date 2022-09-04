@@ -33,18 +33,18 @@ class WavefrontObjReader {
   /* Properties */
   bool HasError() const;
   const std::string& Error() const { return _error; }
-  const std::vector<Vec3>& Positions() const { return _pos; }
-  const std::vector<Vec2>& UVs() const { return _uv; }
-  const std::vector<Vec3>& Normals() const { return _normal; }
+  const std::vector<Eigen::Vector3f>& Positions() const { return _pos; }
+  const std::vector<Eigen::Vector2f>& UVs() const { return _uv; }
+  const std::vector<Eigen::Vector3f>& Normals() const { return _normal; }
   const std::vector<WavefrontObjFace>& Faces() const { return _faces; }
   const std::vector<std::string>& Mtllibs() const { return _mtllibs; }
   const std::vector<WavefrontObjObject>& Objects() const { return _objects; }
 
   /* Methods */
   void Read();
-  std::tuple<Vec3, Vec3, Vec3> GetPosition(size_t faceIndex) const;
-  std::tuple<Vec3, Vec3, Vec3> GetNormal(size_t faceIndex) const;
-  std::tuple<Vec2, Vec2, Vec2> GetUV(size_t faceIndex) const;
+  std::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> GetPosition(size_t faceIndex) const;
+  std::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> GetNormal(size_t faceIndex) const;
+  std::tuple<Eigen::Vector2f, Eigen::Vector2f, Eigen::Vector2f> GetUV(size_t faceIndex) const;
   bool ToModel(const std::string& name, TriangleModel& result) const;
   TriangleModel ToModel() const;
 
@@ -55,9 +55,9 @@ class WavefrontObjReader {
   std::unique_ptr<std::istream> _stream;
   std::string _error;
 
-  std::vector<Vec3> _pos;
-  std::vector<Vec2> _uv;
-  std::vector<Vec3> _normal;
+  std::vector<Eigen::Vector3f> _pos;
+  std::vector<Eigen::Vector2f> _uv;
+  std::vector<Eigen::Vector3f> _normal;
   std::vector<WavefrontObjFace> _faces;
   std::vector<std::string> _mtllibs;
   std::vector<WavefrontObjObject> _objects;

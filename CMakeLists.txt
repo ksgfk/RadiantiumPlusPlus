@@ -17,12 +17,15 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenEXR CONFIG REQUIRED)
 
 add_library(radiantium.core
+    src/core/radiantium.cpp
     src/core/ray.cpp
     src/core/spectrum.cpp
     src/core/image_utility.cpp
     src/core/model.cpp
     src/core/logger.cpp
     src/core/transform.cpp
+    src/core/frame.cpp
+    src/core/math_ext.cpp
     src/core/wavefront_obj_reader.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp)

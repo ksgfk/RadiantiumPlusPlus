@@ -20,6 +20,9 @@ WavefrontObjReader::WavefrontObjReader(std::unique_ptr<std::istream>&& stream) {
 
 WavefrontObjReader::WavefrontObjReader(const std::filesystem::path& file) {
   _stream = std::make_unique<std::ifstream>(file);
+  if(!std::filesystem::exists(file)) {
+    throw std::invalid_argument("file not exist");
+  }
 }
 
 WavefrontObjReader::WavefrontObjReader(const std::string& text) {
@@ -267,7 +270,7 @@ void WavefrontObjReader::Parse(const std::string& line, int lineNum) {
       if (!isSuccess) {
         _error += fmt::format("at line {}: can't parse vertex {}\n", lineNum, data);
       }
-      _pos.push_back(Vec3(result[0], result[1], result[2]));
+      _pos.push_back(Eigen::Vector3f(result[0], result[1], result[2]));
       break;
     }
     case ObjCmd::UV: {
@@ -276,7 +279,7 @@ void WavefrontObjReader::Parse(const std::string& line, int lineNum) {
       if (!isSuccess) {
         _error += fmt::format("at line {}: can't parse uv {}\n", lineNum, data);
       }
-      _uv.push_back(Vec2(result[0], result[1]));
+      _uv.push_back(Eigen::Vector2f(result[0], result[1]));
       break;
     }
     case ObjCmd::Normal: {
@@ -285,7 +288,7 @@ void WavefrontObjReader::Parse(const std::string& line, int lineNum) {
       if (!isSuccess) {
         _error += fmt::format("at line {}: can't parse normal {}\n", lineNum, data);
       }
-      _normal.push_back(Vec3(result[0], result[1], result[2]));
+      _normal.push_back(Eigen::Vector3f(result[0], result[1], result[2]));
       break;
     }
     case ObjCmd::Face: {
@@ -333,19 +336,19 @@ void WavefrontObjReader::Parse(const std::string& line, int lineNum) {
 static size_t CvtIdx(int f, size_t count) {
   return f >= 0 ? f - 1 : count + f;
 }
-std::tuple<Vec3, Vec3, Vec3> WavefrontObjReader::GetPosition(size_t faceIndex) const {
+std::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> WavefrontObjReader::GetPosition(size_t faceIndex) const {
   const WavefrontObjFace& f = _faces[faceIndex];
   size_t count = _pos.size();
   size_t a = CvtIdx(f.V1, count), b = CvtIdx(f.V2, count), c = CvtIdx(f.V3, count);
   return std::make_tuple(_pos[a], _pos[b], _pos[c]);
 }
-std::tuple<Vec3, Vec3, Vec3> WavefrontObjReader::GetNormal(size_t faceIndex) const {
+std::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> WavefrontObjReader::GetNormal(size_t faceIndex) const {
   const WavefrontObjFace& f = _faces[faceIndex];
   size_t count = _normal.size();
   size_t a = CvtIdx(f.Vn1, count), b = CvtIdx(f.Vn2, count), c = CvtIdx(f.Vn3, count);
   return std::make_tuple(_normal[a], _normal[b], _normal[c]);
 }
-std::tuple<Vec2, Vec2, Vec2> WavefrontObjReader::GetUV(size_t faceIndex) const {
+std::tuple<Eigen::Vector2f, Eigen::Vector2f, Eigen::Vector2f> WavefrontObjReader::GetUV(size_t faceIndex) const {
   const WavefrontObjFace& f = _faces[faceIndex];
   size_t count = _uv.size();
   size_t a = CvtIdx(f.Vt1, count), b = CvtIdx(f.Vt2, count), c = CvtIdx(f.Vt3, count);
@@ -411,9 +414,9 @@ namespace rad {
 
 TriangleModel WavefrontObjReader::ToModel(const std::vector<WavefrontObjFace>& faces) const {
   std::unordered_map<VertexHash, UInt32> unique;
-  std::vector<Vec3> p;
-  std::vector<Vec3> n;
-  std::vector<Vec2> u;
+  std::vector<Eigen::Vector3f> p;
+  std::vector<Eigen::Vector3f> n;
+  std::vector<Eigen::Vector2f> u;
   std::vector<UInt32> ind;
   UInt32 count = 0;
   VertexHash v[3];

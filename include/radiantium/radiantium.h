@@ -7,6 +7,7 @@
 #include "logger.h"
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/fmt/ostr.h>
+#include <embree3/rtcore.h>
 
 #include <Eigen/Dense>
 
@@ -67,7 +68,6 @@ struct spdlog::fmt_lib::formatter<rad::Vec2> {
     return it;
   }
 };
-
 template <>
 struct spdlog::fmt_lib::formatter<rad::Vec3> {
   template <typename FormatContext>
@@ -80,7 +80,6 @@ struct spdlog::fmt_lib::formatter<rad::Vec3> {
     return it;
   }
 };
-
 template <>
 struct spdlog::fmt_lib::formatter<rad::Vec4> {
   template <typename FormatContext>
@@ -93,9 +92,10 @@ struct spdlog::fmt_lib::formatter<rad::Vec4> {
     return it;
   }
 };
-
 template <>
 struct spdlog::fmt_lib::formatter<rad::Mat3> : spdlog::fmt_lib::ostream_formatter {};
-
 template <>
 struct spdlog::fmt_lib::formatter<rad::Mat4> : spdlog::fmt_lib::ostream_formatter {};
+std::ostream& operator<<(std::ostream& os, enum RTCError err);
+template <>
+struct spdlog::fmt_lib::formatter<enum RTCError> : spdlog::fmt_lib::ostream_formatter {};
