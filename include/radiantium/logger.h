@@ -2,7 +2,7 @@
 
 #include <spdlog/logger.h>
 
-namespace rad {
+namespace rad::logger {
 
 void InitLogger();
 void ShutdownLogger();

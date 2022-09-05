@@ -13,16 +13,16 @@
 namespace rad {
 
 template <typename T>
-class StaticBuffer {
+class StaticBuffer2D {
  public:
-  StaticBuffer(UInt32 width, UInt32 height) noexcept {
+  StaticBuffer2D(UInt32 width, UInt32 height) noexcept {
     _width = width;
     _height = height;
     _count = _width * _height;
     _buffer = std::make_unique<T[]>(_count);
   }
 
-  StaticBuffer(const StaticBuffer& other) noexcept {
+  StaticBuffer2D(const StaticBuffer2D& other) noexcept {
     _buffer = std::make_unique<T[]>(other._count);
     _width = other._width;
     _height = other._height;
@@ -30,7 +30,7 @@ class StaticBuffer {
     std::copy(other._buffer.get(), other._buffer.get() + _count, _buffer.get());
   }
 
-  StaticBuffer(StaticBuffer&& other) noexcept {
+  StaticBuffer2D(StaticBuffer2D&& other) noexcept {
     _buffer = std::move(other._buffer);
     _width = other._width;
     _height = other._height;

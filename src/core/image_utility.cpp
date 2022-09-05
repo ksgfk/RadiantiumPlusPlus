@@ -7,9 +7,9 @@
 #include <OpenEXR/ImfVersion.h>
 #include <OpenEXR/ImfIO.h>
 
-namespace rad {
+namespace rad::image {
 
-void SaveOpenExr(const std::string& file, const StaticBuffer<RgbSpectrum>& img) {
+void SaveOpenExr(const std::string& file, const StaticBuffer2D<RgbSpectrum>& img) {
   Imf::Header header((int)img.Width(), (int)img.Height());
   header.insert("comments", Imf::StringAttribute("radium"));
   Imf::ChannelList& channels = header.channels();

@@ -1,5 +1,7 @@
 #include <radiantium/math_ext.h>
+
 #include <utility>
+#include <cmath>
 
 namespace rad::math {
 
@@ -7,6 +9,9 @@ Float Sqr(Float v) { return v * v; }
 Float Sign(Float v) { return v >= 0 ? Float(1) : Float(-1); }
 Float MulSign(Float v1, Float v2) { return v2 >= 0 ? v1 : -v1; }
 Float Rcp(Float v) { return Float(1) / v; }
+Float Fmadd(Float a, Float b, Float c) { return a * b + c; }
+Vec3 Fmadd(Vec3 a, Vec3 b, Vec3 c) { return a.cwiseProduct(b) + c; }
+Float Rsqrt(Float v) { return Rcp(std::sqrt(v)); }
 
 std::pair<Vec3, Vec3> CoordinateSystem(Vec3 n) {
   Float sign = Sign(n.z());

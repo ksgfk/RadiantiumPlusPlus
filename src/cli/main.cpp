@@ -10,8 +10,8 @@
 #include <chrono>
 
 int main(int argc, char** argv) {
-  rad::InitLogger();
-  auto logger = rad::GetLogger();
+  rad::logger::InitLogger();
+  auto logger = rad::logger::GetLogger();
   std::filesystem::path a("C:\\Users\\ksgfk\\Desktop\\cube.obj");
   // std::string a("f 1/1         4/3 1/6");
   rad::WavefrontObjReader o(a);
@@ -19,10 +19,10 @@ int main(int argc, char** argv) {
   o.Read();
   std::chrono::time_point<std::chrono::high_resolution_clock> ed = std::chrono::high_resolution_clock::now();
   rad::Int64 r = std::chrono::duration_cast<std::chrono::milliseconds>(ed - st).count();
-  rad::GetLogger()->info("use time: {} ms", r);
+  rad::logger::GetLogger()->info("use time: {} ms", r);
   // rad::GetLogger()->info("face: {}, v: {}, n: {}, uv: {}");
   if (o.HasError()) {
-    rad::GetLogger()->error("objReader err: {}", o.Error());
+    rad::logger::GetLogger()->error("objReader err: {}", o.Error());
   }
   rad::TriangleModel model = o.ToModel();
 
@@ -40,23 +40,24 @@ int main(int argc, char** argv) {
       rad::Vec3(0, 0, 0),
       rad::Vec3(0, 1, 0),
       {x, y});
-  rad::StaticBuffer<rad::Spectrum>
+  rad::StaticBuffer2D<rad::Spectrum>
       fb(x, y);
   for (rad::UInt32 j = 0; j < y; j++) {
     auto [ptr, len] = fb.GetRowSpan(j);
     for (rad::UInt32 i = 0; i < len; i++) {
       rad::Ray ray = camera->SampleRay({i, j});
       rad::HitShapeRecord rec;
-      bool anyHit = accel->RayIntersect(ray, rec);
+      bool anyHit = accel->RayIntersectPreliminary(ray, rec);
       if (anyHit) {
-        ptr[i] = rad::Spectrum(rec.T / 15.0f);
+        auto t = rec.ComputeSurfaceInteraction(ray);
+        ptr[i] = rad::Spectrum(t.Shading.N);
       } else {
         ptr[i] = rad::Spectrum(0);
       }
     }
   }
 
-  rad::SaveOpenExr("C:\\Users\\ksgfk\\Desktop\\test.exr", fb);
+  rad::image::SaveOpenExr("C:\\Users\\ksgfk\\Desktop\\test.exr", fb);
 
-  rad::ShutdownLogger();
+  rad::logger::ShutdownLogger();
 }

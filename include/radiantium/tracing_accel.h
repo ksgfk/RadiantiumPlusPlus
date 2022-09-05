@@ -15,7 +15,7 @@ class ITracingAccel {
 
   virtual void Build(std::vector<IShape*>&& shapes) = 0;
   virtual bool RayIntersect(const Ray& ray) = 0;
-  virtual bool RayIntersect(const Ray& ray, HitShapeRecord& hsr) = 0;
+  virtual bool RayIntersectPreliminary(const Ray& ray, HitShapeRecord& hsr) = 0;
 };
 
 std::unique_ptr<ITracingAccel> CreateEmbree();

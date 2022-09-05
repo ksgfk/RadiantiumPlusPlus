@@ -8,6 +8,7 @@ struct RgbSpectrum : Vec3 {
   RgbSpectrum() noexcept : Vec3(0, 0, 0) {}
   RgbSpectrum(Float value) noexcept : Vec3(value, value, value) {}
   RgbSpectrum(Float r, Float g, Float b) noexcept : Vec3(r, g, b) {}
+  RgbSpectrum(const Vec3& v) noexcept : Vec3(v) {}
   template <typename Derived>
   RgbSpectrum(const Eigen::ArrayBase<Derived>& p) noexcept : Vec3(p) {}
   template <typename Derived>

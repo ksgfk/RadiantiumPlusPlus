@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <array>
 #include <vector>
+#include <limits>
 
 namespace rad {
 
@@ -20,7 +21,7 @@ WavefrontObjReader::WavefrontObjReader(std::unique_ptr<std::istream>&& stream) {
 
 WavefrontObjReader::WavefrontObjReader(const std::filesystem::path& file) {
   _stream = std::make_unique<std::ifstream>(file);
-  if(!std::filesystem::exists(file)) {
+  if (!std::filesystem::exists(file)) {
     throw std::invalid_argument("file not exist");
   }
 }
@@ -448,11 +449,19 @@ TriangleModel WavefrontObjReader::ToModel(const std::vector<WavefrontObjFace>& f
   ind.shrink_to_fit();
   n.shrink_to_fit();
   u.shrink_to_fit();
+  if (p.size() >= std::numeric_limits<UInt32>::max()) {
+    throw std::out_of_range("model tooooooooo bug");
+  }
+  if (ind.size() >= std::numeric_limits<UInt32>::max()) {
+    throw std::out_of_range("model tooooooooo bug");
+  }
   return TriangleModel(
-      std::move(p),
-      std::move(ind),
-      std::move(n),
-      std::move(u));
+      p.data(),
+      static_cast<UInt32>(p.size()),
+      ind.data(),
+      static_cast<UInt32>(ind.size()),
+      n.size() == 0 ? nullptr : n.data(),
+      u.size() == 0 ? nullptr : u.data());
 }
 
 }  // namespace rad

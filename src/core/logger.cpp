@@ -6,7 +6,7 @@
 #include <spdlog/logger.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-namespace rad {
+namespace rad::logger {
 
 static std::shared_ptr<spdlog::logger> _globalLogger;
 

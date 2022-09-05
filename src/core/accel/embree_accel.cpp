@@ -10,7 +10,7 @@ namespace rad {
 class IShape;
 
 static void EmbreeErrCallback(void* userPtr, enum RTCError error, const char* str) {
-  GetLogger()->error("embree log error: {}, {}", error, str);
+  logger::GetLogger()->error("embree log error: {}, {}", error, str);
 }
 
 class EmbreeAccel : public ITracingAccel {
@@ -19,7 +19,7 @@ class EmbreeAccel : public ITracingAccel {
     _device = rtcNewDevice(NULL);
     if (_device == nullptr) {
       RTCError err = rtcGetDeviceError(NULL);
-      GetLogger()->error("embree error {}, cannot create device\n", err);
+      logger::GetLogger()->error("embree error {}, cannot create device\n", err);
       return;
     }
     rtcSetDeviceErrorFunction(_device, EmbreeErrCallback, NULL);
@@ -77,7 +77,7 @@ class EmbreeAccel : public ITracingAccel {
     return rtcray.tfar != ray.MaxT;
   }
 
-  bool RayIntersect(const Ray& ray, HitShapeRecord& hsr) override {
+  bool RayIntersectPreliminary(const Ray& ray, HitShapeRecord& hsr) override {
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
     struct RTCRayHit rayhit;
@@ -95,6 +95,7 @@ class EmbreeAccel : public ITracingAccel {
       rec.T = rayhit.ray.tfar;
       rec.PrimitiveUV = Vec2(rayhit.hit.u, rayhit.hit.v);
       rec.Shape = shape;
+      rec.GeometryNormal = Vec3(rayhit.hit.Ng_x, rayhit.hit.Ng_y, rayhit.hit.Ng_z);
       anyHit = true;
     } else {
       anyHit = false;

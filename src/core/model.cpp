@@ -2,81 +2,101 @@
 
 namespace rad {
 
-TriangleModel::TriangleModel(std::vector<Vec3>&& pos,
-                             std::vector<UInt32>&& indices,
-                             std::vector<Vec3>&& normal,
-                             std::vector<Vec2>&& uv) {
-  if (indices.size() % 3 != 0) {
-    GetLogger()->error("invild model indices {}", indices.size());
+TriangleModel::TriangleModel(
+    const Eigen::Vector3f* pos,
+    UInt32 vertexCount,
+    const UInt32* indices,
+    UInt32 indexCount,
+    const Eigen::Vector3f* normal,
+    const Eigen::Vector2f* uv) {
+  if (indexCount % 3 != 0) {
+    logger::GetLogger()->error("invalid index count {}", indexCount);
   }
-  if (normal.size() > 0 && normal.size() != pos.size()) {
-    GetLogger()->error("invild normal {}", normal.size());
+  _vertexCount = vertexCount;
+  _indexCount = indexCount;
+  _triangleCount = indexCount % 3;
+  _position = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[vertexCount]);
+  std::copy(pos, pos + vertexCount, _position.get());
+  _indices = std::shared_ptr<UInt32[]>(new UInt32[indexCount]);
+  std::copy(indices, indices + indexCount, _indices.get());
+  if (normal != nullptr) {
+    _normal = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[vertexCount]);
+    std::copy(normal, normal + vertexCount, _normal.get());
   }
-  if (uv.size() > 0 && uv.size() != pos.size()) {
-    GetLogger()->error("invild uv {}", uv.size());
+  if (uv != nullptr) {
+    _uv = std::shared_ptr<Eigen::Vector2f[]>(new Eigen::Vector2f[vertexCount]);
+    std::copy(uv, uv + vertexCount, _uv.get());
   }
-  _pos = std::make_unique<std::vector<Vec3>>(std::move(pos));
-  _normal = std::make_unique<std::vector<Vec3>>(std::move(normal));
-  _uv = std::make_unique<std::vector<Vec2>>(std::move(uv));
-  _indices = std::make_unique<std::vector<UInt32>>(std::move(indices));
 }
 
 TriangleModel::TriangleModel(const TriangleModel& other) {
-  _pos = std::make_unique<std::vector<Vec3>>(*other._pos);
-  _normal = std::make_unique<std::vector<Vec3>>(*other._normal);
-  _uv = std::make_unique<std::vector<Vec2>>(*other._uv);
-  _indices = std::make_unique<std::vector<UInt32>>(*other._indices);
+  _vertexCount = other._vertexCount;
+  _indexCount = other._indexCount;
+  _triangleCount = other._indexCount;
+  _position = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[_vertexCount]);
+  std::copy(other._position.get(), other._position.get() + _vertexCount, _position.get());
+  _indices = std::shared_ptr<UInt32[]>(new UInt32[_indexCount]);
+  std::copy(other._indices.get(), other._indices.get() + _indexCount, _indices.get());
+  if (other._normal != nullptr) {
+    _normal = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[_vertexCount]);
+    std::copy(other._normal.get(), other._normal.get() + _vertexCount, _normal.get());
+  }
+  if (other._uv != nullptr) {
+    _uv = std::shared_ptr<Eigen::Vector2f[]>(new Eigen::Vector2f[_vertexCount]);
+    std::copy(other._uv.get(), other._uv.get() + _vertexCount, _uv.get());
+  }
 }
 
 TriangleModel::TriangleModel(TriangleModel&& other) noexcept {
-  _pos = std::move(other._pos);
+  _position = std::move(other._position);
   _normal = std::move(other._normal);
   _uv = std::move(other._uv);
   _indices = std::move(other._indices);
+  _vertexCount = other._vertexCount;
+  _indexCount = other._vertexCount;
+  _triangleCount = other._vertexCount;
 }
 
 TriangleModel& TriangleModel::operator=(const TriangleModel& other) {
-  _pos = std::make_unique<std::vector<Vec3>>(*other._pos);
-  _normal = std::make_unique<std::vector<Vec3>>(*other._normal);
-  _uv = std::make_unique<std::vector<Vec2>>(*other._uv);
-  _indices = std::make_unique<std::vector<UInt32>>(*other._indices);
+  _vertexCount = other._vertexCount;
+  _indexCount = other._indexCount;
+  _triangleCount = other._indexCount;
+  _position = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[_vertexCount]);
+  std::copy(other._position.get(), other._position.get() + _vertexCount, _position.get());
+  _indices = std::shared_ptr<UInt32[]>(new UInt32[_indexCount]);
+  std::copy(other._indices.get(), other._indices.get() + _indexCount, _indices.get());
+  if (other._normal != nullptr) {
+    _normal = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[_vertexCount]);
+    std::copy(other._normal.get(), other._normal.get() + _vertexCount, _normal.get());
+  }
+  if (other._uv != nullptr) {
+    _uv = std::shared_ptr<Eigen::Vector2f[]>(new Eigen::Vector2f[_vertexCount]);
+    std::copy(other._uv.get(), other._uv.get() + _vertexCount, _uv.get());
+  }
   return *this;
 }
 
 TriangleModel& TriangleModel::operator=(TriangleModel&& other) noexcept {
-  _pos = std::move(other._pos);
+  _position = std::move(other._position);
   _normal = std::move(other._normal);
   _uv = std::move(other._uv);
   _indices = std::move(other._indices);
+  _vertexCount = other._vertexCount;
+  _indexCount = other._vertexCount;
+  _triangleCount = other._vertexCount;
   return *this;
 }
 
-const std::vector<Vec3>& TriangleModel::GetPosition() const { return *_pos; }
+std::shared_ptr<Eigen::Vector3f[]> TriangleModel::GetPosition() const { return _position; }
 
-const std::vector<Vec3>& TriangleModel::GetNormal() const { return *_normal; }
+std::shared_ptr<Eigen::Vector3f[]> TriangleModel::GetNormal() const { return _normal; }
 
-const std::vector<Vec2>& TriangleModel::GetUV() const { return *_uv; }
+std::shared_ptr<Eigen::Vector2f[]> TriangleModel::GetUV() const { return _uv; }
 
-const std::vector<UInt32>& TriangleModel::GetIndices() const { return *_indices; }
+std::shared_ptr<UInt32[]> TriangleModel::GetIndices() const { return _indices; }
 
-const size_t TriangleModel::VertexCount() const { return _pos->size(); }
+bool TriangleModel::HasNormal() const { return _normal != nullptr; }
 
-const size_t TriangleModel::IndexCount() const { return _indices->size(); }
-
-bool TriangleModel::HasNormal() const { return _normal->size() > 0; }
-
-bool TriangleModel::HasUV() const { return _uv->size() > 0; }
-
-Vec3* TriangleModel::GetPositionPtr() const { return _pos.get()->data(); }
-
-Vec3* TriangleModel::GetNormalPtr() const {
-  return _normal->size() > 0 ? _normal.get()->data() : nullptr;
-}
-
-Vec2* TriangleModel::GetUVPtr() const {
-  return _uv->size() > 0 ? _uv.get()->data() : nullptr;
-}
-
-UInt32* TriangleModel::GetIndicePtr() const { return _indices.get()->data(); }
+bool TriangleModel::HasUV() const { return _uv != nullptr; }
 
 }  // namespace rad

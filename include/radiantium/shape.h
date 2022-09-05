@@ -7,6 +7,7 @@
 #include "radiantium.h"
 #include "model.h"
 #include "transform.h"
+#include "interaction.h"
 
 namespace rad {
 
@@ -17,6 +18,7 @@ class IShape {
   virtual size_t PrimitiveCount() = 0;
 
   virtual void SubmitToEmbree(RTCDevice device, RTCScene scene, UInt32 id) = 0;
+  virtual SurfaceInteraction ComputeInteraction(const Ray& ray, const HitShapeRecord& rec) = 0;
 };
 
 std::unique_ptr<IShape> CreateMesh(const TriangleModel& model, const Transform& transform);

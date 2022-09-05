@@ -1,20 +1,14 @@
 #pragma once
 
 #include "radiantium.h"
-#include "radiantium/frame.h"
+#include "frame.h"
+#include "ray.h"
+
 #include <limits>
 
 namespace rad {
 
 class IShape;
-
-struct HitShapeRecord {
-  Float T = std::numeric_limits<Float>::infinity();
-  Vec2 PrimitiveUV;
-  UInt32 PrimitiveIndex;
-  UInt32 ShapeIndex;
-  IShape* Shape = nullptr;
-};
 
 struct Interaction {
   Float T;
@@ -30,6 +24,21 @@ struct SurfaceInteraction : public Interaction {
   Vec3 dNdU, dNdV;
   Vec3 Wi;
   UInt32 PrimitiveIndex;
+
+  void ComputeShadingFrame();
+  Vec3 ToWorld(const Vec3& v) const;
+  Vec3 ToLocal(const Vec3& v) const;
+};
+
+struct HitShapeRecord {
+  Float T = std::numeric_limits<Float>::infinity();
+  Vec3 GeometryNormal;
+  Vec2 PrimitiveUV;
+  UInt32 PrimitiveIndex;
+  UInt32 ShapeIndex;
+  IShape* Shape = nullptr;
+
+  SurfaceInteraction ComputeSurfaceInteraction(const Ray& ray) const;
 };
 
 }  // namespace rad
