@@ -27,6 +27,9 @@ add_library(radiantium.core
     src/core/frame.cpp
     src/core/math_ext.cpp
     src/core/interaction.cpp
+    src/core/build_context.cpp
+    src/core/factory.cpp
+    src/core/config_node.cpp
     src/core/wavefront_obj_reader.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp

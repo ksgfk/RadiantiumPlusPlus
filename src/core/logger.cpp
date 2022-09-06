@@ -30,4 +30,12 @@ spdlog::logger* GetLogger() {
   return _globalLogger.get();
 }
 
-}  // namespace rad
+std::shared_ptr<spdlog::logger> GetCategoryLogger(const std::string& name) {
+  std::shared_ptr<spdlog::logger> logger = spdlog::get(name);
+  if (logger == nullptr) {
+    logger = _globalLogger->clone(name);
+  }
+  return logger;
+}
+
+}  // namespace rad::logger

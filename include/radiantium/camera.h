@@ -2,12 +2,16 @@
 
 #include "radiantium.h"
 #include "ray.h"
+#include "object.h"
 
 #include <memory>
 
 namespace rad {
 
-class ICamera {
+class IFactory;
+class Object;
+
+class ICamera : public Object {
  public:
   virtual ~ICamera() noexcept = default;
 
@@ -19,9 +23,8 @@ class ICamera {
   virtual Ray SampleRay(Vec2 screenPosition) = 0;
 };
 
-std::unique_ptr<ICamera> CreatePerspective(
-    Float fov, Float near, Float far,
-    const Vec3& origin, const Vec3& target, const Vec3& up,
-    const Eigen::Vector2i& resolution);
+namespace factory {
+std::unique_ptr<IFactory> CreatePerspectiveFactory();
+}
 
 }  // namespace rad

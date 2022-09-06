@@ -445,10 +445,6 @@ TriangleModel WavefrontObjReader::ToModel(const std::vector<WavefrontObjFace>& f
       ind.push_back(index);
     }
   }
-  p.shrink_to_fit();
-  ind.shrink_to_fit();
-  n.shrink_to_fit();
-  u.shrink_to_fit();
   if (p.size() >= std::numeric_limits<UInt32>::max()) {
     throw std::out_of_range("model tooooooooo bug");
   }

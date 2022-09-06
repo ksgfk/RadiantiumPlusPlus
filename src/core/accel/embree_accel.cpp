@@ -1,13 +1,15 @@
 #include <radiantium/tracing_accel.h>
 
+#include <radiantium/object.h>
+#include <radiantium/factory.h>
+#include <radiantium/build_context.h>
+#include <radiantium/config_node.h>
 #include <radiantium/radiantium.h>
 #include <limits>
 #include <stdexcept>
 #include <utility>
 
 namespace rad {
-
-class IShape;
 
 static void EmbreeErrCallback(void* userPtr, enum RTCError error, const char* str) {
   logger::GetLogger()->error("embree log error: {}, {}", error, str);
@@ -110,8 +112,20 @@ class EmbreeAccel : public ITracingAccel {
   std::vector<IShape*> _shapes;
 };
 
-std::unique_ptr<ITracingAccel> CreateEmbree() {
-  return std::make_unique<EmbreeAccel>();
+}  // namespace rad
+
+namespace rad::factory {
+
+class EmbreeAccelFactory : public IFactory {
+ public:
+  ~EmbreeAccelFactory() noexcept override {}
+  std::string UniqueId() const override { return "embree"; }
+  std::unique_ptr<Object> Create(const BuildContext* context, const IConfigNode* config) const override {
+    return std::make_unique<EmbreeAccel>();
+  }
+};
+std::unique_ptr<IFactory> CreateEmbreeFactory() {
+  return std::make_unique<EmbreeAccelFactory>();
 }
 
-}  // namespace rad
+}  // namespace rad::factory

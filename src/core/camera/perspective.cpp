@@ -1,5 +1,10 @@
 #include <radiantium/camera.h>
 
+#include <radiantium/object.h>
+#include <radiantium/factory.h>
+#include <radiantium/build_context.h>
+#include <radiantium/config_node.h>
+
 #include <radiantium/transform.h>
 #include <radiantium/math_ext.h>
 #include <cmath>
@@ -66,11 +71,35 @@ class Perspective : public ICamera {
   Transform _cameraToClip;
 };
 
-std::unique_ptr<ICamera> CreatePerspective(
-    Float fov, Float near, Float far,
-    const Vec3& origin, const Vec3& target, const Vec3& up,
-    const Eigen::Vector2i& resolution) {
-  return std::make_unique<Perspective>(fov, near, far, origin, target, up, resolution);
+}  // namespace rad
+
+namespace rad::factory {
+
+class PerspectiveCameraFactory : public IFactory {
+ public:
+  ~PerspectiveCameraFactory() noexcept override {}
+  std::string UniqueId() const override { return "perspective"; }
+  std::unique_ptr<Object> Create(const BuildContext* context, const IConfigNode* config) const override {
+    std::unique_ptr<Perspective> result;
+    Float fov = config->GetFloat("fov", 30);
+    Float near = config->GetFloat("near", 30);
+    Float far = config->GetFloat("far", 30);
+    Vec2 reso = config->GetVec2("resolution", Vec2(1280, 720));
+    Eigen::Vector2i resolution{(Int32)reso.x(), (Int32)reso.y()};
+    if (config->HasProperty("to_world")) {
+      Mat4 toWorld = config->GetMat4("to_world", Mat4::Identity());
+      result = std::make_unique<Perspective>(fov, near, far, toWorld, resolution);
+    } else {
+      Vec3 origin = config->GetVec3("origin", Vec3(0, 0, -1));
+      Vec3 target = config->GetVec3("target", Vec3(0, 0, 0));
+      Vec3 up = config->GetVec3("up", Vec3(0, 1, 0));
+      result = std::make_unique<Perspective>(fov, near, far, origin, target, up, resolution);
+    }
+    return result;
+  }
+};
+std::unique_ptr<IFactory> CreatePerspectiveFactory() {
+  return std::make_unique<PerspectiveCameraFactory>();
 }
 
-}  // namespace rad
+}  // namespace rad::factory

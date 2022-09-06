@@ -3,12 +3,15 @@
 #include "ray.h"
 #include "interaction.h"
 #include "shape.h"
+#include "object.h"
 
 namespace rad {
 
-class ITracingAccel {
+class IFactory;
+
+class ITracingAccel : public Object {
  public:
-  virtual ~ITracingAccel() noexcept = default;
+  virtual ~ITracingAccel() noexcept {}
 
   virtual bool IsValid() = 0;
   virtual const std::vector<IShape*> Shapes() noexcept = 0;
@@ -18,6 +21,8 @@ class ITracingAccel {
   virtual bool RayIntersectPreliminary(const Ray& ray, HitShapeRecord& hsr) = 0;
 };
 
-std::unique_ptr<ITracingAccel> CreateEmbree();
+namespace factory {
+std::unique_ptr<IFactory> CreateEmbreeFactory();
+}
 
 }  // namespace rad

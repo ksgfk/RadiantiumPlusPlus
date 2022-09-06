@@ -1,4 +1,5 @@
 #include <radiantium/radiantium.h>
+#include <radiantium/factory.h>
 #include <radiantium/wavefront_obj_reader.h>
 #include <radiantium/tracing_accel.h>
 #include <radiantium/shape.h>
@@ -26,20 +27,23 @@ int main(int argc, char** argv) {
   }
   rad::TriangleModel model = o.ToModel();
 
-  std::unique_ptr<rad::ITracingAccel> accel = rad::CreateEmbree();
+  auto obj = rad::factory::CreateEmbreeFactory()->Create(nullptr, nullptr);
+  rad::ITracingAccel* accel =static_cast<rad::ITracingAccel*>(obj.get());
   std::unique_ptr<rad::IShape> mesh = rad::CreateMesh(model, {});
   accel->Build({mesh.get()});
 
   rad::UInt32 x = 256;
   rad::UInt32 y = 128;
-  auto camera = rad::CreatePerspective(
-      60,
-      0.001f,
-      15,
-      rad::Vec3(5, 5, 5),
-      rad::Vec3(0, 0, 0),
-      rad::Vec3(0, 1, 0),
-      {x, y});
+  // auto camera = rad::CreatePerspective(
+  //     60,
+  //     0.001f,
+  //     15,
+  //     rad::Vec3(5, 5, 5),
+  //     rad::Vec3(0, 0, 0),
+  //     rad::Vec3(0, 1, 0),
+  //     {x, y});
+  auto cam = rad::factory::CreatePerspectiveFactory()->Create(nullptr, nullptr);
+  auto camera =static_cast<rad::ICamera*>(cam.get());
   rad::StaticBuffer2D<rad::Spectrum>
       fb(x, y);
   for (rad::UInt32 j = 0; j < y; j++) {
