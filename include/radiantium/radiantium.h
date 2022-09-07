@@ -3,7 +3,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <chrono>
 
+#include "fwd.h"
 #include "logger.h"
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/fmt/ostr.h>
@@ -17,7 +20,7 @@
 #endif
 #endif
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || defined(RAD_DEFINE_DEBUG)
 #define RAD_DEBUG_MODE
 #endif
 
@@ -49,9 +52,9 @@ using Vec4 = Eigen::Vector4<Float>;
 using Mat3 = Eigen::Matrix3<Float>;
 using Mat4 = Eigen::Matrix4<Float>;
 
-constexpr Float PI = static_cast<Float>(3.1415926535897932);
-constexpr Float Degree(Float value) { return value * (180.0f / PI); }
-constexpr Float Radian(Float value) { return value * (PI / 180.0f); }
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+using Duration = std::chrono::duration<long long, std::chrono::milliseconds>;
 
 }  // namespace rad
 

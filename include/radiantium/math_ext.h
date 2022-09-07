@@ -5,6 +5,10 @@
 
 namespace rad::math {
 
+constexpr Float PI = static_cast<Float>(3.1415926535897932);
+constexpr Float Degree(Float value) { return value * (180.0f / PI); }
+constexpr Float Radian(Float value) { return value * (PI / 180.0f); }
+
 Float Sqr(Float v);
 Float Sign(Float v);
 Float MulSign(Float v1, Float v2); // mul sign of v2 to v1

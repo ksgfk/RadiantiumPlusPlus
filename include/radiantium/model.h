@@ -12,6 +12,7 @@ namespace rad {
 
 class TriangleModel {
  public:
+  TriangleModel();
   TriangleModel(const Eigen::Vector3f* pos,
                 UInt32 vertexCount,
                 const UInt32* indices,

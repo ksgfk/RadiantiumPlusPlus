@@ -3,6 +3,9 @@
 #include <radiantium/model.h>
 #include <radiantium/transform.h>
 #include <radiantium/math_ext.h>
+#include <radiantium/factory.h>
+#include <radiantium/build_context.h>
+#include <radiantium/config_node.h>
 #include <memory>
 #include <limits>
 #include <stdexcept>
@@ -127,3 +130,26 @@ std::unique_ptr<IShape> CreateMesh(const TriangleModel& model, const Transform& 
 }
 
 }  // namespace rad
+
+namespace rad::factory {
+class MeshShapeFactory : public IShapeFactory {
+ public:
+  ~MeshShapeFactory() noexcept override {}
+  std::string UniqueId() const override { return "mesh"; }
+  std::unique_ptr<IShape> Create(const BuildContext* context, const IConfigNode* config) const override {
+    const Transform& toWorld = context->GetEntityCreateContext().ToWorld;
+    std::string assetName = config->GetString("asset_name");
+    IModelAsset* model = context->GetModel(assetName);
+    std::unique_ptr<IShape> result;
+    if (config->HasProperty("sub_model")) {
+      std::string subModel = config->GetString("sub_model");
+      auto sub = model->GetSubModel(subModel);
+      result = std::make_unique<Mesh>(*sub, toWorld);
+    } else {
+      result = std::make_unique<Mesh>(*model->FullModel(), toWorld);
+    }
+    return result;
+  }
+};
+std::unique_ptr<IFactory> CreateMeshFactory() { return std::make_unique<MeshShapeFactory>(); }
+}  // namespace rad::factory

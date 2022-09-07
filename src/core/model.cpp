@@ -2,6 +2,8 @@
 
 namespace rad {
 
+TriangleModel::TriangleModel() = default;
+
 TriangleModel::TriangleModel(
     const Eigen::Vector3f* pos,
     UInt32 vertexCount,

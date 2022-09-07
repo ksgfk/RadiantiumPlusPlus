@@ -1,7 +1,7 @@
 #pragma once
 
 #include "radiantium.h"
-#include "radiantium/model.h"
+#include "model.h"
 
 #include <memory>
 #include <istream>
@@ -26,7 +26,7 @@ struct WavefrontObjObject {
 
 class WavefrontObjReader {
  public:
-  WavefrontObjReader(std::unique_ptr<std::istream>&& stream);
+  WavefrontObjReader(std::unique_ptr<std::istream> stream);
   WavefrontObjReader(const std::filesystem::path& file);
   WavefrontObjReader(const std::string& text);
 

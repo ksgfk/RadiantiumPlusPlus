@@ -25,8 +25,8 @@ class Perspective : public ICamera {
     _cameraToWorld = Transform(cameraToWorld);
 
     Float aspect = _resolution.x() / static_cast<Float>(_resolution.y());
-    Float recip = 1 / (far - near);             //将相机空间中的向量投影到z=1的平面上
-    Float cot = 1 / std::tan(Radian(fov / 2));  // cotangent确保NDC的near到far是[0,1]
+    Float recip = 1 / (far - near);                   //将相机空间中的向量投影到z=1的平面上
+    Float cot = 1 / std::tan(math::Radian(fov / 2));  // cotangent确保NDC的near到far是[0,1]
     Mat4 perspective;
     perspective << cot, 0, 0, 0,
         0, cot, 0, 0,
@@ -47,11 +47,11 @@ class Perspective : public ICamera {
   }
   ~Perspective() noexcept override {}
 
-  Eigen::Vector2i Resolution() override { return _resolution; }
+  Eigen::Vector2i Resolution() const override { return _resolution; }
 
-  Vec3 WorldPosition() override { return _cameraToWorld.ApplyAffineToWorld(Vec3(0, 0, 0)); }
+  Vec3 WorldPosition() const override { return _cameraToWorld.ApplyAffineToWorld(Vec3(0, 0, 0)); }
 
-  Ray SampleRay(Vec2 screenPosition) override {
+  Ray SampleRay(Vec2 screenPosition) const override {
     Vec2 t = screenPosition.cwiseProduct(_rcpResolution);
     Vec3 ndc = Vec3(t.x(), t.y(), 0);
     Vec3 near = _cameraToClip.ApplyAffineToLocal(ndc);  //标准设备空间的近平面变换到摄像机空间
@@ -75,11 +75,11 @@ class Perspective : public ICamera {
 
 namespace rad::factory {
 
-class PerspectiveCameraFactory : public IFactory {
+class PerspectiveCameraFactory : public ICameraFactory {
  public:
   ~PerspectiveCameraFactory() noexcept override {}
   std::string UniqueId() const override { return "perspective"; }
-  std::unique_ptr<Object> Create(const BuildContext* context, const IConfigNode* config) const override {
+  std::unique_ptr<ICamera> Create(const BuildContext* context, const IConfigNode* config) const override {
     std::unique_ptr<Perspective> result;
     Float fov = config->GetFloat("fov", 30);
     Float near = config->GetFloat("near", 30);

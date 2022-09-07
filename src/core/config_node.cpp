@@ -1,5 +1,7 @@
 #include <radiantium/config_node.h>
 
+#include <radiantium/math_ext.h>
+
 #include <fstream>
 #include <stdexcept>
 
@@ -17,8 +19,7 @@ class JsonConfigNode : public IConfigNode {
   JsonConfigNode(const json&& json) : _j(std::move(json)) {}
   ~JsonConfigNode() noexcept override {}
 
-  Type GetType() const override {
-    auto type = _j.type();
+  static Type CvtType(json::value_t type) {
     switch (type) {
       case nlohmann::detail::value_t::null:
         return Type::Empty;
@@ -43,6 +44,15 @@ class JsonConfigNode : public IConfigNode {
       default:
         return Type::Unknown;
     }
+  }
+
+  Type GetType() const override {
+    auto type = _j.type();
+    return CvtType(type);
+  }
+
+  Type GetChildType(const std::string& name) const override {
+    return CvtType(_j.find(name)->type());
   }
 
   bool HasProperty(const std::string& name) const override {
@@ -71,7 +81,7 @@ class JsonConfigNode : public IConfigNode {
   Float GetFloat(const std::string& name, Float defVal) const override { return Get<Float>(name, defVal); }
 
   template <typename T, size_t Count>
-  Eigen::Matrix<T, Count, 1> GetVec(const json& node) const {
+  static Eigen::Matrix<T, Count, 1> GetVec(const json& node) {
     Eigen::Matrix<T, Count, 1> v;
     if (node.is_number()) {
       T val = node.get<T>();
@@ -83,7 +93,7 @@ class JsonConfigNode : public IConfigNode {
         throw std::invalid_argument(fmt::format("invalid vec{}, {}", Count, node.dump()));
       }
       for (size_t i = 0; i < Count; i++) {
-        v[i] = _j[i].get<T>();
+        v[i] = node[i].get<T>();
       }
     }
     return v;
@@ -183,3 +193,50 @@ std::unique_ptr<IConfigNode> CreateJsonConfig(const std::string& config) {
 }
 
 }  // namespace rad::config
+
+namespace rad {
+
+const IConfigNode* IConfigNode::Empty() {
+  static std::unique_ptr<IConfigNode> empty = rad::config::CreateJsonConfig(std::string("{}"));
+  return empty.get();
+}
+
+Mat4 ToTransform(const IConfigNode* node) {
+  Vec3 translate = node->GetVec3("translate", Vec3(0, 0, 0));
+  Vec3 scale = node->GetVec3("scale", Vec3(1, 1, 1));
+  Mat4 rotation = Mat4::Identity();
+  if (node->HasProperty("rotate")) {
+    auto rotateNode = node->GetObject("rotate");
+    Vec3 axis = rotateNode->GetVec3("axis", Vec3(0, 1, 0));
+    Float angle = rotateNode->GetFloat("angle", Float(0));
+    Eigen::AngleAxis<Float> angleAxis(math::Radian(angle), axis);
+    rotation.bottomLeftCorner<3, 3>() = angleAxis.toRotationMatrix();
+  }
+  Mat4 t;
+  t << 1, 0, 0, translate.x(),
+      0, 1, 0, translate.y(),
+      0, 0, 1, translate.z(),
+      0, 0, 0, 1;
+  Mat4 s;
+  s << scale.x(), 0, 0, 0,
+      0, scale.y(), 0, 0,
+      0, 0, scale.z(), 0,
+      0, 0, 0, 1;
+  return t * rotation * s;
+}
+Mat4 IConfigNode::GetTransform(const IConfigNode* node, const std::string& name) {
+  auto n = node->GetObject(name);
+  return ToTransform(n.get());
+}
+Mat4 IConfigNode::GetTransform(
+    const IConfigNode* node,
+    const std::string& name,
+    const Mat4& transform) {
+  if (!node->HasProperty(name)) {
+    return transform;
+  }
+  auto n = node->GetObject(name);
+  return ToTransform(n.get());
+}
+
+}  // namespace rad

@@ -4,10 +4,9 @@
 #include "interaction.h"
 #include "shape.h"
 #include "object.h"
+#include "fwd.h"
 
 namespace rad {
-
-class IFactory;
 
 class ITracingAccel : public Object {
  public:

@@ -37,6 +37,23 @@ class StaticBuffer2D {
     _count = other._count;
   }
 
+  StaticBuffer2D& operator=(const StaticBuffer2D& other) noexcept {
+    _buffer = std::make_unique<T[]>(other._count);
+    _width = other._width;
+    _height = other._height;
+    _count = other._count;
+    std::copy(other._buffer.get(), other._buffer.get() + _count, _buffer.get());
+    return *this;
+  }
+
+  StaticBuffer2D& operator=(StaticBuffer2D&& other) noexcept {
+    _buffer = std::move(other._buffer);
+    _width = other._width;
+    _height = other._height;
+    _count = other._count;
+    return *this;
+  }
+
   /* Properties */
   UInt32 Width() const { return _width; }
   UInt32 Height() const { return _height; }

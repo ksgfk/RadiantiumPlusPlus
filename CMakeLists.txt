@@ -30,10 +30,17 @@ add_library(radiantium.core
     src/core/build_context.cpp
     src/core/factory.cpp
     src/core/config_node.cpp
+    src/core/location_resolver.cpp
     src/core/wavefront_obj_reader.cpp
+    src/core/asset.cpp
+    src/core/world.cpp
+    src/core/stop_watch.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp
-    src/core/camera/perspective.cpp)
+    src/core/camera/perspective.cpp
+    src/core/renderer/block_sample_renderer.cpp
+    src/core/renderer/ao.cpp
+    src/core/sampler/independent.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT32)
@@ -41,6 +48,12 @@ if(RAD_FLOAT_32_WEIGHT)
 else()
   target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT64)
   message(STATUS "RAD use float64")
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  message(STATUS "RAD in Release mode")
+else()
+  target_compile_definitions(radiantium.core PRIVATE RAD_DEFINE_DEBUG)
+  message(STATUS "RAD in Debug mode")
 endif()
 target_include_directories(radiantium.core PUBLIC include)
 target_link_libraries(radiantium.core PRIVATE TBB::tbb)

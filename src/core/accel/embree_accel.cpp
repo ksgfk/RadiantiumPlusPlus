@@ -88,7 +88,7 @@ class EmbreeAccel : public ITracingAccel {
     rtcIntersect1(_scene, &context, &rayhit);
     HitShapeRecord rec{};
     bool anyHit;
-    if (rayhit.ray.tfar != ray.MaxT) {  // hit
+    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {  // hit
       uint32_t shapeIndex = rayhit.hit.geomID;
       uint32_t primIndex = rayhit.hit.primID;
       IShape* shape = _shapes[shapeIndex];
@@ -116,11 +116,11 @@ class EmbreeAccel : public ITracingAccel {
 
 namespace rad::factory {
 
-class EmbreeAccelFactory : public IFactory {
+class EmbreeAccelFactory : public ITracingAccelFactory {
  public:
   ~EmbreeAccelFactory() noexcept override {}
   std::string UniqueId() const override { return "embree"; }
-  std::unique_ptr<Object> Create(const BuildContext* context, const IConfigNode* config) const override {
+  std::unique_ptr<ITracingAccel> Create(const BuildContext* context, const IConfigNode* config) const override {
     return std::make_unique<EmbreeAccel>();
   }
 };

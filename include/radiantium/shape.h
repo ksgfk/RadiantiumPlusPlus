@@ -8,10 +8,12 @@
 #include "model.h"
 #include "transform.h"
 #include "interaction.h"
+#include "object.h"
+#include "fwd.h"
 
 namespace rad {
 
-class IShape {
+class IShape : public Object {
  public:
   virtual ~IShape() noexcept = default;
 
@@ -22,5 +24,9 @@ class IShape {
 };
 
 std::unique_ptr<IShape> CreateMesh(const TriangleModel& model, const Transform& transform);
+
+namespace factory {
+std::unique_ptr<IFactory> CreateMeshFactory();
+}
 
 }  // namespace rad

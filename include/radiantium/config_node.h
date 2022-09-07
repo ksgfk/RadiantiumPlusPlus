@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "radiantium.h"
+#include "transform.h"
 
 namespace rad {
 
@@ -25,6 +26,7 @@ class IConfigNode {
   virtual ~IConfigNode() noexcept = default;
 
   virtual Type GetType() const = 0;
+  virtual Type GetChildType(const std::string& name) const = 0;
   virtual bool HasProperty(const std::string& name) const = 0;
 
   virtual bool GetBool(const std::string& name) const = 0;
@@ -47,6 +49,10 @@ class IConfigNode {
   virtual bool TryGetObject(const std::string& name, std::unique_ptr<IConfigNode>& node) const = 0;
   virtual std::vector<std::unique_ptr<IConfigNode>> GetArray(const std::string& name) const = 0;
   virtual bool TryGetArray(const std::string& name, std::vector<std::unique_ptr<IConfigNode>>& array) const = 0;
+
+  static const IConfigNode* Empty();
+  static Mat4 GetTransform(const IConfigNode*, const std::string& name);
+  static Mat4 GetTransform(const IConfigNode*, const std::string& name, const Mat4& transform);
 };
 
 namespace config {

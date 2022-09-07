@@ -1,67 +1,38 @@
-#include <radiantium/radiantium.h>
-#include <radiantium/factory.h>
-#include <radiantium/wavefront_obj_reader.h>
-#include <radiantium/tracing_accel.h>
-#include <radiantium/shape.h>
-#include <radiantium/static_buffer.h>
-#include <radiantium/spectrum.h>
-#include <radiantium/camera.h>
-#include <radiantium/image_utility.h>
+#include <radiantium/logger.h>
+#include <radiantium/renderer.h>
+#include <radiantium/location_resolver.h>
+#include <radiantium/config_node.h>
+#include <radiantium/build_context.h>
+
 #include <string>
-#include <chrono>
+
+std::pair<std::unique_ptr<rad::IRenderer>, rad::DataWriter> GetRenderer(int argc, char** argv) {
+  std::string scenePath;
+  for (int i = 0; i < argc;) {
+    std::string cmd(argv[i]);
+    if (cmd == "--scene") {
+      scenePath = std::string(argv[i + 1]);
+      i += 2;
+    } else {
+      i++;
+    }
+  }
+  rad::path p = scenePath;
+  auto config = rad::config::CreateJsonConfig(p);
+  rad::BuildContext ctx;
+  ctx.SetConfig(std::move(config));
+  ctx.SetLocationResolver(rad::LocationResolver{p.parent_path()});
+  ctx.SetOutputName(p.filename().replace_extension().string());
+  ctx.Build();
+  return ctx.Result();
+}
 
 int main(int argc, char** argv) {
   rad::logger::InitLogger();
-  auto logger = rad::logger::GetLogger();
-  std::filesystem::path a("C:\\Users\\ksgfk\\Desktop\\cube.obj");
-  // std::string a("f 1/1         4/3 1/6");
-  rad::WavefrontObjReader o(a);
-  std::chrono::time_point<std::chrono::high_resolution_clock> st = std::chrono::high_resolution_clock::now();
-  o.Read();
-  std::chrono::time_point<std::chrono::high_resolution_clock> ed = std::chrono::high_resolution_clock::now();
-  rad::Int64 r = std::chrono::duration_cast<std::chrono::milliseconds>(ed - st).count();
-  rad::logger::GetLogger()->info("use time: {} ms", r);
-  // rad::GetLogger()->info("face: {}, v: {}, n: {}, uv: {}");
-  if (o.HasError()) {
-    rad::logger::GetLogger()->error("objReader err: {}", o.Error());
-  }
-  rad::TriangleModel model = o.ToModel();
-
-  auto obj = rad::factory::CreateEmbreeFactory()->Create(nullptr, nullptr);
-  rad::ITracingAccel* accel =static_cast<rad::ITracingAccel*>(obj.get());
-  std::unique_ptr<rad::IShape> mesh = rad::CreateMesh(model, {});
-  accel->Build({mesh.get()});
-
-  rad::UInt32 x = 256;
-  rad::UInt32 y = 128;
-  // auto camera = rad::CreatePerspective(
-  //     60,
-  //     0.001f,
-  //     15,
-  //     rad::Vec3(5, 5, 5),
-  //     rad::Vec3(0, 0, 0),
-  //     rad::Vec3(0, 1, 0),
-  //     {x, y});
-  auto cam = rad::factory::CreatePerspectiveFactory()->Create(nullptr, nullptr);
-  auto camera =static_cast<rad::ICamera*>(cam.get());
-  rad::StaticBuffer2D<rad::Spectrum>
-      fb(x, y);
-  for (rad::UInt32 j = 0; j < y; j++) {
-    auto [ptr, len] = fb.GetRowSpan(j);
-    for (rad::UInt32 i = 0; i < len; i++) {
-      rad::Ray ray = camera->SampleRay({i, j});
-      rad::HitShapeRecord rec;
-      bool anyHit = accel->RayIntersectPreliminary(ray, rec);
-      if (anyHit) {
-        auto t = rec.ComputeSurfaceInteraction(ray);
-        ptr[i] = rad::Spectrum(t.Shading.N);
-      } else {
-        ptr[i] = rad::Spectrum(0);
-      }
-    }
-  }
-
-  rad::image::SaveOpenExr("C:\\Users\\ksgfk\\Desktop\\test.exr", fb);
-
+  auto [renderer, output] = GetRenderer(argc, argv);
+  rad::logger::GetLogger()->info("start rendering...");
+  renderer->Start();
+  renderer->Wait();
+  renderer->SaveResult(output);
   rad::logger::ShutdownLogger();
 }
