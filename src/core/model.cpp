@@ -34,7 +34,7 @@ TriangleModel::TriangleModel(
 TriangleModel::TriangleModel(const TriangleModel& other) {
   _vertexCount = other._vertexCount;
   _indexCount = other._indexCount;
-  _triangleCount = other._indexCount;
+  _triangleCount = other._triangleCount;
   _position = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[_vertexCount]);
   std::copy(other._position.get(), other._position.get() + _vertexCount, _position.get());
   _indices = std::shared_ptr<UInt32[]>(new UInt32[_indexCount]);
@@ -55,14 +55,14 @@ TriangleModel::TriangleModel(TriangleModel&& other) noexcept {
   _uv = std::move(other._uv);
   _indices = std::move(other._indices);
   _vertexCount = other._vertexCount;
-  _indexCount = other._vertexCount;
-  _triangleCount = other._vertexCount;
+  _indexCount = other._indexCount;
+  _triangleCount = other._triangleCount;
 }
 
 TriangleModel& TriangleModel::operator=(const TriangleModel& other) {
   _vertexCount = other._vertexCount;
   _indexCount = other._indexCount;
-  _triangleCount = other._indexCount;
+  _triangleCount = other._triangleCount;
   _position = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[_vertexCount]);
   std::copy(other._position.get(), other._position.get() + _vertexCount, _position.get());
   _indices = std::shared_ptr<UInt32[]>(new UInt32[_indexCount]);
@@ -84,8 +84,8 @@ TriangleModel& TriangleModel::operator=(TriangleModel&& other) noexcept {
   _uv = std::move(other._uv);
   _indices = std::move(other._indices);
   _vertexCount = other._vertexCount;
-  _indexCount = other._vertexCount;
-  _triangleCount = other._vertexCount;
+  _indexCount = other._indexCount;
+  _triangleCount = other._triangleCount;
   return *this;
 }
 

@@ -88,7 +88,7 @@ class EmbreeAccel : public ITracingAccel {
     rtcIntersect1(_scene, &context, &rayhit);
     HitShapeRecord rec{};
     bool anyHit;
-    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {  // hit
+    if (rayhit.ray.tfar != ray.MaxT) {  // hit
       uint32_t shapeIndex = rayhit.hit.geomID;
       uint32_t primIndex = rayhit.hit.primID;
       IShape* shape = _shapes[shapeIndex];

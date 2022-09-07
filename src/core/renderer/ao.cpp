@@ -17,6 +17,7 @@ class AO : public BlockSampleRenderer {
       return Spectrum(0);
     }
     Spectrum n(si.Shading.N.cwiseAbs());
+    //Spectrum n(si.N.cwiseAbs());
     return n;
   }
 
