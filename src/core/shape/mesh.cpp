@@ -124,11 +124,6 @@ class Mesh : public IShape {
   UInt32 _indexCount;
   UInt32 _triangleCount;
 };
-
-std::unique_ptr<IShape> CreateMesh(const TriangleModel& model, const Transform& transform) {
-  return std::make_unique<Mesh>(model, transform);
-}
-
 }  // namespace rad
 
 namespace rad::factory {

@@ -35,6 +35,7 @@ add_library(radiantium.core
     src/core/asset.cpp
     src/core/world.cpp
     src/core/stop_watch.cpp
+    src/core/warp.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp
     src/core/camera/perspective.cpp

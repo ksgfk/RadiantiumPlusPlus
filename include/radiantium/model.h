@@ -9,7 +9,10 @@
 #include <memory>
 
 namespace rad {
-
+/**
+ * @brief 储存三角形模型
+ * 
+ */
 class TriangleModel {
  public:
   TriangleModel();

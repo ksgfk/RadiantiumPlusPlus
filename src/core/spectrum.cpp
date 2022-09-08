@@ -24,6 +24,11 @@ Float RgbSpectrum::MaxComponent() const {
   return maxCoeff();
 }
 
+Float ColorToLuminance(const RgbSpectrum& c) {
+  return (c.R() * static_cast<Float>(0.212671)) +
+         (c.G() * static_cast<Float>(0.715160)) +
+         (c.B() * static_cast<Float>(0.072169));
+}
 Float RgbSpectrum::Luminance() const {
   return ColorToLuminance(*this);
 }
@@ -34,9 +39,5 @@ Float RgbSpectrum::G() const { return this->operator[](1); }
 Float& RgbSpectrum::G() { return this->operator[](1); }
 Float RgbSpectrum::B() const { return this->operator[](2); }
 Float& RgbSpectrum::B() { return this->operator[](2); }
-
-Float ColorToLuminance(const RgbSpectrum& c) {
-  return (c.R() * static_cast<Float>(0.212671)) + (c.G() * static_cast<Float>(0.715160)) + (c.B() * static_cast<Float>(0.072169));
-}
 
 }  // namespace rad

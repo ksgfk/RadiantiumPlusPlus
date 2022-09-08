@@ -2,6 +2,10 @@
 
 #include <spdlog/logger.h>
 
+/**
+ * @brief 全局的logger
+ * 
+ */
 namespace rad::logger {
 
 void InitLogger();

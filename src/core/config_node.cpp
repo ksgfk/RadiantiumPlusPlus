@@ -201,6 +201,10 @@ const IConfigNode* IConfigNode::Empty() {
   return empty.get();
 }
 
+std::unique_ptr<IConfigNode> IConfigNode::CreateEmpty() {
+  return rad::config::CreateJsonConfig(std::string("{}"));
+}
+
 Mat4 ToTransform(const IConfigNode* node) {
   Vec3 translate = node->GetVec3("translate", Vec3(0, 0, 0));
   Vec3 scale = node->GetVec3("scale", Vec3(1, 1, 1));

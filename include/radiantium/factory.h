@@ -6,7 +6,9 @@
 #include "fwd.h"
 
 namespace rad {
-
+/**
+ * @brief 工厂抽象
+ */
 class IFactory {
  public:
   virtual ~IFactory() noexcept = default;
@@ -52,7 +54,10 @@ class IRendererFactory : public IFactory {
 };
 
 namespace factory_help {
+/**
+ * @brief 获取系统里所有工厂类 (就是硬编码
+ */
 void RegisterSystemFactories(BuildContext* context);
-}
+}  // namespace factory_help
 
 }  // namespace rad

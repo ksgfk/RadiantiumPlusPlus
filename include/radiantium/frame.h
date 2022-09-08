@@ -3,7 +3,9 @@
 #include "radiantium.h"
 
 namespace rad {
-
+/**
+ * @brief 本地坐标系, N朝向(0, 0, 1)
+ */
 struct Frame {
   Frame() = default;
   Frame(const Vec3& n) noexcept;

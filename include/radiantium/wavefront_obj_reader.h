@@ -23,7 +23,10 @@ struct WavefrontObjObject {
   std::string Material;
   std::vector<size_t> Faces;
 };
-
+/**
+ * @brief .obj 格式解析器
+ * 
+ */
 class WavefrontObjReader {
  public:
   WavefrontObjReader(std::unique_ptr<std::istream> stream);

@@ -11,18 +11,40 @@ namespace rad {
 class IShape;
 
 struct Interaction {
+  /**
+   * @brief 交点距离
+   */
   Float T;
+  /**
+   * @brief 交点坐标
+   * 
+   */
   Vec3 P;
+  /**
+   * @brief 交点的法线方向
+   */
   Vec3 N;
 };
 
 struct SurfaceInteraction : public Interaction {
+  /**
+   * @brief 相交的形状
+   */
   IShape* Shape;
+  /**
+   * @brief 着色法线所在的本地坐标系
+   */
   Frame Shading;
   Vec2 UV;
   Vec3 dPdU, dPdV;
   Vec3 dNdU, dNdV;
+  /**
+   * @brief 本地坐标系下的入射方向
+   */
   Vec3 Wi;
+  /**
+   * @brief 相交的图元索引
+   */
   UInt32 PrimitiveIndex;
 
   void ComputeShadingFrame();

@@ -11,7 +11,14 @@
 #endif
 
 namespace rad {
-
+/**
+ * @brief 静态二维缓冲区, 建议只用来存平凡类型, 别存那些花里胡哨的
+ * 假设2行3列
+ * 索引: (0,0)(1,0) | (0,1)(1,1) | (0,2)(1,2)
+ * 下标: 0    1     | 2    3     | 4    5     
+ * 因此双层 foreach 的时候 row 在内层比较好, 可以紧密访问
+ * 建议使用 StaticBuffer2D::GetRowSpan
+ */
 template <typename T>
 class StaticBuffer2D {
  public:
@@ -54,12 +61,15 @@ class StaticBuffer2D {
     return *this;
   }
 
-  /* Properties */
+  /*属性*/
   UInt32 Width() const { return _width; }
   UInt32 Height() const { return _height; }
+  /**
+   * @brief 直接获取原始指针
+   */
   T* Data() const { return _buffer.get(); }
 
-  /* Methods */
+  /*方法*/
   UInt32 GetIndex(UInt32 x, UInt32 y) const {
 #ifdef RAD_DEBUG_MODE
     if (x >= _width) {
@@ -71,6 +81,11 @@ class StaticBuffer2D {
 #endif
     return y * _width + x;
   }
+  /**
+   * @brief 获取一行数据, 第一个是这一行开头, 第二个是这一行有多长
+   * 
+   * @param y 第几列
+   */
   std::pair<T*, UInt32> GetRowSpan(UInt32 y) const {
 #ifdef RAD_DEBUG_MODE
     if (y >= _height) {

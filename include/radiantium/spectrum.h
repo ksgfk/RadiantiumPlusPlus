@@ -3,7 +3,10 @@
 #include "radiantium.h"
 
 namespace rad {
-
+/**
+ * @brief R G B 光谱
+ * 
+ */
 struct RgbSpectrum : Vec3 {
   RgbSpectrum() noexcept : Vec3(0, 0, 0) {}
   RgbSpectrum(Float value) noexcept : Vec3(value, value, value) {}
@@ -21,7 +24,13 @@ struct RgbSpectrum : Vec3 {
   bool HasNaN() const;
   bool HasInfinity() const;
   bool HasNegative() const;
+  /**
+   * @brief 所有分量中的最大分量
+   */
   Float MaxComponent() const;
+  /**
+   * @brief 转换为亮度
+   */
   Float Luminance() const;
 
   Float R() const;
@@ -31,8 +40,6 @@ struct RgbSpectrum : Vec3 {
   Float B() const;
   Float& B();
 };
-
-Float ColorToLuminance(const RgbSpectrum& c);
 
 using Spectrum = RgbSpectrum;
 

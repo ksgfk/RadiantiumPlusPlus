@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "fwd.h"
 #include "ray.h"
 #include "interaction.h"
 #include "sampler.h"
@@ -10,9 +11,6 @@
 #include "tracing_accel.h"
 
 namespace rad {
-
-class IShape;
-class ITracingAccel;
 
 class Entity {
  public:
@@ -30,7 +28,13 @@ class World {
   ISampler* GetSampler() const;
   const ICamera* GetCamera() const;
 
+  /**
+   * @brief shadow ray
+   */
   bool RayIntersect(const Ray& ray) const;
+  /**
+   * @brief 光线求交, 忽略参与介质
+   */
   bool RayIntersect(const Ray& ray, SurfaceInteraction& si) const;
 
  private:

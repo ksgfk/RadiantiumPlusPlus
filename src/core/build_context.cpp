@@ -38,13 +38,29 @@ void BuildContext::SetConfig(std::unique_ptr<IConfigNode> config) {
   _config = std::move(config);
 }
 
-void BuildContext::SetLocationResolver(const LocationResolver& resolver) {
-  _resolver = resolver;
+void BuildContext::SetWorkPath(const std::string& path) {
+  if (_state != BuildStage::Init) {
+    _logger->error("{} can only call at {}", "BuildContext::SetWorkPath", BuildStage::Init);
+    return;
+  }
+  _resolver.SearchPath = path;
   _writer.SavePath = _resolver.SearchPath;
 }
 
 void BuildContext::SetOutputName(const std::string& name) {
+  if (_state != BuildStage::Init) {
+    _logger->error("{} can only call at {}", "BuildContext::SetOutputName", BuildStage::Init);
+    return;
+  }
   _writer.FileName = name;
+}
+
+void BuildContext::SetOutputDir(const std::string& dir) {
+  if (_state != BuildStage::Init) {
+    _logger->error("{} can only call at {}", "BuildContext::SetOutputDir", BuildStage::Init);
+    return;
+  }
+  _writer.SavePath = dir;
 }
 
 IFactory* BuildContext::GetFactory(const std::string& name) const {
@@ -74,11 +90,27 @@ IModelAsset* BuildContext::GetModel(const std::string& name) const {
   return cast;
 }
 
+const BuildContext::EntityCreateContext& BuildContext::GetEntityCreateContext() const {
+  if (_state != BuildStage::CreateEntity) {
+    _logger->error("{} can only call at {}", "BuildContext::CreateEntity", BuildStage::CreateEntity);
+    throw std::invalid_argument("invalid operate");
+  }
+  return _entityCreateContext;
+}
+
 std::unique_ptr<World> BuildContext::MoveWorld() {
+  if (_state != BuildStage::BuildWorld) {
+    _logger->error("{} can only call at {}", "BuildContext::BuildWorld", BuildStage::BuildWorld);
+    return nullptr;
+  }
   return std::move(_world);
 }
 
 std::pair<std::unique_ptr<IRenderer>, DataWriter> BuildContext::Result() {
+  if (_state != BuildStage::Done) {
+    _logger->error("{} can only call at {}", "BuildContext::Result", BuildStage::Done);
+    return std::make_pair<std::unique_ptr<IRenderer>, DataWriter>(nullptr, {});
+  }
   return std::make_pair(std::move(_renderer), _writer);
 }
 
@@ -106,7 +138,7 @@ void BuildContext::Build() {
 }
 
 void BuildContext::CollectFactory() {
-  //在这里硬编码了, 反射? 不会!
+  //在这里硬编码了, 反射? 不会! /doge
   factory_help::RegisterSystemFactories(this);
 }
 
@@ -140,7 +172,7 @@ void BuildContext::ParseConfig() {
     _mainCamera = GetFactory<ICameraFactory>("perspective")->Create(this, IConfigNode::Empty());
   }
   /////////////////////////////////////////
-  // Integrator
+  // Renderer
   if (_config->HasProperty("renderer")) {
     _rendererNode = _config->GetObject("renderer");
   } else {
@@ -167,7 +199,7 @@ void BuildContext::ParseConfig() {
   /////////////////////////////////////////
   // World
   if (_config->HasProperty("world")) {
-    size_t entityCount = 0;
+    size_t entityCount = 0; //记录下实体数量, 等会儿直接开数组
     std::queue<std::unique_ptr<EntityHierarchy>> rootQue;
     //构造实体的亲子关系
     {
@@ -190,9 +222,9 @@ void BuildContext::ParseConfig() {
           Mat4 toWorld = IConfigNode::GetTransform(newEntity->Config.get(), "to_world");
           newEntity->LocalTransform = toWorld;
         } else {
-          newEntity->LocalTransform = Mat4::Identity();
+          newEntity->LocalTransform = Mat4::Identity();  //如果没有变换矩阵, 就设为单位矩阵
         }
-        if (newEntity->Parent == nullptr) {
+        if (newEntity->Parent == nullptr) {  //没父节点说明是直接连接根的, 存起来
           rootQue.emplace(std::move(newEntity));
         } else {
           newEntity->Parent->Children.emplace_back(std::move(newEntity));
@@ -244,6 +276,7 @@ void BuildContext::LoadAsset() {
 }
 
 void BuildContext::CreateEntity() {
+  //这里要将有形状的实体和没形状的实体分开, 有形状的放数组前面, 没有的放后面, 等会儿要把有形状的喂给加速结构
   _entityInstances.reserve(_entityConfigs.size());
   std::vector<Entity> hasShapeEntity;
   hasShapeEntity.reserve(_hasShapeEntityCount);

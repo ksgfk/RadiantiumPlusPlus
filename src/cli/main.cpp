@@ -21,7 +21,7 @@ std::pair<std::unique_ptr<rad::IRenderer>, rad::DataWriter> GetRenderer(int argc
   auto config = rad::config::CreateJsonConfig(p);
   rad::BuildContext ctx;
   ctx.SetConfig(std::move(config));
-  ctx.SetLocationResolver(rad::LocationResolver{p.parent_path()});
+  ctx.SetWorkPath(p.parent_path().string());
   ctx.SetOutputName(p.filename().replace_extension().string());
   ctx.Build();
   return ctx.Result();
