@@ -17,13 +17,18 @@ struct Interaction {
   Float T;
   /**
    * @brief 交点坐标
-   * 
+   *
    */
   Vec3 P;
   /**
    * @brief 交点的法线方向
    */
   Vec3 N;
+
+  Ray SpawnRay(const Vec3& d) const;
+
+ private:
+  Vec3 OffsetP(const Vec3& d) const;
 };
 
 struct SurfaceInteraction : public Interaction {

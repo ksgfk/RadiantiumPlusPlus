@@ -40,4 +40,8 @@ Mat4 LookAtLeftHand(const Vec3& origin, const Vec3& target, const Vec3& up) {
   return result;
 }
 
+std::pair<Float, Float> SinCos(Float v) {
+  return std::make_pair(std::sin(v), std::cos(v));
+}
+
 }  // namespace rad::math

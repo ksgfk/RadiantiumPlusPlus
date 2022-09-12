@@ -82,8 +82,8 @@ class PerspectiveCameraFactory : public ICameraFactory {
   std::unique_ptr<ICamera> Create(const BuildContext* context, const IConfigNode* config) const override {
     std::unique_ptr<Perspective> result;
     Float fov = config->GetFloat("fov", 30);
-    Float near = config->GetFloat("near", 30);
-    Float far = config->GetFloat("far", 30);
+    Float near = config->GetFloat("near", 0.001f);
+    Float far = config->GetFloat("far", 100);
     Vec2 reso = config->GetVec2("resolution", Vec2(1280, 720));
     Eigen::Vector2i resolution{(Int32)reso.x(), (Int32)reso.y()};
     if (config->HasProperty("to_world")) {

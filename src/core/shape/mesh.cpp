@@ -89,7 +89,7 @@ class Mesh : public IShape {
       si.UV = uv0 * bary.x() + (uv1 * bary.y() + (uv2 * bary.z()));
       Vec2 duv0 = uv1 - uv0, duv1 = uv2 - uv0;
       Float det = duv0.x() * duv1.y() - (duv0.y() * duv1.x());
-      Float invDet = Rcp(det);
+      Float invDet = det == 0 ? 0 : Rcp(det);
       if (invDet == 0) {
         si.dPdU = Vec3::Zero();
         si.dPdV = Vec3::Zero();

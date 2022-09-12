@@ -49,7 +49,7 @@ const std::thread& BlockSampleRenderer::Start() {
       ctrl = std::make_unique<tbb::global_control>(tbb::global_control::max_allowed_parallelism, _taskCount);
     }
     tbb::parallel_for(
-        tbb::blocked_range2d<UInt32>(0, res.x(), 0, res.y()),
+        tbb::blocked_range2d<UInt32>(0, res.y(), 0, res.x()),
         [&](const tbb::blocked_range2d<UInt32>& r) {
           World* world = _world.get();
           const ICamera* camera = world->GetCamera();

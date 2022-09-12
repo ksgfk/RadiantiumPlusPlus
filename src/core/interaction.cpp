@@ -4,6 +4,15 @@
 #include <radiantium/math_ext.h>
 
 namespace rad {
+Vec3 Interaction::OffsetP(const Vec3& d) const {
+  Float mag = (1 + P.cwiseAbs().maxCoeff()) * math::RayEpsilon;
+  mag = math::MulSign(mag, N.dot(d));
+  return math::Fmadd(Vec3(mag, mag, mag), N, P);
+}
+
+Ray Interaction::SpawnRay(const Vec3& d) const {
+  return Ray{OffsetP(d), d, 0, std::numeric_limits<Float>::max()};
+}
 
 void SurfaceInteraction::ComputeShadingFrame() {
   if (dPdU.isZero()) {

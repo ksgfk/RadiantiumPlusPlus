@@ -2,10 +2,13 @@
 
 namespace rad::warp {
 
-Vec3 SquareToUniformHemisphere(const Vec2& sample);
-float SquareToUniformHemispherePdf();
+Vec3 SquareToUniformHemisphere(const Vec2& u);
+Float SquareToUniformHemispherePdf();
 
-Vec3 SquareToCosineHemisphere(const Vec2& sample);
-float SquareToCosineHemispherePdf(const Vec3& v);
+Vec2 SquareToUniformDisk(const Vec2& u);
+Float SquareToUniformDiskPdf();
+
+Vec3 SquareToCosineHemisphere(const Vec2& u);
+Float SquareToCosineHemispherePdf(const Vec3& v);
 
 }

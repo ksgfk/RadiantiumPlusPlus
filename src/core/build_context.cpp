@@ -7,6 +7,7 @@
 #include <radiantium/tracing_accel.h>
 #include <radiantium/renderer.h>
 #include <radiantium/asset.h>
+#include <radiantium/stop_watch.h>
 
 #include <ostream>
 #include <queue>
@@ -199,7 +200,7 @@ void BuildContext::ParseConfig() {
   /////////////////////////////////////////
   // World
   if (_config->HasProperty("world")) {
-    size_t entityCount = 0; //记录下实体数量, 等会儿直接开数组
+    size_t entityCount = 0;  //记录下实体数量, 等会儿直接开数组
     std::queue<std::unique_ptr<EntityHierarchy>> rootQue;
     //构造实体的亲子关系
     {
@@ -265,10 +266,13 @@ void BuildContext::LoadAsset() {
     assets.emplace_back(std::static_pointer_cast<IAsset, Object>(std::move(shared)));
   }
   for (auto& asset : assets) {
+    Stopwatch sw;
+    sw.Start();
     asset->Load(_resolver);
+    sw.Stop();
     if (asset->IsValid()) {
       _assetInstances.emplace(asset->Name(), asset);
-      _logger->info("load asset {}", asset->Name());
+      _logger->info("load asset {}, used time {} ms", asset->Name(), sw.ElapsedMilliseconds());
     } else {
       _logger->error("invalid asset {}. ignore", asset->Name());
     }
@@ -319,7 +323,11 @@ void BuildContext::BuildAccel() {
   for (size_t i = 0; i < _hasShapeEntityCount; i++) {
     entityPtr[i] = _entityInstances[i].Shape();
   }
+  Stopwatch sw;
+  sw.Start();
   _accelInstance->Build(std::move(entityPtr));
+  sw.Stop();
+  _logger->info("build accel used time: {} ms", sw.ElapsedMilliseconds());
 }
 
 void BuildContext::BuildWorld() {

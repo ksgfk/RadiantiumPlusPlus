@@ -14,6 +14,8 @@ struct Frame {
   Vec3 ToLocal(const Vec3& v) const;
 
   Vec3 S, T, N;
+
+  static float CosTheta(const Vec3& v);
 };
 
 }  // namespace rad

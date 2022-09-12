@@ -17,6 +17,9 @@ std::pair<std::unique_ptr<rad::IRenderer>, rad::DataWriter> GetRenderer(int argc
       i++;
     }
   }
+  if (scenePath.empty()) {
+    return std::make_pair<std::unique_ptr<rad::IRenderer>, rad::DataWriter>(nullptr, {});
+  }
   rad::path p = scenePath;
   auto config = rad::config::CreateJsonConfig(p);
   rad::BuildContext ctx;
@@ -30,9 +33,14 @@ std::pair<std::unique_ptr<rad::IRenderer>, rad::DataWriter> GetRenderer(int argc
 int main(int argc, char** argv) {
   rad::logger::InitLogger();
   auto [renderer, output] = GetRenderer(argc, argv);
+  if(renderer == nullptr) {
+    rad::logger::GetLogger()->warn("no valid scene. exit");
+    return 0;
+  }
   rad::logger::GetLogger()->info("start rendering...");
   renderer->Start();
   renderer->Wait();
+  rad::logger::GetLogger()->info("render used time: {} ms", renderer->ElapsedTime());
   renderer->SaveResult(output);
   rad::logger::ShutdownLogger();
 }

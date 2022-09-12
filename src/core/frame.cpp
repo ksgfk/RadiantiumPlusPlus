@@ -17,4 +17,6 @@ Vec3 Frame::ToLocal(const Vec3& v) const {
   return Vec3(v.dot(S), v.dot(T), v.dot(N));
 }
 
+float Frame::CosTheta(const Vec3& v) { return v.z(); }
+
 }  // namespace rad

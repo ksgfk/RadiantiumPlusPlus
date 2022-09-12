@@ -8,6 +8,9 @@ namespace rad::math {
 constexpr Float PI = static_cast<Float>(3.1415926535897932);
 constexpr Float Degree(Float value) { return value * (180.0f / PI); }
 constexpr Float Radian(Float value) { return value * (PI / 180.0f); }
+constexpr Float Float32Epsilon = 0x1p-24;
+constexpr Float Float64Epsilon = 0x1p-53;
+constexpr Float RayEpsilon = Float32Epsilon * 1500;
 
 /**
  * @brief 平方
@@ -45,5 +48,9 @@ std::pair<Vec3, Vec3> CoordinateSystem(Vec3 n);
  * @brief 左手视图矩阵
  */
 Mat4 LookAtLeftHand(const Vec3& origin, const Vec3& target, const Vec3& up);
+/**
+ * @brief 计算传入值的sin与cos
+ */
+std::pair<Float, Float> SinCos(Float v);
 
 }  // namespace rad::math
