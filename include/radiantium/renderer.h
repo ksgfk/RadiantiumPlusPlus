@@ -68,5 +68,6 @@ class BlockSampleRenderer : public IRenderer {
 
 namespace factory {
 std::unique_ptr<IFactory> CreateAORenderer();  //环境光遮蔽渲染器
-}
+std::unique_ptr<IFactory> CreateGBufferRenderer();
+}  // namespace factory
 }  // namespace rad

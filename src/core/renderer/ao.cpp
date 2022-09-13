@@ -11,7 +11,7 @@ namespace rad {
 /**
  * @brief 假设所有表面都是漫反射, 并从所有方向接收均匀的光照
  * L(x) = \int_\omega V * (cosTheta / PI) \mathrm{d}\omega
- * 
+ *
  */
 class AO : public BlockSampleRenderer {
  public:
@@ -35,7 +35,7 @@ class AO : public BlockSampleRenderer {
     Ray shadowRay = si.SpawnRay(si.ToWorld(wo));
     bool visibility = world->RayIntersect(shadowRay);
     Spectrum l(0);
-    if (!visibility && Frame::CosTheta(wo) >= 0) {
+    if (!visibility && Frame::CosTheta(wo) > 0) {
       l = Frame::CosTheta(wo) / math::PI / pdf;
     }
     return l;

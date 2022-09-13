@@ -41,6 +41,10 @@ Vec3 Fmadd(Vec3 a, Vec3 b, Vec3 c);
  */
 Float Rsqrt(Float v);
 /**
+ * @brief 安全的计算平方根, 如果输入负数返回0
+ */
+Float SafeSqrt(Float v);
+/**
  * @brief 根据输入的N方向构建本地坐标系
  */
 std::pair<Vec3, Vec3> CoordinateSystem(Vec3 n);

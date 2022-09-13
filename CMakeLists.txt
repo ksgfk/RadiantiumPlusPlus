@@ -45,6 +45,7 @@ add_library(radiantium.core
     src/core/camera/perspective.cpp
     src/core/renderer/block_sample_renderer.cpp
     src/core/renderer/ao.cpp
+    src/core/renderer/gbuffer.cpp
     src/core/sampler/independent.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)

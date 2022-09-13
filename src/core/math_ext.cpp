@@ -12,6 +12,7 @@ Float Rcp(Float v) { return Float(1) / v; }
 Float Fmadd(Float a, Float b, Float c) { return a * b + c; }
 Vec3 Fmadd(Vec3 a, Vec3 b, Vec3 c) { return a.cwiseProduct(b) + c; }
 Float Rsqrt(Float v) { return Rcp(std::sqrt(v)); }
+Float SafeSqrt(Float v) { return std::sqrt(std::max(v, Float(0))); }
 
 std::pair<Vec3, Vec3> CoordinateSystem(Vec3 n) {
   Float sign = Sign(n.z());

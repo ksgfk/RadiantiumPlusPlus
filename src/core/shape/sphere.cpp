@@ -20,6 +20,24 @@ struct alignas(16) EmbreeSphere {
   unsigned int GeomID;
 };
 
+/* https://pbr-book.org/3ed-2018/Shapes/Spheres#IntersectionTests
+ * 首先球的隐式表达为:
+ * (P - C)^2 - r^2 = 0 (1), 其中 p 表示球面上一点的坐标, c表示球心坐标, r表示半径
+ * 射线的表达式为:
+ * r(t) = O + t * D (2)
+ * 球面上一点可以用射线与这一点相交来代替, 所以将球公式 (1) 改写:
+ * (O + t * D - C)^2 - r^2 = 0 (3)
+ * 除了 t, 也就是射线从起点出发, 经过的距离, 其他参数都是已知的
+ * 我们将公式 (3) 展开
+ * (3) = (t * D + (O - C))^2 - r^2
+ *     = (t * D)^2 + 2 * t * D * (O - C) + (O - C)^2 - r^2
+ *     = D^2 * t^2 + 2 * D * (O - C) * t + (O - C)^2 - r^2 (4)
+ * 很容易发现这是个标准的一元二次方程, 且
+ * a = D^2
+ * b = 2 * D * (O - C)
+ * c = (O - C)^2 - r^2
+ * 解出t1, t2就可以求出射线与球是否有交点, 最近的交点就是最小的那个解
+ */
 static std::pair<bool, Float> SphereIntersect(
     const Eigen::Vector3f& rayO, const Eigen::Vector3f& rayD,
     const Eigen::Vector3f& center, float radius,
@@ -205,6 +223,13 @@ class Sphere : public IShape {
     si.Shading.N = (ray(si.T) - _center).normalized();
     si.P = Fmadd(si.Shading.N, Vec3(_radius, _radius, _radius), _center);
     {
+      /*
+       * 球面坐标系转化到直角坐标系的公式:
+       * x = r * sinTheta * cosPhi
+       * y = r * sinTheta * sinPhi
+       * z = r * cosTheta
+       * tanPhi = y / x
+       */
       Vec3 local = _toWorld.ApplyAffineToLocal(si.P);
       Float rd2 = Sqr(local.x()) + Sqr(local.y());
       Float theta = UnitAngleZ(local);
@@ -251,7 +276,7 @@ class SphereShapeFactory : public IShapeFactory {
   std::string UniqueId() const override { return "sphere"; }
   std::unique_ptr<IShape> Create(const BuildContext* context, const IConfigNode* config) const override {
     const Transform& toWorld = context->GetEntityCreateContext().ToWorld;
-    Vec3 center = config->GetVec3("center", Vec3(0));
+    Vec3 center = config->GetVec3("center", Vec3(0, 0, 0));
     Float radius = config->GetFloat("radius", 1);
     return std::make_unique<Sphere>(center, radius, toWorld);
   }

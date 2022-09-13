@@ -32,6 +32,7 @@ void RegisterSystemFactories(BuildContext* context) {
   /////////////////////////////////
   // Renderer
   context->RegisterFactory(rad::factory::CreateAORenderer());
+  context->RegisterFactory(rad::factory::CreateGBufferRenderer());
 }
 
 }  // namespace factory_help

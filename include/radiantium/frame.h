@@ -15,7 +15,17 @@ struct Frame {
 
   Vec3 S, T, N;
 
-  static float CosTheta(const Vec3& v);
+  static Float CosTheta(const Vec3& v);
+  static Float AbsCosTheta(const Vec3& v);
+  static Float Cos2Theta(const Vec3& v);
+  static Float Sin2Theta(const Vec3& v);
+  static Float SinTheta(const Vec3& v);
+  static Float TanTheta(const Vec3& v);
+  static Float Tan2Theta(const Vec3& v);
+  static Float CosPhi(const Vec3& v);
+  static Float SinPhi(const Vec3& v);
+  static Float Cos2Phi(const Vec3& v);
+  static Float Sin2Phi(const Vec3& v);
 };
 
 }  // namespace rad
