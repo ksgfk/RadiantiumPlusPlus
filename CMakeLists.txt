@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(radiantium VERSION 0.1.0)
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -38,6 +41,7 @@ add_library(radiantium.core
     src/core/warp.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp
+    src/core/shape/sphere.cpp
     src/core/camera/perspective.cpp
     src/core/renderer/block_sample_renderer.cpp
     src/core/renderer/ao.cpp

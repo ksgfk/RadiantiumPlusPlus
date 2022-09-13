@@ -44,4 +44,28 @@ std::pair<Float, Float> SinCos(Float v) {
   return std::make_pair(std::sin(v), std::cos(v));
 }
 
+std::tuple<bool, Float, Float> SolveQuadratic(Float a, Float b, Float c) {
+  bool linearCase = a == 0.0;
+  bool validLinear = linearCase && b != 0.0;
+  Float x0 = -c / b, x1 = -c / b;
+  Float discrim = b * b - Float(4) * a * c;
+  bool validQuadratic = !linearCase && (discrim >= 0.0);
+  if (validQuadratic) {
+    Float rootDiscrim = std::sqrt(discrim);
+    Float temp = Float(-0.5) * (b + std::copysign(rootDiscrim, b));
+    Float x0p = temp / a;
+    Float x1p = c / temp;
+    Float x0m = std::min(x0p, x1p);
+    Float x1m = std::max(x0p, x1p);
+    x0 = linearCase ? x0 : x0m;
+    x1 = linearCase ? x0 : x1m;
+  }
+  return std::make_tuple(validLinear || validQuadratic, x0, x1);
+}
+
+Float UnitAngleZ(const Vec3& v) {
+  Float temp = asin(Float(0.5) * Vec3(v.x(), v.y(), v.z() - MulSign(Float(1), v.z())).norm()) * 2;
+  return v.z() >= 0 ? temp : PI - temp;
+}
+
 }  // namespace rad::math

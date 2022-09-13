@@ -34,7 +34,4 @@ SurfaceInteraction HitShapeRecord::ComputeSurfaceInteraction(const Ray& ray) con
   return si;
 }
 
-void ComputeShadingFrame() {
-}
-
 }  // namespace rad

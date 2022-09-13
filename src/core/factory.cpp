@@ -25,6 +25,7 @@ void RegisterSystemFactories(BuildContext* context) {
   /////////////////////////////////
   // Shape
   context->RegisterFactory(rad::factory::CreateMeshFactory());
+  context->RegisterFactory(rad::factory::CreateSphereFactory());
   /////////////////////////////////
   // Sampler
   context->RegisterFactory(rad::factory::CreateIndependentSamplerFactory());

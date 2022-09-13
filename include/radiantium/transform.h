@@ -15,6 +15,7 @@ struct Transform {
   bool IsValid() const;
   bool IsIdentity() const;
   bool HasScale() const;
+  bool HasNonUniformScale() const;
   Vec3 TranslationToWorld() const;
   Vec3 TranslationToLocal() const;
 

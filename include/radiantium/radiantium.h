@@ -14,7 +14,7 @@
 
 #include <Eigen/Dense>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_MSC_VER)
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
@@ -55,6 +55,9 @@ using Mat4 = Eigen::Matrix4<Float>;
 using Clock = std::chrono::high_resolution_clock;
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using Duration = std::chrono::duration<long long, std::chrono::milliseconds>;
+
+void* AlignedAlloc(std::size_t alignment, std::size_t size);
+void AlignedFree(void* ptr);
 
 }  // namespace rad
 

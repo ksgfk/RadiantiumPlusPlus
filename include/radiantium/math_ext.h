@@ -52,5 +52,13 @@ Mat4 LookAtLeftHand(const Vec3& origin, const Vec3& target, const Vec3& up);
  * @brief 计算传入值的sin与cos
  */
 std::pair<Float, Float> SinCos(Float v);
+/**
+ * @brief 解二元一次方程
+ */
+std::tuple<bool, Float, Float> SolveQuadratic(Float a, Float b, Float c);
+/**
+ * @brief 计算acos(v.z()), 实际上就是计算向量v与z轴夹角
+ */
+Float UnitAngleZ(const Vec3& v);
 
 }  // namespace rad::math

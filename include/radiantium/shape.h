@@ -45,6 +45,7 @@ class IShape : public Object {
 
 namespace factory {
 std::unique_ptr<IFactory> CreateMeshFactory();  //三角形网格
+std::unique_ptr<IFactory> CreateSphereFactory();
 }
 
 }  // namespace rad

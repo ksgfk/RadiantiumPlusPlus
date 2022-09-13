@@ -18,6 +18,7 @@ BlockSampleRenderer::BlockSampleRenderer(
   Eigen::Vector2i res = _world->GetCamera()->Resolution();
   _frameBuffer = std::make_unique<StaticBuffer2D<Spectrum>>(res.x(), res.y());
   _allTask = res.x() * res.y();
+  _isComplete = false;
 }
 
 bool BlockSampleRenderer::IsComplete() const {
@@ -81,6 +82,7 @@ const std::thread& BlockSampleRenderer::Start() {
           }
         },
         part);
+    _isComplete = true;
     _sw.Stop();
   });
   _renderThread = std::make_unique<std::thread>(std::move(renderThread));

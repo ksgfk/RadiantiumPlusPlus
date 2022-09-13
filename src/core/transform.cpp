@@ -34,7 +34,14 @@ bool Transform::HasScale() const {
   Float la2 = ApplyLinearToWorld(Vec3(1, 0, 0)).squaredNorm();
   Float lb2 = ApplyLinearToWorld(Vec3(0, 1, 0)).squaredNorm();
   Float lc2 = ApplyLinearToWorld(Vec3(0, 0, 1)).squaredNorm();
-  return !Vec3(la2, lb2, lc2).isApproxToConstant(1);
+  return !Vec3(la2, lb2, lc2).isApproxToConstant(1, 0.0001f);
+}
+
+bool Transform::HasNonUniformScale() const {
+  Float la2 = ApplyLinearToWorld(Vec3(1, 0, 0)).squaredNorm();
+  Float lb2 = ApplyLinearToWorld(Vec3(0, 1, 0)).squaredNorm();
+  Float lc2 = ApplyLinearToWorld(Vec3(0, 0, 1)).squaredNorm();
+  return std::abs(la2 - lb2) > 0.0001f || std::abs(la2 - lc2) > 0.0001f;
 }
 
 Vec3 Transform::TranslationToWorld() const {
