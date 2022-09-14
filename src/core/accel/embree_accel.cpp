@@ -91,12 +91,11 @@ class EmbreeAccel : public ITracingAccel {
     if (rayhit.ray.tfar != ray.MaxT) {  // hit
       uint32_t shapeIndex = rayhit.hit.geomID;
       uint32_t primIndex = rayhit.hit.primID;
-      IShape* shape = _shapes[shapeIndex];
       rec.ShapeIndex = shapeIndex;
       rec.PrimitiveIndex = primIndex;
       rec.T = rayhit.ray.tfar;
       rec.PrimitiveUV = Vec2(rayhit.hit.u, rayhit.hit.v);
-      rec.Shape = shape;
+      rec.EntityIndex = shapeIndex;
       rec.GeometryNormal = Vec3(rayhit.hit.Ng_x, rayhit.hit.Ng_y, rayhit.hit.Ng_z);
       anyHit = true;
     } else {

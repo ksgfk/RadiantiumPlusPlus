@@ -109,6 +109,10 @@ class BuildContext {
    */
   IModelAsset* GetModel(const std::string& name) const;
   /**
+   * @brief 在任何阶段都可以获取图片资源, 如果获取失败会返回nullptr
+   */
+  IImageAsset* GetImage(const std::string& name) const;
+  /**
    * @brief 只有在 BuildStage::CreateEntity 阶段才可以获取配置实体组件的上下文
    */
   const EntityCreateContext& GetEntityCreateContext() const;
@@ -142,6 +146,7 @@ class BuildContext {
 #endif
     return cast;
   }
+  IAsset* GetAsset(const std::string& name) const;
 
   BuildStage _state = BuildStage::Init;     //记录当前阶段
   std::shared_ptr<spdlog::logger> _logger;  //专用的logger

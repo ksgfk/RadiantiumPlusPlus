@@ -63,9 +63,9 @@ struct HitShapeRecord {
   Vec2 PrimitiveUV;
   UInt32 PrimitiveIndex;
   UInt32 ShapeIndex;
-  IShape* Shape = nullptr;
+  UInt32 EntityIndex = std::numeric_limits<UInt32>::max();
 
-  SurfaceInteraction ComputeSurfaceInteraction(const Ray& ray) const;
+  SurfaceInteraction ComputeSurfaceInteraction(const Ray& ray, const World* world) const;
 };
 
 }  // namespace rad

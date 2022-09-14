@@ -8,6 +8,7 @@
 #include <radiantium/shape.h>
 #include <radiantium/sampler.h>
 #include <radiantium/renderer.h>
+#include <radiantium/texture.h>
 
 namespace rad {
 namespace factory_help {
@@ -22,6 +23,7 @@ void RegisterSystemFactories(BuildContext* context) {
   /////////////////////////////////
   // Asset
   context->RegisterFactory(rad::factory::CreateObjModelFactory());
+  context->RegisterFactory(rad::factory::CreateDefaultImageFactory());
   /////////////////////////////////
   // Shape
   context->RegisterFactory(rad::factory::CreateMeshFactory());
@@ -33,6 +35,9 @@ void RegisterSystemFactories(BuildContext* context) {
   // Renderer
   context->RegisterFactory(rad::factory::CreateAORenderer());
   context->RegisterFactory(rad::factory::CreateGBufferRenderer());
+  /////////////////////////////////
+  // Texture
+  context->RegisterFactory(rad::factory::CreateBitmapFactory());
 }
 
 }  // namespace factory_help

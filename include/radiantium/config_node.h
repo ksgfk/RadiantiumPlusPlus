@@ -6,6 +6,7 @@
 
 #include "radiantium.h"
 #include "transform.h"
+#include "spectrum.h"
 
 namespace rad {
 /**
@@ -56,6 +57,11 @@ class IConfigNode {
   static std::unique_ptr<IConfigNode> CreateEmpty();
   static Mat4 GetTransform(const IConfigNode*, const std::string& name);
   static Mat4 GetTransform(const IConfigNode*, const std::string& name, const Mat4& transform);
+  static std::unique_ptr<ITexture> GetTexture(
+      const IConfigNode*,
+      const BuildContext* ctx,
+      const std::string& name,
+      const RgbSpectrum& defVal);
 };
 
 namespace config {

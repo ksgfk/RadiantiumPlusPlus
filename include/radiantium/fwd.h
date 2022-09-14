@@ -10,6 +10,8 @@ class IShape;
 class ITracingAccel;
 class IRenderer;
 class ISampler;
+class IBsdf;
+class ITexture;
 class Entity;
 class World;
 

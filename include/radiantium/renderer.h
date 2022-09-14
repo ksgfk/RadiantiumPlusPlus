@@ -8,6 +8,7 @@
 #include "world.h"
 #include "static_buffer.h"
 #include "factory.h"
+#include "bsdf.h"
 
 #include <thread>
 

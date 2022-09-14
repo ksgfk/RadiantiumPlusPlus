@@ -12,13 +12,14 @@ void LocationResolver::SetSearchPath(const path& path) {
   SearchPath = path;
 }
 
-std::unique_ptr<std::istream> LocationResolver::GetFileStream(const path& path) const {
+std::unique_ptr<std::istream> LocationResolver::GetStream(const path& path, std::ios::openmode extMode) const {
+  auto mode = std::ios::in | extMode;
   if (exists(path)) {
-    return std::make_unique<std::ifstream>(path);
+    return std::make_unique<std::ifstream>(path, mode);
   }
   auto search = SearchPath / path;
   if (exists(search)) {
-    return std::make_unique<std::ifstream>(search);
+    return std::make_unique<std::ifstream>(search, mode);
   }
   return nullptr;
 }

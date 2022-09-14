@@ -17,8 +17,12 @@ class Entity {
   bool HasShape() const { return _shape != nullptr; }
   IShape* Shape() const { return _shape.get(); }
 
+  bool HasBsdf() const { return _bsdf != nullptr; }
+  IBsdf* Bsdf() const { return _bsdf.get(); }
+
  private:
   std::unique_ptr<IShape> _shape;
+  std::unique_ptr<IBsdf> _bsdf;
 
   friend class BuildContext;
 };
@@ -27,6 +31,7 @@ class World {
  public:
   ISampler* GetSampler() const;
   const ICamera* GetCamera() const;
+  const Entity& GetEntity(UInt32 entityIndex) const;
 
   /**
    * @brief shadow ray

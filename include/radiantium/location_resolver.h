@@ -14,7 +14,7 @@ using path = std::filesystem::path;
 class LocationResolver {
  public:
   void SetSearchPath(const path& path);
-  std::unique_ptr<std::istream> GetFileStream(const path& path) const;
+  std::unique_ptr<std::istream> GetStream(const path& path, std::ios::openmode extMode = 0) const;
 
   path SearchPath;
 };

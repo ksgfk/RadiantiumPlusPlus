@@ -8,6 +8,7 @@
 #include <radiantium/renderer.h>
 #include <radiantium/asset.h>
 #include <radiantium/stop_watch.h>
+#include <radiantium/bsdf.h>
 
 #include <ostream>
 #include <queue>
@@ -74,12 +75,7 @@ IFactory* BuildContext::GetFactory(const std::string& name) const {
 }
 
 IModelAsset* BuildContext::GetModel(const std::string& name) const {
-  auto iter = _assetInstances.find(name);
-  if (iter == _assetInstances.end()) {
-    _logger->error("no model named: {}", name);
-    return nullptr;
-  }
-  IAsset* ptr = iter->second.get();
+  IAsset* ptr = GetAsset(name);
 #ifdef RAD_DEBUG_MODE
   IModelAsset* cast = dynamic_cast<IModelAsset*>(ptr);
   if (cast == nullptr) {
@@ -87,6 +83,19 @@ IModelAsset* BuildContext::GetModel(const std::string& name) const {
   }
 #else
   IModelAsset* cast = static_cast<IModelAsset*>(ptr);
+#endif
+  return cast;
+}
+
+IImageAsset* BuildContext::GetImage(const std::string& name) const {
+  IAsset* ptr = GetAsset(name);
+#ifdef RAD_DEBUG_MODE
+  IImageAsset* cast = dynamic_cast<IImageAsset*>(ptr);
+  if (cast == nullptr) {
+    _logger->error("can't cast asset type, asset name: {}, real type {}", name, ptr->GetType());
+  }
+#else
+  IImageAsset* cast = static_cast<IImageAsset*>(ptr);
 #endif
   return cast;
 }
@@ -147,6 +156,16 @@ IFactory* BuildContext::GetFactoryFromConfig(IConfigNode* config) {
   auto type = config->GetString("type");
   auto factory = GetFactory(type);
   return factory;
+}
+
+IAsset* BuildContext::GetAsset(const std::string& name) const {
+  auto iter = _assetInstances.find(name);
+  if (iter == _assetInstances.end()) {
+    _logger->error("no model named: {}", name);
+    return nullptr;
+  }
+  IAsset* ptr = iter->second.get();
+  return ptr;
 }
 
 struct EntityHierarchy {

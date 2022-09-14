@@ -18,6 +18,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(embree 3 CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenEXR CONFIG REQUIRED)
+find_path(STB_INCLUDE_DIRS "stb_image.h")
 
 add_library(radiantium.core
     src/core/radiantium.cpp
@@ -39,6 +40,7 @@ add_library(radiantium.core
     src/core/world.cpp
     src/core/stop_watch.cpp
     src/core/warp.cpp
+    src/core/bsdf.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp
     src/core/shape/sphere.cpp
@@ -46,7 +48,11 @@ add_library(radiantium.core
     src/core/renderer/block_sample_renderer.cpp
     src/core/renderer/ao.cpp
     src/core/renderer/gbuffer.cpp
-    src/core/sampler/independent.cpp)
+    src/core/sampler/independent.cpp
+    src/core/asset/obj_model.cpp
+    src/core/asset/image.cpp
+    src/core/texture/bitmap.cpp
+    src/core/texture/const.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT32)
@@ -62,6 +68,7 @@ else()
   message(STATUS "RAD in Debug mode")
 endif()
 target_include_directories(radiantium.core PUBLIC include)
+target_include_directories(radiantium.core PRIVATE ${STB_INCLUDE_DIRS})
 target_link_libraries(radiantium.core PRIVATE TBB::tbb)
 target_link_libraries(radiantium.core PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(radiantium.core PUBLIC spdlog::spdlog spdlog::spdlog_header_only)

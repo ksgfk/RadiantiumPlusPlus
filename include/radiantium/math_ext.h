@@ -1,6 +1,8 @@
 #pragma once
 
 #include "radiantium.h"
+#include "spectrum.h"
+
 #include <utility>
 
 namespace rad::math {
@@ -64,5 +66,22 @@ std::tuple<bool, Float, Float> SolveQuadratic(Float a, Float b, Float c);
  * @brief 计算acos(v.z()), 实际上就是计算向量v与z轴夹角
  */
 Float UnitAngleZ(const Vec3& v);
+/**
+ * @brief 将v限制在l和r范围内
+ */
+RgbSpectrum Clamp(const RgbSpectrum& v, const RgbSpectrum& l, const RgbSpectrum& r);
+/**
+ * @brief 将v限制在l和r范围内
+ */
+RgbSpectrum Clamp(const RgbSpectrum& v, Float l, Float r);
+/**
+ * @brief 将v限制在l和r范围内
+ */
+Float Clamp(Float v, Float l, Float r);
+
+/**
+ * @brief byte RGB转 float RGB
+ */
+RgbSpectrum Bit24ToFloatRgb(UInt8 r, UInt8 g, UInt8 b);
 
 }  // namespace rad::math

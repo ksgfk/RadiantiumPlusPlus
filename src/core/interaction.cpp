@@ -2,6 +2,7 @@
 
 #include <radiantium/shape.h>
 #include <radiantium/math_ext.h>
+#include <radiantium/world.h>
 
 namespace rad {
 Vec3 Interaction::OffsetP(const Vec3& d) const {
@@ -27,8 +28,10 @@ Vec3 SurfaceInteraction::ToWorld(const Vec3& v) const { return Shading.ToWorld(v
 
 Vec3 SurfaceInteraction::ToLocal(const Vec3& v) const { return Shading.ToLocal(v); }
 
-SurfaceInteraction HitShapeRecord::ComputeSurfaceInteraction(const Ray& ray) const {
-  SurfaceInteraction si = Shape->ComputeInteraction(ray, *this);
+SurfaceInteraction HitShapeRecord::ComputeSurfaceInteraction(const Ray& ray, const World* world) const {
+  const auto& e = world->GetEntity(EntityIndex);
+  auto shape = e.Shape();
+  SurfaceInteraction si = shape->ComputeInteraction(ray, *this);
   si.ComputeShadingFrame();
   si.Wi = si.ToLocal(-ray.D);
   return si;

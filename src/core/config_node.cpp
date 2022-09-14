@@ -1,6 +1,9 @@
 #include <radiantium/config_node.h>
 
 #include <radiantium/math_ext.h>
+#include <radiantium/build_context.h>
+#include <radiantium/factory.h>
+#include <radiantium/texture.h>
 
 #include <fstream>
 #include <stdexcept>
@@ -205,7 +208,7 @@ std::unique_ptr<IConfigNode> IConfigNode::CreateEmpty() {
   return rad::config::CreateJsonConfig(std::string("{}"));
 }
 
-Mat4 ToTransform(const IConfigNode* node) {
+static Mat4 ToTransform(const IConfigNode* node) {
   Vec3 translate = node->GetVec3("translate", Vec3(0, 0, 0));
   Vec3 scale = node->GetVec3("scale", Vec3(1, 1, 1));
   Mat4 rotation = Mat4::Identity();
@@ -241,6 +244,22 @@ Mat4 IConfigNode::GetTransform(
   }
   auto n = node->GetObject(name);
   return ToTransform(n.get());
+}
+
+std::unique_ptr<ITexture> IConfigNode::GetTexture(
+    const IConfigNode* node,
+    const BuildContext* ctx,
+    const std::string& name,
+    const RgbSpectrum& defVal) {
+  if (!node->HasProperty(name)) {
+    auto json = fmt::format("{{\"value\":[{},{},{}]}}", defVal.R(), defVal.G(), defVal.B());
+    auto node = config::CreateJsonConfig(json);
+    return ctx->GetFactory<ITextureFactory>("texture_const")->Create(ctx, node.get());
+  }
+  auto n = node->GetObject(name);
+  std::string type = n->GetString("type");
+  auto factory = ctx->GetFactory<ITextureFactory>(type);
+  return factory->Create(ctx, n.get());
 }
 
 }  // namespace rad

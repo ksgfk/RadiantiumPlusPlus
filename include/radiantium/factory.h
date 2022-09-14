@@ -53,6 +53,18 @@ class IRendererFactory : public IFactory {
   virtual std::unique_ptr<IRenderer> Create(BuildContext* context, const IConfigNode* config) const = 0;
 };
 
+class IBsdfFactory : public IFactory {
+ public:
+  virtual ~IBsdfFactory() noexcept = default;
+  virtual std::unique_ptr<IBsdf> Create(const BuildContext* context, const IConfigNode* config) const = 0;
+};
+
+class ITextureFactory : public IFactory {
+ public:
+  virtual ~ITextureFactory() noexcept = default;
+  virtual std::unique_ptr<ITexture> Create(const BuildContext* context, const IConfigNode* config) const = 0;
+};
+
 namespace factory_help {
 /**
  * @brief 获取系统里所有工厂类 (就是硬编码

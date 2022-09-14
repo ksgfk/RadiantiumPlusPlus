@@ -69,4 +69,23 @@ Float UnitAngleZ(const Vec3& v) {
   return v.z() >= 0 ? temp : PI - temp;
 }
 
+RgbSpectrum Clamp(const RgbSpectrum& v, const RgbSpectrum& l, const RgbSpectrum& r) {
+  return RgbSpectrum(v.cwiseMax(l).cwiseMin(r));
+}
+
+RgbSpectrum Clamp(const RgbSpectrum& v, Float l, Float r) {
+  return RgbSpectrum(v.cwiseMax(l).cwiseMin(r));
+}
+
+Float Clamp(Float v, Float l, Float r) {
+  return v < l ? l : (v > r ? r : v);
+}
+
+RgbSpectrum Bit24ToFloatRgb(UInt8 r_, UInt8 g_, UInt8 b_) {
+  Float r = r_ / (Float)std::numeric_limits<UInt8>::max();
+  Float g = g_ / (Float)std::numeric_limits<UInt8>::max();
+  Float b = b_ / (Float)std::numeric_limits<UInt8>::max();
+  return RgbSpectrum(r, g, b);
+}
+
 }  // namespace rad::math

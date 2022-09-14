@@ -4,10 +4,42 @@
 #include "object.h"
 #include "location_resolver.h"
 #include "fwd.h"
+#include "static_buffer.h"
 
 #include <string>
+#include <memory>
+#include <vector>
+#include <utility>
 
 namespace rad {
+
+class BlockBasedImage {
+ public:
+  constexpr static UInt32 BlockSize = 32;
+
+  struct Block {
+    std::vector<Float> Data;
+  };
+
+  BlockBasedImage(UInt32 width, UInt32 height, UInt32 depth);
+  BlockBasedImage(UInt32 width, UInt32 height, UInt32 depth, const Float* data);
+
+  UInt32 Width() const { return _width; }
+  UInt32 Height() const { return _height; }
+  UInt32 Depth() const { return _depth; }
+
+  Float Read1(UInt32 x, UInt32 y) const;
+  RgbSpectrum Read3(UInt32 x, UInt32 y) const;
+
+ private:
+  std::pair<UInt32, UInt32> GetIndex(UInt32 x, UInt32 y) const;
+
+  const UInt32 _width;
+  const UInt32 _height;
+  const UInt32 _depth;
+  UInt32 _widthBlockCount;
+  std::vector<Block> _data;
+};
 
 enum class AssetType {
   Model,
@@ -48,9 +80,23 @@ class IModelAsset : public IAsset {
   virtual bool HasSubModel(const std::string& name) const = 0;
 };
 
+/**
+ * @brief 对图片资源的抽象
+ *
+ */
+class IImageAsset : public IAsset {
+ public:
+  virtual ~IImageAsset() noexcept = default;
+
+  AssetType GetType() const final { return AssetType::Image; }
+
+  virtual std::shared_ptr<BlockBasedImage> Image() const = 0;
+};
+
 namespace factory {
-std::unique_ptr<IFactory> CreateObjModelFactory();  //.obj格式的模型
-}
+std::unique_ptr<IFactory> CreateObjModelFactory();      //.obj格式的模型
+std::unique_ptr<IFactory> CreateDefaultImageFactory();  // 默认的图片加载器
+}  // namespace factory
 
 }  // namespace rad
 
