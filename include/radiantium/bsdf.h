@@ -12,7 +12,7 @@ enum class TransportMode {
   Importance,
 };
 
-enum class BsdfType : UInt32 {
+enum BsdfType : UInt32 {
   Empty = 0b000000,
   Diffuse = 0b000001,
   Glossy = 0b000010,
@@ -27,7 +27,7 @@ struct BsdfContext {
   TransportMode Mode = TransportMode::Radiance;
   UInt32 Type = (UInt32)BsdfType::All;
 
-  bool IsEnableType(BsdfType type) const;
+  bool IsEnableType(UInt32 type) const;
 };
 
 struct BsdfSampleResult {
@@ -40,6 +40,8 @@ struct BsdfSampleResult {
 class IBsdf : public Object {
  public:
   virtual ~IBsdf() noexcept = default;
+
+  virtual UInt32 Flags() const = 0;
 
   virtual std::pair<BsdfSampleResult, Spectrum> Sample(
       const BsdfContext& context,
@@ -55,8 +57,10 @@ class IBsdf : public Object {
       const BsdfContext& context,
       const SurfaceInteraction& si,
       const Vec3& wo) const = 0;
-
-  virtual UInt32 Flags() const = 0;
 };
+
+namespace factory {
+std::unique_ptr<IFactory> CreateDiffuseFactory();
+}  // namespace factory
 
 }  // namespace rad

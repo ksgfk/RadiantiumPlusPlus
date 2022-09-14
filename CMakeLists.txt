@@ -52,7 +52,8 @@ add_library(radiantium.core
     src/core/asset/obj_model.cpp
     src/core/asset/image.cpp
     src/core/texture/bitmap.cpp
-    src/core/texture/const.cpp)
+    src/core/texture/const.cpp
+    src/core/bsdf/diffuse.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT32)

@@ -2,7 +2,7 @@
 
 namespace rad {
 
-bool BsdfContext::IsEnableType(BsdfType type) const {
+bool BsdfContext::IsEnableType(UInt32 type) const {
   UInt32 t = (UInt32)type;
   return (Type & t) == t;
 }

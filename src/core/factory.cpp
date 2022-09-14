@@ -9,6 +9,7 @@
 #include <radiantium/sampler.h>
 #include <radiantium/renderer.h>
 #include <radiantium/texture.h>
+#include <radiantium/bsdf.h>
 
 namespace rad {
 namespace factory_help {
@@ -38,6 +39,10 @@ void RegisterSystemFactories(BuildContext* context) {
   /////////////////////////////////
   // Texture
   context->RegisterFactory(rad::factory::CreateBitmapFactory());
+  context->RegisterFactory(rad::factory::CreateDefaultImageFactory());
+  /////////////////////////////////
+  // Bsdf
+  context->RegisterFactory(rad::factory::CreateDiffuseFactory());
 }
 
 }  // namespace factory_help
