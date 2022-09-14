@@ -34,6 +34,7 @@ SurfaceInteraction HitShapeRecord::ComputeSurfaceInteraction(const Ray& ray, con
   SurfaceInteraction si = shape->ComputeInteraction(ray, *this);
   si.ComputeShadingFrame();
   si.Wi = si.ToLocal(-ray.D);
+  si.EntityIndex = EntityIndex;
   return si;
 }
 

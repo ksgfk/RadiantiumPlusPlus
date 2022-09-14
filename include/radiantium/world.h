@@ -20,9 +20,13 @@ class Entity {
   bool HasBsdf() const { return _bsdf != nullptr; }
   IBsdf* Bsdf() const { return _bsdf.get(); }
 
+  bool HasLight() const { return _light != nullptr; }
+  ILight* Light() const { return _light.get(); }
+
  private:
   std::unique_ptr<IShape> _shape;
   std::unique_ptr<IBsdf> _bsdf;
+  std::unique_ptr<ILight> _light;
 
   friend class BuildContext;
 };

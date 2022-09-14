@@ -36,6 +36,7 @@ struct SurfaceInteraction : public Interaction {
    * @brief 相交的形状
    */
   IShape* Shape;
+  UInt32 EntityIndex;
   /**
    * @brief 着色法线所在的本地坐标系
    */

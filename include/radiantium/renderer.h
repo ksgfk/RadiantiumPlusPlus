@@ -9,6 +9,7 @@
 #include "static_buffer.h"
 #include "factory.h"
 #include "bsdf.h"
+#include "light.h"
 
 #include <thread>
 
@@ -70,5 +71,6 @@ class BlockSampleRenderer : public IRenderer {
 namespace factory {
 std::unique_ptr<IFactory> CreateAORenderer();  //环境光遮蔽渲染器
 std::unique_ptr<IFactory> CreateGBufferRenderer();
+std::unique_ptr<IFactory> CreateDirectRenderer();
 }  // namespace factory
 }  // namespace rad

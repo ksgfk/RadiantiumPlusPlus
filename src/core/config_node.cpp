@@ -66,7 +66,8 @@ class JsonConfigNode : public IConfigNode {
   static T Get(const json& node) { return node.get<T>(); }
   template <typename T>
   T Get(const std::string& name) const {
-    return Get<T>(*_j.find(name));
+    auto iter = _j.find(name);
+    return Get<T>(*iter);
   }
   template <typename T>
   T Get(const std::string& name, const T& defVal) const {
@@ -256,10 +257,17 @@ std::unique_ptr<ITexture> IConfigNode::GetTexture(
     auto node = config::CreateJsonConfig(json);
     return ctx->GetFactory<ITextureFactory>("texture_const")->Create(ctx, node.get());
   }
-  auto n = node->GetObject(name);
-  std::string type = n->GetString("type");
-  auto factory = ctx->GetFactory<ITextureFactory>(type);
-  return factory->Create(ctx, n.get());
+  if (node->GetChildType(name) == IConfigNode::Type::Array) {
+    Vec3 cst = node->GetVec3(name);
+    auto json = fmt::format("{{\"value\":[{},{},{}]}}", cst.x(), cst.y(), cst.z());
+    auto node = config::CreateJsonConfig(json);
+    return ctx->GetFactory<ITextureFactory>("texture_const")->Create(ctx, node.get());
+  } else {
+    auto texNode = node->GetObject(name);
+    std::string type = texNode->GetString("type");
+    auto factory = ctx->GetFactory<ITextureFactory>(type);
+    return factory->Create(ctx, texNode.get());
+  }
 }
 
 }  // namespace rad

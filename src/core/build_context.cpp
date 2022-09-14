@@ -9,6 +9,7 @@
 #include <radiantium/asset.h>
 #include <radiantium/stop_watch.h>
 #include <radiantium/bsdf.h>
+#include <radiantium/light.h>
 
 #include <ostream>
 #include <queue>
@@ -266,6 +267,12 @@ void BuildContext::ParseConfig() {
         newEntity->ShapeConfig = hie->Config->GetObject("shape");
         _hasShapeEntityCount++;
       }
+      if (hie->Config->HasProperty("bsdf")) {
+        newEntity->BsdfConfig = hie->Config->GetObject("bsdf");
+      }
+      if (hie->Config->HasProperty("light")) {
+        newEntity->LightConfig = hie->Config->GetObject("light");
+      }
       flatEntity.emplace_back(std::move(newEntity));
       rootQue.pop();
     }
@@ -312,6 +319,21 @@ void BuildContext::CreateEntity() {
       auto shapeFactory = GetFactoryFromConfig<IShapeFactory>(e->ShapeConfig.get());
       auto shapeInst = shapeFactory->Create(this, e->ShapeConfig.get());
       newEntity._shape = std::move(shapeInst);
+    }
+    if (e->BsdfConfig != nullptr) {
+      auto bsdfFactory = GetFactoryFromConfig<IBsdfFactory>(e->BsdfConfig.get());
+      auto bsdfInst = bsdfFactory->Create(this, e->BsdfConfig.get());
+      newEntity._bsdf = std::move(bsdfInst);
+    }
+    if (e->LightConfig != nullptr) {
+      auto liFactory = GetFactoryFromConfig<ILightFactory>(e->LightConfig.get());
+      auto liInst = liFactory->Create(this, e->LightConfig.get());
+      newEntity._light = std::move(liInst);
+      if (e->BsdfConfig == nullptr) {
+        auto bsdfFactory = GetFactory<IBsdfFactory>("diffuse");
+        auto bsdfInst = bsdfFactory->Create(this, IConfigNode::Empty());
+        newEntity._bsdf = std::move(bsdfInst);
+      }
     }
     if (newEntity.HasShape()) {
       hasShapeEntity.emplace_back(std::move(newEntity));

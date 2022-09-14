@@ -32,7 +32,7 @@ class SmoothDiffuse : public IBsdf {
     bsr.Eta = 1;
     bsr.Type = Flags();
     Spectrum value = _reflectance->Sample(si.UV);
-    auto f = value / math::PI * Frame::CosPhi(bsr.Wo);
+    auto f = value / math::PI * Frame::CosTheta(bsr.Wo);
     return {bsr, Spectrum(f)};
   }
 

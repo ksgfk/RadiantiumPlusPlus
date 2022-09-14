@@ -41,6 +41,8 @@ class BuildContext {
   struct EntityConfig {
     Transform ToWorld;
     std::unique_ptr<IConfigNode> ShapeConfig;
+    std::unique_ptr<IConfigNode> BsdfConfig;
+    std::unique_ptr<IConfigNode> LightConfig;
   };
 
  public:

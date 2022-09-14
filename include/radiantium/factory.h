@@ -65,6 +65,12 @@ class ITextureFactory : public IFactory {
   virtual std::unique_ptr<ITexture> Create(const BuildContext* context, const IConfigNode* config) const = 0;
 };
 
+class ILightFactory : public IFactory {
+ public:
+  virtual ~ILightFactory() noexcept = default;
+  virtual std::unique_ptr<ILight> Create(const BuildContext* context, const IConfigNode* config) const = 0;
+};
+
 namespace factory_help {
 /**
  * @brief 获取系统里所有工厂类 (就是硬编码

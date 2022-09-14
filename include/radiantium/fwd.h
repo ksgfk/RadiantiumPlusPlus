@@ -12,6 +12,7 @@ class IRenderer;
 class ISampler;
 class IBsdf;
 class ITexture;
+class ILight;
 class Entity;
 class World;
 

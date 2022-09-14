@@ -41,6 +41,7 @@ add_library(radiantium.core
     src/core/stop_watch.cpp
     src/core/warp.cpp
     src/core/bsdf.cpp
+    src/core/light.cpp
     src/core/accel/embree_accel.cpp
     src/core/shape/mesh.cpp
     src/core/shape/sphere.cpp
@@ -48,12 +49,14 @@ add_library(radiantium.core
     src/core/renderer/block_sample_renderer.cpp
     src/core/renderer/ao.cpp
     src/core/renderer/gbuffer.cpp
+    src/core/renderer/direct.cpp
     src/core/sampler/independent.cpp
     src/core/asset/obj_model.cpp
     src/core/asset/image.cpp
     src/core/texture/bitmap.cpp
     src/core/texture/const.cpp
-    src/core/bsdf/diffuse.cpp)
+    src/core/bsdf/diffuse.cpp
+    src/core/light/area.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT32)

@@ -10,6 +10,7 @@
 #include <radiantium/renderer.h>
 #include <radiantium/texture.h>
 #include <radiantium/bsdf.h>
+#include <radiantium/light.h>
 
 namespace rad {
 namespace factory_help {
@@ -36,13 +37,17 @@ void RegisterSystemFactories(BuildContext* context) {
   // Renderer
   context->RegisterFactory(rad::factory::CreateAORenderer());
   context->RegisterFactory(rad::factory::CreateGBufferRenderer());
+  context->RegisterFactory(rad::factory::CreateDirectRenderer());
   /////////////////////////////////
   // Texture
   context->RegisterFactory(rad::factory::CreateBitmapFactory());
-  context->RegisterFactory(rad::factory::CreateDefaultImageFactory());
+  context->RegisterFactory(rad::factory::CreateConstTextureFactory());
   /////////////////////////////////
   // Bsdf
   context->RegisterFactory(rad::factory::CreateDiffuseFactory());
+  /////////////////////////////////
+  // Light
+  context->RegisterFactory(rad::factory::CreateAreaLightFactory());
 }
 
 }  // namespace factory_help
