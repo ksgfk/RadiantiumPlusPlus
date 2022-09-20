@@ -20,66 +20,65 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenEXR CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 
-add_library(radiantium.core
-    src/core/radiantium.cpp
-    src/core/ray.cpp
-    src/core/spectrum.cpp
-    src/core/image_utility.cpp
-    src/core/model.cpp
-    src/core/logger.cpp
-    src/core/transform.cpp
-    src/core/frame.cpp
-    src/core/math_ext.cpp
-    src/core/interaction.cpp
-    src/core/build_context.cpp
-    src/core/factory.cpp
-    src/core/config_node.cpp
-    src/core/location_resolver.cpp
-    src/core/wavefront_obj_reader.cpp
-    src/core/asset.cpp
-    src/core/world.cpp
-    src/core/stop_watch.cpp
-    src/core/warp.cpp
-    src/core/bsdf.cpp
-    src/core/light.cpp
-    src/core/accel/embree_accel.cpp
-    src/core/shape/mesh.cpp
-    src/core/shape/sphere.cpp
-    src/core/camera/perspective.cpp
-    src/core/renderer/block_sample_renderer.cpp
-    src/core/renderer/ao.cpp
-    src/core/renderer/gbuffer.cpp
-    src/core/renderer/direct.cpp
-    src/core/sampler/independent.cpp
-    src/core/asset/obj_model.cpp
-    src/core/asset/image.cpp
-    src/core/texture/bitmap.cpp
-    src/core/texture/const.cpp
-    src/core/bsdf/diffuse.cpp
-    src/core/light/area.cpp)
+add_library(rad.offline
+    src/offline/types.cpp
+    src/offline/logger.cpp
+    src/offline/color.cpp
+    src/offline/transform.cpp
+    src/offline/frame.cpp
+    src/offline/warp.cpp
+    src/offline/interaction.cpp
+    src/offline/scene.cpp
+    src/offline/distribution.cpp
+    src/offline/shape.cpp
+    src/offline/microfacet.cpp
+    src/offline/fresnel.cpp
+    src/offline/utility/image.cpp
+    src/offline/utility/stop_watch.cpp
+    src/offline/asset/triangle_model.cpp
+    src/offline/asset/wavefront_obj_reader.cpp
+    src/offline/asset/model_obj.cpp
+    src/offline/asset/image_default.cpp
+    src/offline/build/config_node.cpp
+    src/offline/build/build_context.cpp
+    src/offline/shape/mesh.cpp
+    src/offline/camera/perspective.cpp
+    src/offline/accel/embree.cpp
+    src/offline/sampler/independent.cpp
+    src/offline/renderer/sample_renderer.cpp
+    src/offline/renderer/ao.cpp
+    src/offline/renderer/direct.cpp
+    src/offline/renderer/gbuffer.cpp
+    src/offline/bsdf/diffuse.cpp
+    src/offline/bsdf/rough_metal.cpp
+    src/offline/light/area.cpp
+    src/offline/texture/bitmap.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
-  target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT32)
+  target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT32)
   message(STATUS "RAD use float32")
 else()
-  target_compile_definitions(radiantium.core PRIVATE RAD_USE_FLOAT64)
+  target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT64)
   message(STATUS "RAD use float64")
 endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   message(STATUS "RAD in Release mode")
 else()
-  target_compile_definitions(radiantium.core PRIVATE RAD_DEFINE_DEBUG)
+  target_compile_definitions(rad.offline PRIVATE RAD_DEFINE_DEBUG)
   message(STATUS "RAD in Debug mode")
 endif()
-target_include_directories(radiantium.core PUBLIC include)
-target_include_directories(radiantium.core PRIVATE ${STB_INCLUDE_DIRS})
-target_link_libraries(radiantium.core PRIVATE TBB::tbb)
-target_link_libraries(radiantium.core PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(radiantium.core PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
-target_link_libraries(radiantium.core PRIVATE embree)
-target_link_libraries(radiantium.core PRIVATE Eigen3::Eigen)
-target_link_libraries(radiantium.core PRIVATE OpenEXR::IlmImf OpenEXR::IlmImfUtil OpenEXR::IlmImfConfig)
+if(MSVC)
+target_compile_options(rad.offline PUBLIC /utf-8)
+endif()
+target_include_directories(rad.offline PUBLIC include)
+target_include_directories(rad.offline PRIVATE ${STB_INCLUDE_DIRS})
+target_link_libraries(rad.offline PRIVATE TBB::tbb)
+target_link_libraries(rad.offline PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(rad.offline PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
+target_link_libraries(rad.offline PRIVATE embree)
+target_link_libraries(rad.offline PRIVATE Eigen3::Eigen)
+target_link_libraries(rad.offline PRIVATE OpenEXR::IlmImf OpenEXR::IlmImfUtil OpenEXR::IlmImfConfig)
 
-add_executable(radiantium.cli
-    src/cli/main.cpp)
-target_link_libraries(radiantium.cli radiantium.core)
+add_executable(rad.offline.cli
+    src/offline_cli/main.cpp)
+target_link_libraries(rad.offline.cli rad.offline)

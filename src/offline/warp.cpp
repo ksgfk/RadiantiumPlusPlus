@@ -1,0 +1,59 @@
+#include <rad/offline/warp.h>
+
+#include <rad/offline/math_ext.h>
+
+using namespace Rad::Math;
+
+namespace Rad::Warp {
+
+// https://ksgfk.github.io/2022/09/08/MonteCarlo/#%E4%BE%8B%E5%AD%90unifom-hemisphere
+Vector3 SquareToUniformHemisphere(const Vector2& u) {
+  Float z = u[0];
+  Float r = std::sqrt(std::max(Float(0), 1 - Sqr(z)));
+  Float phi = 2 * PI * u[1];
+  auto [sinPhi, cosPhi] = SinCos(phi);
+  return Vector3(r * cosPhi, r * sinPhi, z);
+}
+Float SquareToUniformHemispherePdf() {
+  return 1 / (2 * PI);
+}
+
+// https://ksgfk.github.io/2022/09/08/MonteCarlo/#%E4%BE%8B%E5%AD%90unifom-disk-%E6%AD%A3%E5%BC%8F%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88
+Vector2 SquareToUniformDisk(const Vector2& u) {
+  Float r = std::sqrt(u[0]);
+  Float angle = 2 * PI * u[1];
+  auto [s, c] = SinCos(angle);
+  return Vector2(r * c, r * s);
+}
+Float SquareToUniformDiskPdf() {
+  return 1 / PI;
+}
+
+// https://ksgfk.github.io/2022/09/08/MonteCarlo/#%E4%BE%8B%E5%AD%90diffuse-brdf
+Vector3 SquareToCosineHemisphere(const Vector2& u) {
+#if 0
+  Float sinTheta = std::sqrt(1 - u.x());
+  Float cosTheta = sqrt(u.x());
+  Float phi = 2 * PI * u.y();
+  auto [sinPhi, cosPhi] = SinCos(phi);
+  return Vector3(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
+#else
+  Vector2 bottom = SquareToUniformDisk(u);
+  Float x = bottom.x();
+  Float y = bottom.y();
+  return Vector3(x, y, std::sqrt(1 - Sqr(x) - Sqr(y)));
+#endif
+}
+Float SquareToCosineHemispherePdf(const Vector3& v) {
+  return v.z() * (1 / PI);
+}
+
+Vector2 SquareToUniformTriangle(const Vector2& u) {
+  Float t = SafeSqrt(1 - u.x());
+  return Vector2(1 - t, t * u.y());
+}
+Float SquareToUniformTrianglePdf() {
+  return 2;
+}
+
+}  // namespace Rad::Warp
