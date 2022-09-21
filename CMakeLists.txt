@@ -33,6 +33,7 @@ add_library(rad.offline
     src/offline/shape.cpp
     src/offline/microfacet.cpp
     src/offline/fresnel.cpp
+    src/offline/memory.cpp
     src/offline/utility/image.cpp
     src/offline/utility/stop_watch.cpp
     src/offline/asset/triangle_model.cpp
@@ -42,6 +43,7 @@ add_library(rad.offline
     src/offline/build/config_node.cpp
     src/offline/build/build_context.cpp
     src/offline/shape/mesh.cpp
+    src/offline/shape/sphere.cpp
     src/offline/camera/perspective.cpp
     src/offline/accel/embree.cpp
     src/offline/sampler/independent.cpp

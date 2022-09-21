@@ -16,4 +16,10 @@ Float SquareToCosineHemispherePdf(const Vector3& v);
 Vector2 SquareToUniformTriangle(const Vector2& u);
 Float SquareToUniformTrianglePdf();
 
+Vector3 SquareToUniformSphere(const Vector2& u);
+Float SquareToUniformSpherePdf();
+
+Vector3 SquareToUniformCone(const Vector2& sample, Float cosCutoff);
+Float SquareToUniformConePdf(Float cosCutoff);
+
 }  // namespace Rad::Warp

@@ -18,28 +18,42 @@ constexpr T Epsilon() {
   } else if constexpr (std::is_same_v<T, Float64>) {
     return Float64Epsilon;
   } else {
-    throw RadException("未知的类型");
+    return T(Float32Epsilon);
   }
 }
 constexpr Float RayEpsilon = Epsilon<Float>() * Float(1500);
 constexpr Float ShadowEpsilon = RayEpsilon * Float(10);
+template <typename T>
+constexpr T OneMinusEpsilon() {
+  if constexpr (std::is_same_v<T, Float32>) {
+    return T(0x1.fffffep-1);
+  } else if constexpr (std::is_same_v<T, Float64>) {
+    return T(0x1.fffffffffffffp-1);
+  } else {
+    return T(0x1.fffffep-1);
+  }
+}
 
 /**
  * @brief 平方
  */
-constexpr Float Sqr(Float v) { return v * v; }
+template <typename T>
+constexpr T Sqr(T v) { return v * v; }
 /**
  * @brief 获取v的符号
  */
-constexpr Float Sign(Float v) { return v >= 0 ? Float(1) : Float(-1); }
+template <typename T>
+constexpr T Sign(T v) { return v >= 0 ? T(1) : T(-1); }
 /**
  * @brief 将v2的符号乘到v1上
  */
-constexpr Float MulSign(Float v1, Float v2) { return v2 >= 0 ? v1 : -v1; }
+template <typename T>
+constexpr T MulSign(T v1, T v2) { return v2 >= 0 ? v1 : -v1; }
 /**
  * @brief v的倒数
  */
-constexpr Float Rcp(Float v) { return Float(1) / v; }
+template <typename T>
+constexpr T Rcp(T v) { return T(1) / v; }
 /**
  * @brief a * b + c
  */
@@ -47,11 +61,14 @@ constexpr Float Fmadd(Float a, Float b, Float c) { return a * b + c; }
 /**
  * @brief a * b + c
  */
-inline Vector3 Fmadd(Vector3 a, Vector3 b, Vector3 c) { return a.cwiseProduct(b) + c; }
+inline Vector3 Fmadd(const Vector3& a, const Vector3& b, const Vector3& c) {
+  return a.cwiseProduct(b) + c;
+}
 /**
  * @brief 二次根的倒数
  */
-inline Float Rsqrt(Float v) { return Rcp(std::sqrt(v)); }
+template <typename T>
+inline T Rsqrt(T v) { return Rcp(std::sqrt(v)); }
 /**
  * @brief 安全的计算平方根, 如果输入负数返回0
  */
@@ -99,7 +116,8 @@ inline std::pair<Float, Float> SinCos(Float v) {
 /**
  * @brief 解二元一次方程
  */
-constexpr std::tuple<bool, Float, Float> SolveQuadratic(Float a, Float b, Float c) {
+template <typename Float>
+inline std::tuple<bool, Float, Float> SolveQuadratic(Float a, Float b, Float c) {
   bool linearCase = a == 0.0;
   bool validLinear = linearCase && b != 0.0;
   Float x0 = -c / b, x1 = -c / b;
@@ -121,7 +139,7 @@ constexpr std::tuple<bool, Float, Float> SolveQuadratic(Float a, Float b, Float 
  * @brief 计算acos(v.z()), 实际上就是计算向量v与z轴夹角
  */
 inline Float UnitAngleZ(const Vector3& v) {
-  Float temp = asin(Float(0.5) * Vector3(v.x(), v.y(), v.z() - MulSign(1, v.z())).norm()) * 2;
+  Float temp = asin(Float(0.5) * Vector3(v.x(), v.y(), v.z() - MulSign(Float(1), v.z())).norm()) * 2;
   return v.z() >= 0 ? temp : PI - temp;
 }
 

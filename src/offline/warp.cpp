@@ -56,4 +56,24 @@ Float SquareToUniformTrianglePdf() {
   return 2;
 }
 
+Vector3 SquareToUniformSphere(const Vector2& u) {
+  Float z = Fmadd(-2, u.y(), 1);
+  Float r = SafeSqrt(Fmadd(-z, z, 1));
+  auto [s, c] = SinCos(2 * PI * u.x());
+  return Vector3(r * c, r * s, z);
+}
+Float SquareToUniformSpherePdf() {
+  return 1 / (4 * PI);
+}
+
+Vector3 SquareToUniformCone(const Vector2& sample, Float cosCutoff) {
+  Float cosTheta = (1 - sample.y()) + sample.y() * cosCutoff;
+  Float sinTheta = SafeSqrt(Fmadd(-cosTheta, cosTheta, 1));
+  auto [s, c] = SinCos(2 * PI * sample.x());
+  return Vector3(c * sinTheta, s * sinTheta, cosTheta);
+}
+Float SquareToUniformConePdf(Float cosCutoff) {
+  return 1 / (2 * PI) / (1 - cosCutoff);
+}
+
 }  // namespace Rad::Warp
