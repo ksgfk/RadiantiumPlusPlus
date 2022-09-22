@@ -11,6 +11,7 @@ class DiffuseArea final : public Light {
  public:
   DiffuseArea(BuildContext* ctx, const ConfigNode& cfg) {
     _radiance = cfg.ReadTexture(*ctx, "radiance", Color(1));
+    _flag = (UInt32)LightType::Surface;
   }
   ~DiffuseArea() noexcept override = default;
 

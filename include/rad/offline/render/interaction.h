@@ -33,8 +33,8 @@ struct SurfaceInteraction : public Interaction {
   /**
    * @brief 相交的形状
    */
-  Shape* Shape;
-  UInt32 ShapeIndex;
+  Shape* Shape = nullptr;
+  UInt32 ShapeIndex = std::numeric_limits<UInt32>::max();
   /**
    * @brief 着色法线所在的本地坐标系
    */

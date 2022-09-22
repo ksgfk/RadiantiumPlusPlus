@@ -101,7 +101,7 @@ class Mesh final : public Shape {
     Vector2 primUV = rec.PrimitiveUV;
     Vector3 bary(1.f - primUV.x() - primUV.y(), primUV.x(), primUV.y());
     Vector3 dp0 = p1 - p0, dp1 = p2 - p0;
-    SurfaceInteraction si;
+    SurfaceInteraction si{};
     si.P = p0 * bary.x() + (p1 * bary.y() + (p2 * bary.z()));
     si.T = t;
     si.N = (dp0.cross(dp1)).normalized();

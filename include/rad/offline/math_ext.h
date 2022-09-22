@@ -77,6 +77,12 @@ inline Vector3 SafeSqrt(const Vector3& v) {
   return v.cwiseMax(0).cwiseSqrt();
 }
 /**
+ * @brief 绝对值点乘
+ */
+inline Float AbsDot(const Vector3& v1, const Vector3& v2) {
+  return std::abs(v1.dot(v2));
+}
+/**
  * @brief 根据输入的N方向构建本地坐标系
  */
 inline std::pair<Vector3, Vector3> CoordinateSystem(const Vector3& n) {

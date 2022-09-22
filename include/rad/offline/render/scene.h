@@ -24,6 +24,7 @@ class Scene {
   Float PdfLight(UInt32 index) const;
   std::tuple<Light*, DirectionSampleResult, Spectrum> SampleLightDirection(
       const Interaction& ref,
+      Float sampleLight,
       const Vector2& xi) const;
 
  private:

@@ -35,8 +35,8 @@ class Independent final : public Sampler {
     return _dist(_engine);
   }
   Vector2 Next2D() override {
-    Float s1 = Next1D();
-    Float s2 = Next1D();
+    Float s1 = _dist(_engine);
+    Float s2 = _dist(_engine);
     return Vector2(s1, s2);
   }
 

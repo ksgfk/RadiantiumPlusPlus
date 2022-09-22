@@ -30,8 +30,8 @@ class Diffuse final : public Bsdf {
     bsr.Pdf = Warp::SquareToCosineHemispherePdf(bsr.Wo);
     bsr.Eta = Float(1);
     bsr.TypeMask = _flags;
-    Float cosThetaO = Frame::CosTheta(bsr.Wo);
     Spectrum reflectance = Spectrum(_reflectance->Eval(si));
+    Float cosThetaO = Frame::CosTheta(bsr.Wo);
     auto f = reflectance * (1 / Math::PI) * cosThetaO;
     return std::make_pair(bsr, Spectrum(f));
   }

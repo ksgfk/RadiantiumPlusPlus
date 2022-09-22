@@ -83,6 +83,7 @@ class Direct final : public SampleRenderer {
     return result;
 #endif
 
+#if 1
     Spectrum result(0);
     SurfaceInteraction si;
     bool anyHit = scene.RayIntersect(ray, si);
@@ -95,7 +96,7 @@ class Direct final : public SampleRenderer {
     BsdfContext ctx{};
     Bsdf* bsdf = si.Shape->GetBsdf();
     for (size_t i = 0; i < _lightSamples; i++) {
-      auto [l, dsr, li] = scene.SampleLightDirection(si, sampler->Next2D());
+      auto [l, dsr, li] = scene.SampleLightDirection(si, sampler->Next1D(), sampler->Next2D());
       if (dsr.Pdf <= 0) {
         continue;
       }
@@ -133,11 +134,12 @@ class Direct final : public SampleRenderer {
         continue;
       }
       Spectrum li = light->Eval(bsdfSi);
-      Float weight = MisWeight(bsr.Pdf * _fracBsdf, lightPdf * _fracLight) * _weightBsdf;
-      auto le = f.cwiseProduct(li) * weight / bsr.Pdf;
+      Float mis = MisWeight(bsr.Pdf * _fracBsdf, lightPdf * _fracLight) * _weightBsdf;
+      auto le = f.cwiseProduct(li) * mis / bsr.Pdf;
       result += Spectrum(le);
     }
     return result;
+#endif
   }
 
   Float MisWeight(Float pdf_a, Float pdf_b) const {

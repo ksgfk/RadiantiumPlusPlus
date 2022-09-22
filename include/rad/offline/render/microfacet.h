@@ -34,7 +34,6 @@ template <typename T>
 class MicrofacetDistribution {
  public:
   MicrofacetDistribution(Float alphaX, Float alphaY) : alphaX(alphaX), alphaY(alphaY) {}
-  virtual ~MicrofacetDistribution() noexcept = default;
 
   Float D(const Vector3& wh) const {
     return static_cast<const T*>(this)->DImpl(wh);
@@ -55,7 +54,6 @@ class MicrofacetDistribution {
 class Beckmann final : public MicrofacetDistribution<Beckmann> {
  public:
   inline Beckmann(Float alphaX, Float alphaY) : MicrofacetDistribution<Beckmann>(alphaX, alphaY) {}
-  ~Beckmann() noexcept override = default;
 
   Float DImpl(const Vector3& wh) const {
     return Microfacet::Beckmann::D(wh, this->alphaX, this->alphaY);
@@ -74,7 +72,6 @@ class Beckmann final : public MicrofacetDistribution<Beckmann> {
 class GGX final : public MicrofacetDistribution<GGX> {
  public:
   inline GGX(Float alphaX, Float alphaY) : MicrofacetDistribution<GGX>(alphaX, alphaY) {}
-  ~GGX() noexcept override = default;
 
   Float DImpl(const Vector3& wh) const {
     return Microfacet::GGX::D(wh, this->alphaX, this->alphaY);

@@ -50,14 +50,12 @@ Float Scene::PdfLight(UInt32 index) const {
 
 std::tuple<Light*, DirectionSampleResult, Spectrum> Scene::SampleLightDirection(
     const Interaction& ref,
+    Float sampleLight,
     const Vector2& xi) const {
-  Vector2 sample = xi;
-  auto [index, weight, sampleXReuse] = SampleLight(sample.x());
-  sample.x() = sampleXReuse;
+  auto [index, weight, sampleXReuse] = SampleLight(sampleLight);
   Light* light = _lights[index].get();
-  auto [dsr, li] = light->SampleDirection(ref, sample);
-  dsr.Pdf *= weight;
-  // a / b / c = a / (b * (1 / c))
+  auto [dsr, li] = light->SampleDirection(ref, xi);
+  dsr.Pdf /= weight;
   return std::make_tuple(light, dsr, li);
 }
 

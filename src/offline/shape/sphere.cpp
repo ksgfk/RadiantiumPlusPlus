@@ -180,8 +180,9 @@ class Sphere final : public Shape {
     _radius = transform.ApplyLinearToWorld(Vector3(0, 0, localRadius)).norm();
     Eigen::Translation<Float, 3> t(_center);
     Eigen::UniformScaling<Float> s(_radius);
-    Eigen::Transform<Float, 3, Eigen::Affine> affine = t * s;
-    _toWorld = Transform(toWorld * affine.matrix());
+    Eigen::Transform<Float, 3, Eigen::Affine> affine(toWorld);
+    auto trans = affine * t * s;
+    _toWorld = Transform(trans.matrix());
     _surfaceArea = 4 * PI * Sqr(_radius);
 
     _giveEmbreeData = (EmbreeSphere*)Memory::AlignedAlloc(16, sizeof(EmbreeSphere));
@@ -211,9 +212,9 @@ class Sphere final : public Shape {
   }
 
   SurfaceInteraction ComputeInteraction(const Ray& ray, const HitShapeRecord& rec) override {
-    SurfaceInteraction si;
+    SurfaceInteraction si{};
     si.T = rec.T;
-    si.Shading.N = (ray(si.T) - _center).normalized();
+    si.Shading.N = rec.GeometryNormal;
     si.P = Fmadd(si.Shading.N, Vector3::Constant(_radius), _center);
     {
       Vector3 local = _toWorld.ApplyAffineToLocal(si.P);
@@ -261,57 +262,67 @@ class Sphere final : public Shape {
   }
 
   DirectionSampleResult SampleDirection(const Interaction& ref, const Vector2& xi) const override {
+    /* https://pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/Sampling_Light_Sources#x2-SamplingSpheres
+     * 在球体上采样时, 我们当然可以在球的表面均匀选取一个点, 这是完全正确的
+     * 但是思考一下, 我们看向球的时候, 实际上只能看到一个半球表面, 另一半是看不见的
+     * 因此更好的采样方法是只采样可见的那个半球
+     * pbrt给出参考图, 我们实际可视范围是一个锥体, 锥体角度是
+     * \theta_max = \mathrm{arcsin}(\frac{r}{p-p_center})
+     * (pbrt的图画的不准确...视线锥体与圆的切线歪了)
+     * 然后就可以在锥体内均匀采样, 再投影到半球表面
+     * 怎么去投影呢, 一般做法是从球心与采样点生成射线, 再与球相交, 这个方法是不稳定的, 因为浮点误差
+     * 幸运的是大佬们发现了更好的方法
+     * https://www.akalin.com/sampling-visible-sphere
+     * 文字不是很好描述, 直接看图就解出来了
+     *
+     * 当然, 如果参考点本身就在球内, 就只能均匀采样了
+     */
     Vector3 dcv = _center - ref.P;
     Float dc2 = dcv.squaredNorm();
-    Float radius = _radius;
-    DirectionSampleResult dsr{};
-    if (dc2 > Sqr(radius)) {
+    Float radiusAdj = _radius * (Float(1) - Math::RayEpsilon);
+    bool isOut = dc2 > Sqr(radiusAdj);
+    DirectionSampleResult dsr;
+    if (isOut) {
       Float invDc = Rsqrt(dc2);
       Float sinThetaMax = _radius * invDc;
       Float sinThetaMax2 = Sqr(sinThetaMax);
       Float invSinThetaMax = Rcp(sinThetaMax);
-      Float cosThetaMax = SafeSqrt(1 - sinThetaMax2);
-      Float sinTheta2 = sinThetaMax2 > 0.00068523262271  // sin^2(1.5 deg)
-                            ? 1 - Sqr(Fmadd(cosThetaMax - 1, xi.x(), 1))
+      Float cosThetaMax = SafeSqrt(1.f - sinThetaMax2);
+      Float sinTheta2 = sinThetaMax2 > Float(0.00068523262)
+                            ? Float(1) - Sqr(Fmadd(cosThetaMax - Float(1), xi.x(), Float(1)))
                             : sinThetaMax2 * xi.x();
-      Float cosTheta = SafeSqrt(1.0f - sinTheta2);
-      // https://www.akalin.com/sampling-visible-sphere
+      Float cosTheta = SafeSqrt(Float(1) - sinTheta2);
       Float cosAlpha = sinTheta2 * invSinThetaMax +
-                       cosTheta * SafeSqrt(Fmadd(-sinTheta2, Sqr(invSinThetaMax), 1));
-      Float sinAlpha = SafeSqrt(Fmadd(-cosAlpha, cosAlpha, 1.0));
-      auto [sinPhi, cosPhi] = SinCos(xi.y() * (2 * PI));
-      Vector3 localN = dcv * -invDc;
-      auto [localS, localT] = CoordinateSystem(localN);
-      Vector3 localDir(cosPhi * sinAlpha, sinPhi * sinAlpha, cosAlpha);
-      Vector3 dir = (localS * localDir.x()) + (localT * localDir.y()) + (localN * localDir.z());
-
-      dsr.P = Fmadd(dir, Vector3::Constant(_radius), _center);
-      dsr.N = dir;
+                       cosTheta * SafeSqrt(Fmadd(-sinTheta2, Sqr(invSinThetaMax), Float(1)));
+      Float sinAlpha = SafeSqrt(Fmadd(-cosAlpha, cosAlpha, Float(1)));
+      auto [sinPhi, cosPhi] = SinCos(xi.y() * (Float(2) * PI));
+      Vector3 d = Frame(dcv * -invDc).ToWorld(Vector3(cosPhi * sinAlpha, sinPhi * sinAlpha, cosAlpha));
+      dsr.P = Fmadd(d, Vector3::Constant(_radius), _center);
+      dsr.N = d;
       dsr.Dir = dsr.P - ref.P;
       Float dist2 = dsr.Dir.squaredNorm();
       dsr.Dist = std::sqrt(dist2);
       dsr.Dir = dsr.Dir / dsr.Dist;
-      dsr.Pdf = dsr.Dist == 0 ? 0 : Warp::SquareToUniformConePdf(cosThetaMax);
+      dsr.Pdf = Warp::SquareToUniformConePdf(cosThetaMax);
     } else {
-      Vector3 dir = Warp::SquareToUniformSphere(xi);
-      dsr.P = Fmadd(dir, Vector3::Constant(_radius), _center);
-      dsr.N = dir;
+      Vector3 d = Warp::SquareToUniformSphere(xi);
+      dsr.P = Fmadd(d, Vector3::Constant(_radius), _center);
+      dsr.N = d;
       dsr.Dir = dsr.P - ref.P;
       Float dist2 = dsr.Dir.squaredNorm();
       dsr.Dist = std::sqrt(dist2);
       dsr.Dir = dsr.Dir / dsr.Dist;
-      dsr.Pdf = (1 / _surfaceArea) * dist2 / std::abs(dsr.Dir.dot(dsr.N));
+      dsr.Pdf = (1 / _surfaceArea) * dist2 / AbsDot(dsr.Dir, dsr.N);
     }
-    dsr.IsDelta = _radius == 0;
     return dsr;
   }
 
   Float PdfDirection(const Interaction& ref, const DirectionSampleResult& dsr) const override {
-    Float sinAlpha = _radius * Rcp((_center - dsr.P).norm());
-    Float cosAlpha = SafeSqrt(1.0f - Sqr(sinAlpha));
+    Float sinAlpha = _radius * Rcp((_center - ref.P).norm()),
+          cosAlpha = SafeSqrt(Float(1) - sinAlpha * sinAlpha);
     return sinAlpha < OneMinusEpsilon<Float>()
                ? Warp::SquareToUniformConePdf(cosAlpha)
-               : (1 / _surfaceArea) * Sqr(dsr.Dist) / std::abs(dsr.Dir.dot(dsr.N));
+               : (1 / _surfaceArea) * Sqr(dsr.Dist) / AbsDot(dsr.Dir, dsr.N);
   }
 
  private:
