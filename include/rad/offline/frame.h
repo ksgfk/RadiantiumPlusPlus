@@ -24,6 +24,7 @@ struct Frame {
   static Float Tan2Theta(const Vector3& v);
   static Float CosPhi(const Vector3& v);
   static Float SinPhi(const Vector3& v);
+  static std::pair<Float, Float> SinCosPhi(const Vector3& v);
   static Float Cos2Phi(const Vector3& v);
   static Float Sin2Phi(const Vector3& v);
   static bool IsSameHemisphere(const Vector3& x, const Vector3& y);

@@ -13,8 +13,8 @@ class RoughMetal final : public Bsdf {
   RoughMetal(BuildContext* ctx, const ConfigNode& cfg) {
     _flags = BsdfType::Glossy | BsdfType::Reflection;
     _reflectance = cfg.ReadTexture(*ctx, "reflectance", Color(Float(1)));
-    _eta = cfg.ReadTexture(*ctx, "eta", Color(Float(0)));
-    _k = cfg.ReadTexture(*ctx, "k", Color(Float(1)));
+    _eta = cfg.ReadTexture(*ctx, "eta", Color(0.1999899f, 0.9220823f, 1.0998751f));
+    _k = cfg.ReadTexture(*ctx, "k", Color(3.9046354f, 2.4476316f, 2.1376500f));
     if (cfg.HasNode("alpha")) {
       _alphaU = cfg.ReadTexture(*ctx, "alpha", Float(0.1));
       _alphaV = _alphaU;
@@ -24,13 +24,14 @@ class RoughMetal final : public Bsdf {
     }
     std::string distribution = cfg.ReadOrDefault("distribution", std::string("ggx"));
     if (distribution == "ggx") {
-      _type = MicrofacetDistributionType::GGX;
+      _type = MicrofacetType::GGX;
     } else if (distribution == "beckmann") {
-      _type = MicrofacetDistributionType::Beckmann;
+      _type = MicrofacetType::Beckmann;
     } else {
       Logger::Get()->warn("unknwon microfacet dist: {}", distribution);
-      _type = MicrofacetDistributionType::GGX;
+      _type = MicrofacetType::GGX;
     }
+    _isSampleVisible = cfg.ReadOrDefault("sample_visible", true);
   }
   ~RoughMetal() noexcept override = default;
 
@@ -48,20 +49,21 @@ class RoughMetal final : public Bsdf {
       return {{}, Spectrum(0)};
     }
     BsdfSampleResult bsr{};
-    Vector3 wh = dist.Sample(si.Wi, dirXi);
-    bsr.Wo = Fresnel::Reflect(si.Wi);
+    Vector3 m;
+    std::tie(m, bsr.Pdf) = dist.Sample(si.Wi, dirXi);
+    bsr.Wo = Fresnel::Reflect(si.Wi, m);
     bsr.Eta = 1;
     bsr.TypeMask = _flags;
-    bsr.Pdf = dist.Pdf(si.Wi, wh) / (4 * bsr.Wo.dot(wh));
-
-    Spectrum eta = _eta->Eval(si), k = _k->Eval(si), r = _reflectance->Eval(si);
-    Vector3 F = Fresnel::Conductor(si.Wi.dot(wh), eta, k);
-    Float D = dist.D(wh);
-    Float G = dist.G(si.Wi, bsr.Wo);
-    Float cosThetaO = Frame::CosTheta(bsr.Wo);
-    auto f = r.cwiseProduct((F * D * G).cwiseAbs() / (cosThetaI * cosThetaO * 4));
-    Spectrum fr = Spectrum(f);
-    return std::make_pair(bsr, fr);
+    if (bsr.Pdf <= 0 || Frame::CosTheta(bsr.Wo) <= 0) {
+      return {{}, Spectrum(0)};
+    }
+    bsr.Pdf /= 4 * bsr.Wo.dot(m);
+    Float D = dist.D(m);
+    Float G = dist.G(si.Wi, bsr.Wo, m);
+    Float result = (D * G) / (4 * Frame::CosTheta(si.Wi));
+    Spectrum F = Fresnel::Conductor(si.Wi.dot(m), _eta->Eval(si), _k->Eval(si));
+    Spectrum r = _reflectance->Eval(si);
+    return {bsr, Spectrum(r.cwiseProduct(F) * result)};
   }
 
   std::pair<BsdfSampleResult, Spectrum> Sample(
@@ -69,13 +71,13 @@ class RoughMetal final : public Bsdf {
       const SurfaceInteraction& si,
       Float lobeXi, const Vector2& dirXi) const override {
     switch (_type) {
-      case MicrofacetDistributionType::Beckmann: {
-        Beckmann dist{_alphaU->Eval(si), _alphaV->Eval(si)};
+      case MicrofacetType::Beckmann: {
+        Beckmann dist{{_alphaU->Eval(si), _alphaV->Eval(si)}, _isSampleVisible};
         return SampleImpl(context, si, lobeXi, dirXi, dist);
       }
-      case MicrofacetDistributionType::GGX:
+      case MicrofacetType::GGX:
       default: {
-        GGX dist{_alphaU->Eval(si), _alphaV->Eval(si)};
+        GGX dist{{_alphaU->Eval(si), _alphaV->Eval(si)}, _isSampleVisible};
         return SampleImpl(context, si, lobeXi, dirXi, dist);
       }
     }
@@ -99,8 +101,8 @@ class RoughMetal final : public Bsdf {
     Spectrum eta = _eta->Eval(si), k = _k->Eval(si), r = _reflectance->Eval(si);
     Vector3 F = Fresnel::Conductor(si.Wi.dot(wh), eta, k);
     Float D = dist.D(wh);
-    Float G = dist.G(si.Wi, wo);
-    auto f = r.cwiseProduct((F * D * G).cwiseAbs() / (cosThetaI * cosThetaO * 4));
+    Float G = dist.G(si.Wi, wo, wh);
+    auto f = r.cwiseProduct((F * D * G).cwiseAbs() / (cosThetaI * 4));
     Spectrum fr = Spectrum(f);
     return fr;
   }
@@ -110,13 +112,13 @@ class RoughMetal final : public Bsdf {
       const SurfaceInteraction& si,
       const Vector3& wo) const override {
     switch (_type) {
-      case MicrofacetDistributionType::Beckmann: {
-        Beckmann dist{_alphaU->Eval(si), _alphaV->Eval(si)};
+      case MicrofacetType::Beckmann: {
+        Beckmann dist{{_alphaU->Eval(si), _alphaV->Eval(si)}, _isSampleVisible};
         return EvalImpl(context, si, wo, dist);
       }
-      case MicrofacetDistributionType::GGX:
+      case MicrofacetType::GGX:
       default: {
-        GGX dist{_alphaU->Eval(si), _alphaV->Eval(si)};
+        GGX dist{{_alphaU->Eval(si), _alphaV->Eval(si)}, _isSampleVisible};
         return EvalImpl(context, si, wo, dist);
       }
     }
@@ -146,13 +148,13 @@ class RoughMetal final : public Bsdf {
       const SurfaceInteraction& si,
       const Vector3& wo) const override {
     switch (_type) {
-      case MicrofacetDistributionType::Beckmann: {
-        Beckmann dist{_alphaU->Eval(si), _alphaV->Eval(si)};
+      case MicrofacetType::Beckmann: {
+        Beckmann dist{{_alphaU->Eval(si), _alphaV->Eval(si)}, _isSampleVisible};
         return PdfImpl(context, si, wo, dist);
       }
-      case MicrofacetDistributionType::GGX:
+      case MicrofacetType::GGX:
       default: {
-        GGX dist{_alphaU->Eval(si), _alphaV->Eval(si)};
+        GGX dist{{_alphaU->Eval(si), _alphaV->Eval(si)}, _isSampleVisible};
         return PdfImpl(context, si, wo, dist);
       }
     }
@@ -164,7 +166,8 @@ class RoughMetal final : public Bsdf {
   Share<Texture<Color>> _k;
   Share<Texture<Float>> _alphaU;
   Share<Texture<Float>> _alphaV;
-  MicrofacetDistributionType _type;
+  MicrofacetType _type;
+  bool _isSampleVisible;
 };
 
 }  // namespace Rad

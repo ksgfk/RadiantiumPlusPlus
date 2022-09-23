@@ -8,9 +8,13 @@ Vector3 Fresnel::Reflect(const Vector3& wi) {
   return Vector3(-wi.x(), -wi.y(), wi.z());
 }
 
+Vector3 Fresnel::Reflect(const Vector3& wi, const Vector3& wh) {
+  return Fmadd(wh, Vector3::Constant(2 * wi.dot(wh)), -wi);
+}
+
 Vector3 Fresnel::Conductor(Float cosThetaI, const Vector3& eta, const Vector3& k) {
   Float cosThetaI2 = cosThetaI * cosThetaI,
-        sinThetaI2 = 1.f - cosThetaI2,
+        sinThetaI2 = Float(1) - cosThetaI2,
         sinThetaI4 = sinThetaI2 * sinThetaI2;
   auto etaR = eta,
        etaI = k;
@@ -23,7 +27,7 @@ Vector3 Fresnel::Conductor(Float cosThetaI, const Vector3& eta, const Vector3& k
   auto term3 = a2pb2 * cosThetaI2 + Vector3::Constant(sinThetaI4);
   auto term4 = term2 * sinThetaI2;
   auto rp = rs.cwiseProduct(term3 - term4).cwiseProduct((term3 + term4).cwiseInverse());
-  return (rs + rp) * 0.5f;
+  return (rs + rp) * Float(0.5);
 }
 
 }  // namespace Rad

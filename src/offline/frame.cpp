@@ -42,6 +42,15 @@ Float Frame::SinPhi(const Vector3& v) {
              ? 0.0f
              : std::clamp(v.y() * invSinTheta, -1.0f, 1.0f);
 }
+std::pair<Float, Float> Frame::SinCosPhi(const Vector3& v) {
+  Float sin2Theta = Sin2Theta(v);
+  Float invSinTheta = Rsqrt(Sin2Theta(v));
+  Vector2 result = v.head<2>() * invSinTheta;
+  result = std::abs(sin2Theta) <= 4 * Epsilon<Float>()
+               ? Vector2(1, 0)
+               : result.cwiseMin(-1).cwiseMax(1);
+  return {result.y(), result.x()};
+}
 Float Frame::Cos2Phi(const Vector3& v) {
   Float sin2Theta = Sin2Theta(v);
   return std::abs(sin2Theta) <= 4 * std::numeric_limits<Float>::epsilon()
