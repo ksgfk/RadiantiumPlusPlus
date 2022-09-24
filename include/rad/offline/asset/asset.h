@@ -20,6 +20,9 @@ struct AssetLoadResult {
   std::string FailResult;
 };
 
+/**
+ * @brief 需要从其他地方, 比如硬盘、网络读取的数据都可以是资产
+ */
 class Asset {
  public:
   inline Asset(BuildContext* ctx, const ConfigNode& cfg, AssetType type) : _type(type) {
@@ -38,6 +41,9 @@ class Asset {
   std::string _name;
 };
 
+/**
+ * @brief 模型资产的抽象, 一个模型里可能包含多个子模型, 也可以直接将所有子模型合并成完整模型获取
+ */
 class ModelAsset : public Asset {
  public:
   ModelAsset(BuildContext* ctx, const ConfigNode& cfg) : Asset(ctx, cfg, AssetType::Model) {}
@@ -48,6 +54,10 @@ class ModelAsset : public Asset {
   virtual bool HasSubModel(const std::string& name) const = 0;
 };
 
+/**
+ * @brief 图片资产的抽象, 可以将读取数据转化为RGB或单通道图片
+ *
+ */
 class ImageAsset : public Asset {
  public:
   ImageAsset(BuildContext* ctx, const ConfigNode& cfg) : Asset(ctx, cfg, AssetType::Image) {}

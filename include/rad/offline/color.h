@@ -4,6 +4,9 @@
 
 namespace Rad {
 
+/**
+ * @brief RGB颜色
+ */
 struct Color : Vector3 {
   using Scalar = Vector3::Scalar;
 

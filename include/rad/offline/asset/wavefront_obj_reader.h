@@ -24,8 +24,7 @@ struct WavefrontObjObject {
   std::vector<size_t> Faces;
 };
 /**
- * @brief .obj 格式解析器
- *
+ * @brief .obj 格式模型解析器
  */
 class WavefrontObjReader {
  public:
@@ -33,7 +32,6 @@ class WavefrontObjReader {
   WavefrontObjReader(const std::filesystem::path& file);
   WavefrontObjReader(const std::string& text);
 
-  /* Properties */
   bool HasError() const;
   const std::string& Error() const { return _error; }
   const std::vector<Eigen::Vector3f>& Positions() const { return _pos; }
@@ -43,7 +41,6 @@ class WavefrontObjReader {
   const std::vector<std::string>& Mtllibs() const { return _mtllibs; }
   const std::vector<WavefrontObjObject>& Objects() const { return _objects; }
 
-  /* Methods */
   void Read();
   std::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> GetPosition(size_t faceIndex) const;
   std::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> GetNormal(size_t faceIndex) const;

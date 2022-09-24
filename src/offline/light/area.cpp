@@ -7,6 +7,10 @@
 
 namespace Rad {
 
+/**
+ * @brief 区域光, 从任意形状表面发出照明的光源, 无论观察者在哪, 它都发出均匀的辐射
+ * 由于它的表面积不是0, 通常可以投影出软阴影
+ */
 class DiffuseArea final : public Light {
  public:
   DiffuseArea(BuildContext* ctx, const ConfigNode& cfg) {
@@ -29,20 +33,10 @@ class DiffuseArea final : public Light {
                          : Color(0);
     return std::make_pair(dsr, Spectrum(radiance));
   }
-  Float PdfDirection(
-      const Interaction& ref,
-      const DirectionSampleResult& dsr) const override {
+
+  Float PdfDirection(const Interaction& ref, const DirectionSampleResult& dsr) const override {
     Float pdf = (-dsr.Dir).dot(dsr.N) >= 0 ? _shape->PdfDirection(ref, dsr) : 0;
     return pdf;
-  }
-
-  Spectrum EvalDirection(
-      const Interaction& ref,
-      const DirectionSampleResult& dsr) const override {
-    Color radiance = (-dsr.Dir).dot(dsr.N) >= 0
-                         ? _radiance->Eval(SurfaceInteraction(dsr))
-                         : Color(0);
-    return Spectrum(radiance);
   }
 
   std::pair<PositionSampleResult, Float> SamplePosition(const Vector2& xi) const override {
@@ -50,6 +44,7 @@ class DiffuseArea final : public Light {
     Float weight = psr.Pdf > 0 ? psr.Pdf : 0;
     return std::make_pair(psr, weight);
   }
+
   Float PdfPosition(const PositionSampleResult& psr) const override {
     return _shape->PdfPosition(psr);
   }

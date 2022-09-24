@@ -7,6 +7,9 @@
 
 namespace Rad {
 
+/**
+ * @brief 理想透视相机, 它有一个无限小的光圈, 因此不会有景深效果
+ */
 class Perspective final : public Camera {
  public:
   Perspective(BuildContext* ctx, const ConfigNode& cfg) {

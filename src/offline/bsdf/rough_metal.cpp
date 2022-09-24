@@ -8,6 +8,11 @@
 
 namespace Rad {
 
+/**
+ * @brief 这个BSDF用来模拟粗糙导体材质, 例如金属
+ * 基于微表面模型, 支持两种分布: Beckmann 和 GGX
+ * 有关微表面详情, 可以查看MicrofacetDistribution类的注释
+ */
 class RoughMetal final : public Bsdf {
  public:
   RoughMetal(BuildContext* ctx, const ConfigNode& cfg) {
@@ -31,7 +36,7 @@ class RoughMetal final : public Bsdf {
       Logger::Get()->warn("unknwon microfacet dist: {}", distribution);
       _type = MicrofacetType::GGX;
     }
-    _isSampleVisible = cfg.ReadOrDefault("sample_visible", true);
+    _isSampleVisible = cfg.ReadOrDefault("sample_visible", false);
   }
   ~RoughMetal() noexcept override = default;
 
@@ -60,10 +65,11 @@ class RoughMetal final : public Bsdf {
     bsr.Pdf /= 4 * bsr.Wo.dot(m);
     Float D = dist.D(m);
     Float G = dist.G(si.Wi, bsr.Wo, m);
-    Float result = (D * G) / (4 * Frame::CosTheta(si.Wi));
     Spectrum F = Fresnel::Conductor(si.Wi.dot(m), _eta->Eval(si), _k->Eval(si));
+    auto brdf = (F * D * G) / (4 * Frame::CosTheta(si.Wi) * Frame::CosTheta(bsr.Wo));
     Spectrum r = _reflectance->Eval(si);
-    return {bsr, Spectrum(r.cwiseProduct(F) * result)};
+    auto result = r.cwiseProduct(brdf) * Frame::CosTheta(bsr.Wo);
+    return {bsr, Spectrum(result)};
   }
 
   std::pair<BsdfSampleResult, Spectrum> Sample(
@@ -102,8 +108,9 @@ class RoughMetal final : public Bsdf {
     Vector3 F = Fresnel::Conductor(si.Wi.dot(wh), eta, k);
     Float D = dist.D(wh);
     Float G = dist.G(si.Wi, wo, wh);
-    auto f = r.cwiseProduct((F * D * G).cwiseAbs() / (cosThetaI * 4));
-    Spectrum fr = Spectrum(f);
+    auto brdf = (F * D * G).cwiseAbs() / (cosThetaI * cosThetaO * 4);
+    auto result = r.cwiseProduct(brdf) * cosThetaO;
+    Spectrum fr = Spectrum(result);
     return fr;
   }
 

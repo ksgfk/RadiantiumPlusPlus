@@ -19,6 +19,10 @@ class TextureBase {
   UInt32 _height;
 };
 
+/**
+ * @brief 纹理, 支持RGB与Gray两种采样格式
+ * 缓存常量颜色
+ */
 template <typename T>
 class Texture : public TextureBase {
   static_assert(std::is_same_v<T, Color> || std::is_same_v<T, Float32>, "T must be color or float32");
@@ -31,6 +35,9 @@ class Texture : public TextureBase {
   }
   virtual ~Texture() noexcept = default;
 
+  /**
+   * @brief 根据交点评估纹理颜色
+   */
   T Eval(const SurfaceInteraction& si) const {
     if (_isConstColor) {
       return _constColor;
@@ -38,6 +45,9 @@ class Texture : public TextureBase {
     return EvalImpl(si);
   }
 
+  /**
+   * @brief 直接读取纹理的值
+   */
   T Read(UInt32 x, UInt32 y) const {
     if (_isConstColor) {
       return _constColor;

@@ -5,18 +5,22 @@
 
 namespace Rad {
 
+/**
+ * @brief 求交加速结构的抽象
+ */
 class Accel {
  public:
   virtual ~Accel() noexcept = default;
 
   /**
-   * @brief shadow ray
+   * @brief shadow ray, 检查射线是否与场景中任何一个 shape 有交点
    */
   virtual bool RayIntersect(const Ray& ray) = 0;
   /**
-   * @brief 初步求交
+   * @brief 光线求交, 如果射线与场景中任何一个 shape 有交点, 就会返回true, 并且hsr会返回
+   * 距离光线起点最近的物体的求交数据
    *
-   * @param hsr out 返回求交结果
+   * @param hsr [out] 返回最近的物体的求交数据
    */
   virtual bool RayIntersectPreliminary(const Ray& ray, HitShapeRecord& hsr) = 0;
 };

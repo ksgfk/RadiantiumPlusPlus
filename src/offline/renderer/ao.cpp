@@ -7,6 +7,11 @@
 
 namespace Rad {
 
+/**
+ * @brief Ambient Occlusion 环境光遮蔽
+ * 假设所有表面都是漫反射, 并从所有方向接收均匀的光照
+ * L(x) = ∫ V * (cosθ / PI) dω
+ */
 class AO final : public SampleRenderer {
  public:
   AO(BuildContext* ctx, const ConfigNode& cfg) : SampleRenderer(ctx, cfg) {}

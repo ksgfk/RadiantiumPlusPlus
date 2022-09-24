@@ -7,6 +7,11 @@
 
 namespace Rad {
 
+/**
+ * @brief 直接照明
+ * 只计算单一散射事件, 光路: Eye -> BSDF -> Light
+ * 多重重要性采样(MIS), 可以将光源重要性采样与BSDF重要性采样结合, 显著方差
+ */
 class Direct final : public SampleRenderer {
  public:
   Direct(BuildContext* ctx, const ConfigNode& cfg) : SampleRenderer(ctx, cfg) {

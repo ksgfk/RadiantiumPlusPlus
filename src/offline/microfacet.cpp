@@ -1,18 +1,52 @@
 #include <rad/offline/render/microfacet.h>
 
+//#define RAD_USE_ORIGINAL_MICROFACEET  //定义这个宏是使用原始公式, 不定义就使用mitsuba优化的代码
+
 using namespace Rad::Math;
 
 namespace Rad {
 
 Float Beckmann::DImpl(const Vector3& wh) const {
+#if defined(RAD_USE_ORIGINAL_MICROFACEET)
+  Float tan2Theta = Frame::Tan2Theta(wh);
+  if (std::isinf(tan2Theta)) {  //掠射
+    return 0;
+  }
+  Float cos4Theta = Sqr(Frame::Cos2Theta(wh));
+  return std::exp(-tan2Theta * (Frame::Cos2Phi(wh) / Sqr(alphaX) + Frame::Sin2Phi(wh) / Sqr(alphaY))) / (PI * alphaX * alphaY * cos4Theta);
+#else
+  // mitsuba优化的代码
   Float alphaXY = alphaX * alphaY;
   Float cosTheta = Frame::CosTheta(wh);
   Float cosTheta2 = Sqr(cosTheta);
   Float result = std::exp(-(Sqr(wh.x() / alphaX) + Sqr(wh.y() / alphaY)) / cosTheta2) / (PI * alphaXY * Sqr(cosTheta2));
   return result * cosTheta > 1e-20f ? result : 0;
+#endif
 }
 
+#if defined(RAD_USE_ORIGINAL_MICROFACEET)
+static Float LambdaBeckmann(const Vector3& w, Float alphaX, Float alphaY) {
+  Float absTanTheta = std::abs(Frame::TanTheta(w));
+  if (std::isinf(absTanTheta)) {
+    return 0;
+  }
+  Float alpha = std::sqrt(Frame::Cos2Phi(w) * Sqr(alphaX) + Frame::Sin2Phi(w) * Sqr(alphaY));
+  Float a = 1 / (alpha * absTanTheta);
+  if (a >= Float(1.6)) {
+    return 0;
+  }
+  return (1 - Float(1.259) * a + Float(0.396) * a * a) / (Float(3.535) * a + Float(2.181) * a * a);
+}
+#endif
+
 Float Beckmann::SmithG1Impl(const Vector3& v, const Vector3& wh) const {
+#if defined(RAD_USE_ORIGINAL_MICROFACEET)
+  Float result = 1 / (1 + LambdaBeckmann(v, alphaX, alphaY));
+  if (v.dot(wh) * Frame::CosTheta(v) <= 0.f) {
+    result = 0;
+  }
+  return result;
+#else
   Float xyAlpha2 = Sqr(alphaX * v.x()) + Sqr(alphaY * v.y());
   Float tanThetaAlpha2 = xyAlpha2 / Sqr(v.z());
   Float a = Rsqrt(tanThetaAlpha2);
@@ -25,10 +59,11 @@ Float Beckmann::SmithG1Impl(const Vector3& v, const Vector3& wh) const {
     result = 0;
   }
   return result;
+#endif
 }
 
 Float Beckmann::GImpl(const Vector3& wi, const Vector3& wo, const Vector3& wh) const {
-  return SmithG1Impl(wi, wh) * SmithG1Impl(wo, wh);
+  return SmithG1Impl(wi, wh) * SmithG1Impl(wo, wh);  // Separable Masking and Shadowing Function
 }
 
 Float Beckmann::PdfImpl(const Vector3& wi, const Vector3& wh) const {
@@ -42,7 +77,7 @@ Float Beckmann::PdfImpl(const Vector3& wi, const Vector3& wh) const {
 }
 
 static Vector2 SampleVisibleBeckmann(Float cosThetaI, Vector2 sample) {
-  // mitsuba
+  // mitsuba impl
   Float tanThetaI = SafeSqrt(Fmadd(-cosThetaI, cosThetaI, 1.f)) / cosThetaI;
   Float cotThetaI = Rcp(tanThetaI);
   Float maxval = std::erf(cotThetaI);
@@ -98,13 +133,42 @@ std::pair<Vector3, Float> Beckmann::SampleImpl(const Vector3& wi, const Vector2&
 }
 
 Float GGX::DImpl(const Vector3& wh) const {
+#if defined(RAD_USE_ORIGINAL_MICROFACEET)
+  Float tan2Theta = Frame::Tan2Theta(wh);
+  if (std::isinf(tan2Theta)) {
+    return 0.0f;
+  }  //掠射
+  Float cos4Theta = Sqr(Frame::Cos2Theta(wh));
+  Float e = (Frame::Cos2Phi(wh) / Sqr(alphaX) + Frame::Sin2Phi(wh) / Sqr(alphaY)) * tan2Theta;
+  return 1 / (PI * alphaX * alphaY * cos4Theta * Sqr(1 + e));
+#else
   Float alphaXY = alphaX * alphaY;
   Float cosTheta = Frame::CosTheta(wh);
   Float result = Rcp(PI * alphaXY * Sqr(Sqr(wh.x() / alphaX) + Sqr(wh.y() / alphaY) + Sqr(wh.z())));
   return result * cosTheta > 1e-20f ? result : 0;
+#endif
 }
 
+#if defined(RAD_USE_ORIGINAL_MICROFACEET)
+static Float LambdaGGX(const Vector3& w, Float alphaX, Float alphaY) {
+  Float absTanTheta = std::abs(Frame::TanTheta(w));
+  if (std::isinf(absTanTheta)) {
+    return 0.0f;
+  }
+  Float alpha = std::sqrt(Frame::Cos2Phi(w) * Sqr(alphaX) + Frame::Sin2Phi(w) * Sqr(alphaY));
+  Float alpha2Tan2Theta = Sqr(alpha * absTanTheta);
+  return (-1 + std::sqrt(1.0f + alpha2Tan2Theta)) / 2;
+}
+#endif
+
 Float GGX::SmithG1Impl(const Vector3& v, const Vector3& wh) const {
+#if defined(RAD_USE_ORIGINAL_MICROFACEET)
+  Float result = 1 / (1 + LambdaGGX(v, alphaX, alphaY));
+  if (v.dot(wh) * Frame::CosTheta(v) <= 0.f) {
+    result = 0;
+  }
+  return result;
+#else
   Float xyAlpha2 = Sqr(alphaX * v.x()) + Sqr(alphaY * v.y());
   Float tanThetaAlpha2 = xyAlpha2 / Sqr(v.z());
   Float result = 2 / (1 + std::sqrt(1 + tanThetaAlpha2));
@@ -115,10 +179,11 @@ Float GGX::SmithG1Impl(const Vector3& v, const Vector3& wh) const {
     result = 0;
   }
   return result;
+#endif
 }
 
 Float GGX::GImpl(const Vector3& wi, const Vector3& wo, const Vector3& wh) const {
-  return SmithG1Impl(wi, wh) * SmithG1Impl(wo, wh);
+  return SmithG1Impl(wi, wh) * SmithG1Impl(wo, wh);  // Separable Masking and Shadowing Function
 }
 
 Float GGX::PdfImpl(const Vector3& wi, const Vector3& wh) const {
@@ -132,7 +197,7 @@ Float GGX::PdfImpl(const Vector3& wi, const Vector3& wh) const {
 }
 
 static Vector2 SampleVisibleGGX(Float cosThetaI, Vector2 sample) {
-  // PBRT
+  // PBRT impl
   if (cosThetaI > 0.9999) {
     Float r = sqrt(sample.x() / (1 - sample.x()));
     Float phi = Float(6.28318530718) * sample.y();
@@ -197,8 +262,8 @@ std::pair<Vector3, Float> GGX::SampleImpl(const Vector3& wi, const Vector2& xi) 
     Float cosTheta = Rsqrt(1.f + tanThetaM2);
     Float cos2Theta = Sqr(cosTheta);
     Float temp = 1 + tanThetaM2 / alpha2;
-    Float cos_theta_3 = std::max(cos2Theta * cosTheta, 1e-20f);
-    Float pdf = Rcp(PI * alphaX * alphaY * cos_theta_3 * Sqr(temp));
+    Float cos3Theta = std::max(cos2Theta * cosTheta, 1e-20f);
+    Float pdf = Rcp(PI * alphaX * alphaY * cos3Theta * Sqr(temp));
     Float sinTheta = std::sqrt(1 - cos2Theta);
     Vector3 m(
         cosPhi * sinTheta,

@@ -55,6 +55,7 @@ void SampleRenderer::Start() {
                 if (_isStop) {
                   break;
                 }
+                localSampler->Advance();
                 Vector2 scrPos(x + dist(rng), y + dist(rng));
                 Ray ray = camera.SampleRay(scrPos);
                 Spectrum li = Li(ray, scene, localSampler.get());

@@ -32,6 +32,7 @@ enum class MicrofacetType {
  * 微表面也可以重要性采样, 无论是Beckmann还是GGX的D(wh)都可以使用inverse method直接推出样本变换的公式
  * 但是shadowing-masking就不太行了, 想推导inverse method太难了
  * http://jcgt.org/published/0007/04/01/paper.pdf
+ * 还是Eric Heitz, 提出了一个采样方法, 具体的还没看懂...
  */
 template <typename T>
 class MicrofacetDistribution {  // Curiously Recurring Template Pattern (CRTP)

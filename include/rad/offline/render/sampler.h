@@ -5,6 +5,11 @@
 
 namespace Rad {
 
+/**
+ * @brief 采样器提供了生成随机样本的能力, 这些样本的范围在[0,1)内
+ * 首先需要调用SetSeed来初始化采样器
+ * 然后就可以获取样本了, 当每一轮采样完成后需要调用 Advance() 函数
+ */
 class Sampler {
  public:
   inline Sampler(BuildContext* ctx, const ConfigNode& cfg) {
@@ -21,6 +26,7 @@ class Sampler {
 
   virtual Float Next1D() = 0;
   virtual Vector2 Next2D() = 0;
+  inline virtual void Advance() {}
 
  protected:
   UInt32 _sampleCount;
