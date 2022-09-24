@@ -26,6 +26,8 @@ RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Bitmap);
 RAD_FACTORY_FUNC_DECLARATION(Light, DiffuseArea);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, Diffuse);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughMetal);
+RAD_FACTORY_FUNC_DECLARATION(Bsdf, PerfectMirror);
+RAD_FACTORY_FUNC_DECLARATION(Bsdf, PerfectGlass);
 
 namespace Rad::Factories {
 
@@ -45,6 +47,8 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Light, DiffuseArea),
       RAD_GET_FACTORY_FUNC(Bsdf, Diffuse),
       RAD_GET_FACTORY_FUNC(Bsdf, RoughMetal),
+      RAD_GET_FACTORY_FUNC(Bsdf, PerfectMirror),
+      RAD_GET_FACTORY_FUNC(Bsdf, PerfectGlass),
   };
 }
 

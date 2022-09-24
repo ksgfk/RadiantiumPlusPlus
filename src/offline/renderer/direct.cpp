@@ -135,9 +135,6 @@ class Direct final : public SampleRenderer {
       bool isDelta = bsr.HasType(BsdfType::Delta);
       DirectionSampleResult dsr = bsdfSi.ToDsr(si);
       Float lightPdf = isDelta ? 0 : light->PdfDirection(si, dsr);
-      if (lightPdf <= 0) {
-        continue;
-      }
       Spectrum li = light->Eval(bsdfSi);
       Float mis = MisWeight(bsr.Pdf * _fracBsdf, lightPdf * _fracLight) * _weightBsdf;
       auto le = f.cwiseProduct(li) * mis / bsr.Pdf;

@@ -16,14 +16,37 @@ namespace Rad {
 class Fresnel {
  public:
   /**
-   * @brief 反射, 假设传入方向是以(0, 0, 1)为法线的向量
+   * @brief 反射, 假设法线是(0, 0, 1)
    */
   static Vector3 Reflect(const Vector3& wi);
   /**
    * @brief 根据入射方向与给定法线计算反射方向
    */
   static Vector3 Reflect(const Vector3& wi, const Vector3& wh);
+  /**
+   * @brief 折射, 假设法线是(0, 0, 1)
+   */
+  static Vector3 Refract(const Vector3& wi, Float cosThetaT, Float etaTI);
+  /**
+   * @brief 折射
+   *
+   * @param wi 折射方向
+   * @param wh 表面法线
+   * @param cosThetaT 透射方向与法线之间夹角的余弦值
+   * @param etaTI 折射率的倒数
+   */
+  static Vector3 Refract(const Vector3& wi, const Vector3& wh, Float cosThetaT, Float etaTI);
 
+  /**
+   * @brief 电介质菲涅尔
+
+   * @return std::tuple<Float, Float, Float, Float>
+   * F 菲涅尔系数
+   * cosThetaT 表面法线与透射光线之间夹角的余弦
+   * etaIT 出射方向相对折射率
+   * etaTI 出射方向相对折射率的倒数
+   */
+  static std::tuple<Float, Float, Float, Float> Dielectric(Float cosThetaI, Float eta);
   /**
    * @brief 导体菲涅尔
    */

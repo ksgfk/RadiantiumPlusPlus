@@ -53,6 +53,8 @@ add_library(rad.offline
     src/offline/renderer/gbuffer.cpp
     src/offline/bsdf/diffuse.cpp
     src/offline/bsdf/rough_metal.cpp
+    src/offline/bsdf/perfect_mirror.cpp
+    src/offline/bsdf/perfect_glass.cpp
     src/offline/light/area.cpp
     src/offline/texture/bitmap.cpp)
 
