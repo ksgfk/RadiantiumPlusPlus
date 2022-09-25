@@ -4,12 +4,23 @@
 
 namespace Rad {
 
-DiscreteDistribution1D::DiscreteDistribution1D(const Float* data, size_t size) {
+Float DiscreteDistribution1D::PmfNormalized(size_t index) const {
+  return _pmf[index] * _normalization;
+}
+
+Float DiscreteDistribution1D::CdfNormalized(size_t index) const {
+  return _cdf[index] * _normalization;
+}
+
+DiscreteDistribution1D::DiscreteDistribution1D(const Float* pmf, size_t size) {
+  _pmf.reserve(size);
+  std::copy(pmf, pmf + size, _pmf.begin());
   _cdf.resize(size);
   Float64 sum = 0;
   for (size_t i = 0; i < size; i++) {
-    sum += data[i];
-    _cdf[i] = Float(sum);
+    double value = (double)*pmf++;
+    sum += value;
+    _cdf[i] = (Float)sum;
   }
   _sum = Float(sum);
   _normalization = Float(1.0 / sum);
@@ -20,31 +31,22 @@ DiscreteDistribution1D::DiscreteDistribution1D(const std::vector<Float>& data)
 
 size_t DiscreteDistribution1D::Sample(Float xi) const {
   Float value = xi * _sum;
-  // lower_bound 返回大于等于value的迭代器, 如果找不到(也就是比最大的还要大), 则返回end()
-  auto iter = std::lower_bound(_cdf.begin(), _cdf.end(), value);
-  size_t index = (size_t)std::max((ptrdiff_t)0, iter - _cdf.begin());
-  return std::min(index, _cdf.size() - 1);
+  // upper_bound 返回大于value的迭代器, 如果找不到(也就是比最大的还要大), 则返回end()
+  // 理论上来说, xi的范围是[0,1), 绝对不可能比最大的还要大, 所以不用处理边界
+  auto iter = std::upper_bound(_cdf.begin(), _cdf.end(), value);
+  return std::distance(_cdf.begin(), iter);
 }
 
 std::pair<size_t, Float> DiscreteDistribution1D::SampleWithPdf(Float xi) const {
   size_t index = Sample(xi);
-  return std::make_pair(index, Pdf(index));
+  return std::make_pair(index, PmfNormalized(index));
 }
 
 std::pair<size_t, Float> DiscreteDistribution1D::SampleReuse(Float xi) const {
   size_t index = Sample(xi);
-  Float cdf = index == 0 ? 0 : _cdf[index - 1] * _normalization;
-  Float pdf = Pdf(index);
-  Float reuse = (xi - cdf) / pdf;
-  return std::make_pair(index, reuse);
-}
-
-Float DiscreteDistribution1D::Pdf(size_t index) const {
-  if (index == 0) {
-    return _cdf[0] * _normalization;
-  } else {
-    return (_cdf[index] - _cdf[index - 1]) * _normalization;
-  }
+  Float pmf = PmfNormalized(index);
+  Float cdf = CdfNormalized(index - 1);
+  return {index, (xi - cdf) / pmf};
 }
 
 }  // namespace Rad

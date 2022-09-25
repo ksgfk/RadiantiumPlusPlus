@@ -24,8 +24,6 @@ struct Interaction {
   Ray SpawnRay(const Vector3& d) const;
   Ray SpawnRayTo(const Vector3& p) const;
   bool IsValid() const;
-
- private:
   Vector3 OffsetP(const Vector3& d) const;
 };
 
@@ -56,6 +54,8 @@ struct SurfaceInteraction : public Interaction {
 
   PositionSampleResult ToPsr() const;
   DirectionSampleResult ToDsr(const Interaction& ref) const;
+
+  Spectrum Le() const;
 };
 
 struct HitShapeRecord {

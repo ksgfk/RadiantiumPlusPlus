@@ -26,6 +26,7 @@ class Sampler {
 
   virtual Float Next1D() = 0;
   virtual Vector2 Next2D() = 0;
+  virtual Vector3 Next3D() = 0;
   inline virtual void Advance() {}
 
  protected:

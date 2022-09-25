@@ -4,6 +4,7 @@
 #include "interaction.h"
 
 #include <vector>
+#include <optional>
 
 namespace Rad {
 
@@ -36,9 +37,9 @@ class Scene {
   /**
    * @brief 采样场景中的光源
    *
-   * @return std::tuple<UInt32, Float, Float> 光源索引, 采样光源的权重, 样本重用
+   * @return std::pair<UInt32, Float> 光源索引, 采样光源的权重
    */
-  std::tuple<UInt32, Float, Float> SampleLight(Float xi) const;
+  std::pair<UInt32, Float> SampleLight(Float xi) const;
   /**
    * @brief 采样光源的概率密度
    */
@@ -53,12 +54,17 @@ class Scene {
       const Interaction& ref,
       Float sampleLight,
       const Vector2& xi) const;
+  Float PdfLightDirection(const Light* light, const Interaction& ref, const DirectionSampleResult& dsr) const;
+
+  std::optional<Light*> GetLight(const SurfaceInteraction& si) const;
+  Spectrum EvalLight(const SurfaceInteraction& si) const;
 
  private:
   Unique<Accel> _accel;
   Unique<Camera> _camera;
   std::vector<Unique<Light>> _lights;
   Float _lightPdf;
+  Light* _envLight = nullptr;
 };
 
 }  // namespace Rad

@@ -99,7 +99,6 @@ class Mesh final : public Shape {
   ~Mesh() noexcept override = default;
 
   static Float TriangleArea(const Vector3& p0, const Vector3& p1, const Vector3& p2) {
-    //.5f * dr::norm(dr::cross(p1 - p0, p2 - p0));
     return (p1 - p0).cross(p2 - p0).norm() * Float(0.5);
   }
 
@@ -118,7 +117,7 @@ class Mesh final : public Shape {
         0,
         RTC_FORMAT_UINT3,
         3 * sizeof(UInt32),
-        _indexCount);
+        _triangleCount);
     std::copy(_position.get(), _position.get() + _vertexCount, vertices);
     std::copy(_indices.get(), _indices.get() + _indexCount, indices);
     rtcCommitGeometry(geo);
@@ -176,7 +175,7 @@ class Mesh final : public Shape {
     Vector2 txi = xi;
     size_t index;
     std::tie(index, txi.y()) = _dist.SampleReuse(txi.y());
-    UInt32 face = UInt32(index);
+    UInt32 face = UInt32(index) * 3;
     UInt32 f0 = _indices[face + 0], f1 = _indices[face + 1], f2 = _indices[face + 2];
     Vector3 p0 = _position[f0], p1 = _position[f1], p2 = _position[f2];
     Vector3 e0 = p1 - p0, e1 = p2 - p0;

@@ -40,7 +40,8 @@ enum class BsdfType : UInt32 {
   Reflection = 0b001000,
   Transmission = 0b010000,
 
-  All = Diffuse | Glossy | Delta | Reflection | Transmission
+  All = Diffuse | Glossy | Delta | Reflection | Transmission,
+  NoDelta = Diffuse | Glossy
 };
 constexpr UInt32 operator|(BsdfType f1, BsdfType f2) {
   return (UInt32)f1 | (UInt32)f2;
@@ -106,6 +107,9 @@ class Bsdf {
    * @brief 包含的所有可能的BsdfType
    */
   UInt32 Flags() const { return _flags; }
+  constexpr bool HasAnyTypeExceptDelta() const {
+    return HasFlag(Flags(), BsdfType::NoDelta);
+  }
 
   /**
    * @brief 根据表面信息与入射方向, 采样一个出射方向, 同时返回带 cosine 项函数评估结果

@@ -11,6 +11,10 @@ namespace Rad {
  * @brief 直接照明
  * 只计算单一散射事件, 光路: Eye -> BSDF -> Light
  * 多重重要性采样(MIS), 可以将光源重要性采样与BSDF重要性采样结合, 显著方差
+ * 在BSDF重要性采样时, 如果不能采样到连接光源的路径, 就毫无意义, 整体路径没有任何贡献
+ * 在光源重要性采样时, 在许多情况下是有效的, 但如果采样点与表面连接的路径不在BSDF的lobe内,
+ * 也会造成无效路径, 例如很光滑的微表面, delta路径, 尤其是后者根本无法使用光源重要性来评估
+ * MIS将两种采样策略得到的样本按权重叠加, 抑制pdf较低的样本, 放大pdf较高样本所占权重, 可以有效减少方差
  */
 class Direct final : public SampleRenderer {
  public:
@@ -28,7 +32,7 @@ class Direct final : public SampleRenderer {
   ~Direct() noexcept override = default;
 
   Spectrum Li(const Ray& ray, const Scene& scene, Sampler* sampler) const override {
-#if 0
+#if 1
     Spectrum result(0);
     SurfaceInteraction si;
     bool anyHit = scene.RayIntersect(ray, si);
@@ -38,10 +42,9 @@ class Direct final : public SampleRenderer {
     if (si.Shape->IsLight()) {
       return si.Shape->GetLight()->Eval(si);
     }
-
-    // auto [light, dsr, li] = scene.SampleLightDirection(si, sampler->Next2D());
-    auto [index, weight, _] = scene.SampleLight(sampler->Next1D());
-    const Light* light = scene.GetLight(index);
+    // auto [light, dsr, li] = scene.SampleLightDirection(si, sampler->Next1D(), sampler->Next2D());
+    auto [lightIndex, selectPdf] = scene.SampleLight(sampler->Next1D());
+    const Light* light = scene.GetLight(lightIndex);
     auto [dsr, li] = light->SampleDirection(si, sampler->Next2D());
     if (dsr.Pdf <= 0) {
       return result;
@@ -52,7 +55,7 @@ class Direct final : public SampleRenderer {
     BsdfContext ctx{};
     Bsdf* bsdf = si.Shape->GetBsdf();
     Spectrum f = bsdf->Eval(ctx, si, si.ToLocal(dsr.Dir));
-    result += Spectrum(f.cwiseProduct(li) * weight / dsr.Pdf);
+    result += Spectrum(f.cwiseProduct(li) / dsr.Pdf / selectPdf);
     return result;
 #endif
 
@@ -88,23 +91,25 @@ class Direct final : public SampleRenderer {
     return result;
 #endif
 
-#if 1
+#if 0
     Spectrum result(0);
     SurfaceInteraction si;
     bool anyHit = scene.RayIntersect(ray, si);
     if (!anyHit) {
       return result;
     }
-    if (si.Shape->IsLight()) {
+    if (si.Shape->IsLight()) {  //直接击中光源
       return si.Shape->GetLight()->Eval(si);
     }
     BsdfContext ctx{};
     Bsdf* bsdf = si.Shape->GetBsdf();
+    //光源重要性采样
     for (size_t i = 0; i < _lightSamples; i++) {
       auto [l, dsr, li] = scene.SampleLightDirection(si, sampler->Next1D(), sampler->Next2D());
       if (dsr.Pdf <= 0) {
         continue;
       }
+      //可见性测试
       if (scene.IsOcclude(si, dsr.P)) {
         continue;
       }
@@ -118,6 +123,7 @@ class Direct final : public SampleRenderer {
       auto le = f.cwiseProduct(li) * mis / dsr.Pdf;
       result += Spectrum(le);
     }
+    // BSDF重要性采样
     for (size_t i = 0; i < _bsdfSamples; i++) {
       auto [bsr, f] = bsdf->Sample(ctx, si, sampler->Next1D(), sampler->Next2D());
       if (bsr.Pdf <= 0) {
@@ -128,7 +134,7 @@ class Direct final : public SampleRenderer {
       if (!bsdfHit) {
         continue;
       }
-      if (!bsdfSi.Shape->IsLight()) {
+      if (!bsdfSi.Shape->IsLight()) {  //击中光源才能对路径有贡献
         continue;
       }
       Light* light = bsdfSi.Shape->GetLight();
@@ -144,10 +150,10 @@ class Direct final : public SampleRenderer {
 #endif
   }
 
-  Float MisWeight(Float pdf_a, Float pdf_b) const {
-    pdf_a *= pdf_a;
-    pdf_b *= pdf_b;
-    Float w = pdf_a / (pdf_a + pdf_b);
+  Float MisWeight(Float a, Float b) const {
+    a *= a;  // power heuristic
+    b *= b;
+    Float w = a / (a + b);
     return std::isfinite(w) ? w : 0;
   }
 

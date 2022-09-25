@@ -39,6 +39,12 @@ class Independent final : public Sampler {
     Float s2 = _dist(_engine);
     return Vector2(s1, s2);
   }
+  Vector3 Next3D() override {
+    Float s1 = _dist(_engine);
+    Float s2 = _dist(_engine);
+    Float s3 = _dist(_engine);
+    return Vector3(s1, s2, s3);
+  }
 
  private:
   std::mt19937 _engine;

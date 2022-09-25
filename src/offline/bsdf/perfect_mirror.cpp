@@ -17,7 +17,7 @@ class PerfectMirror final : public Bsdf {
   PerfectMirror(BuildContext* ctx, const ConfigNode& cfg) {
     _flags = BsdfType::Delta | BsdfType::Reflection;
     _reflectance = cfg.ReadTexture(*ctx, "reflectance", Color(Float(1)));
-    _eta = cfg.ReadTexture(*ctx, "eta", Color(Float(1)));
+    _eta = cfg.ReadTexture(*ctx, "eta", Color(Float(0)));
     _k = cfg.ReadTexture(*ctx, "k", Color(Float(1)));
   }
   ~PerfectMirror() noexcept override = default;

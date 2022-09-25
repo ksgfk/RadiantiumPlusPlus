@@ -7,7 +7,7 @@ namespace Rad {
 Vector3 Interaction::OffsetP(const Vector3& d) const {
   Float mag = (1 + P.cwiseAbs().maxCoeff()) * Math::RayEpsilon;
   mag = Math::MulSign(mag, N.dot(d));
-  return Math::Fmadd(Vector3(mag, mag, mag), N, P);
+  return Math::Fmadd(Vector3::Constant(mag), N, P);
 }
 
 Ray Interaction::SpawnRay(const Vector3& d) const {

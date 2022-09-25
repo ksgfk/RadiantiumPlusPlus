@@ -314,6 +314,7 @@ class Sphere final : public Shape {
       dsr.Dir = dsr.Dir / dsr.Dist;
       dsr.Pdf = (1 / _surfaceArea) * dist2 / AbsDot(dsr.Dir, dsr.N);
     }
+    dsr.IsDelta = _radius == 0;
     return dsr;
   }
 
