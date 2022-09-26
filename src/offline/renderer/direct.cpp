@@ -32,7 +32,7 @@ class Direct final : public SampleRenderer {
   ~Direct() noexcept override = default;
 
   Spectrum Li(const Ray& ray, const Scene& scene, Sampler* sampler) const override {
-#if 1
+#if 0
     Spectrum result(0);
     SurfaceInteraction si;
     bool anyHit = scene.RayIntersect(ray, si);
@@ -91,7 +91,7 @@ class Direct final : public SampleRenderer {
     return result;
 #endif
 
-#if 0
+#if 1
     Spectrum result(0);
     SurfaceInteraction si;
     bool anyHit = scene.RayIntersect(ray, si);

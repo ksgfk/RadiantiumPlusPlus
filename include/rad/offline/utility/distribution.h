@@ -46,9 +46,12 @@ class DiscreteDistribution1D {
   void Update();
 
   /**
-   * @brief 累计分布函数
+   * @brief 概率质量函数
    */
   std::vector<Float> _pmf;
+  /**
+   * @brief 累计分布函数
+   */
   std::vector<Float> _cdf;
   Float _sum = 0.f;
   Float _normalization = 0.f;

@@ -36,7 +36,7 @@ class RoughMetal final : public Bsdf {
       Logger::Get()->warn("unknwon microfacet dist: {}", distribution);
       _type = MicrofacetType::GGX;
     }
-    _isSampleVisible = cfg.ReadOrDefault("sample_visible", false);
+    _isSampleVisible = cfg.ReadOrDefault("sample_visible", true);
   }
   ~RoughMetal() noexcept override = default;
 
