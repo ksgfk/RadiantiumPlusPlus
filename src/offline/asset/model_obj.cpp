@@ -10,9 +10,7 @@ namespace Rad {
 
 class ModelObj final : public ModelAsset {
  public:
-  ModelObj(BuildContext* ctx, const ConfigNode& cfg) : ModelAsset(ctx, cfg) {
-    _location = cfg.Read<std::string>("location");
-  }
+  ModelObj(BuildContext* ctx, const ConfigNode& cfg) : ModelAsset(ctx, cfg) {}
   ~ModelObj() noexcept override = default;
 
   Share<TriangleModel> FullModel() const override { return _full; }
@@ -68,7 +66,6 @@ class ModelObj final : public ModelAsset {
 
   Share<TriangleModel> _full;
   std::vector<SubModel> _sub;
-  std::string _location;
 };
 
 }  // namespace Rad

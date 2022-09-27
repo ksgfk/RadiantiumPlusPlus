@@ -33,7 +33,7 @@ class Bitmap final : public Texture<T> {
       throw RadInvalidOperationException("unknown type");
     }
 
-    std::string filterStr = cfg.ReadOrDefault("filter", std::string("nearest"));
+    std::string filterStr = cfg.ReadOrDefault("filter", std::string("linear"));
     if (filterStr == "nearest") {
       _filter = FilterMode::Nearest;
     } else if (filterStr == "linear") {

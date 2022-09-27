@@ -212,18 +212,37 @@ struct ConfigNode {
     return iter == data->end() ? defVal : ReadValue<T>(iter.value());
   }
 
+  inline Matrix3 AsRotate() const {
+    if (data->type() == nlohmann::detail::value_t::object) {  //轴角
+      Vector3 axis = ReadOrDefault("axis", Vector3(0, 1, 0));
+      Float angle = ReadOrDefault("angle", Float(0));
+      Eigen::AngleAxis<Float> rotation(Math::Radian(angle), axis);
+      return rotation.toRotationMatrix();
+    } else if (data->type() == nlohmann::detail::value_t::array) {
+      if (data->size() == 9) {  //直接一个矩阵, 注意是3x3的
+        return As<Matrix3>();
+      } else if (data->size() == 4) {  //四元数
+        Vector4 vec4 = As<Vector4>();
+        Eigen::Quaternion<Float> q(vec4);
+        return q.toRotationMatrix();
+      } else {
+        throw RadInvalidOperationException("rotate array must be mat3 or quaternion");
+      }
+    } else {
+      throw RadInvalidOperationException("rotate node must be array or object");
+    }
+  }
+
   inline Matrix4 AsTransform() const {
     if (data->type() == nlohmann::detail::value_t::array) {
       return As<Matrix4>();
     } else if (data->type() == nlohmann::detail::value_t::object) {
       Vector3 translate = ReadOrDefault("translate", Vector3(0, 0, 0));
       Vector3 scale = ReadOrDefault("scale", Vector3(1, 1, 1));
-      Eigen::AngleAxis<Float> rotation = Eigen::AngleAxis<Float>::Identity();
+      Matrix3 rotation = Matrix3::Identity();
       ConfigNode rotateNode;
       if (TryRead("rotate", rotateNode)) {
-        Vector3 axis = ReadOrDefault("axis", Vector3(0, 1, 0));
-        Float angle = ReadOrDefault("angle", Float(0));
-        rotation = Eigen::AngleAxis<Float>(Math::Radian(angle), axis);
+        rotation = rotateNode.AsRotate();
       }
       Eigen::Translation<Float, 3> t(translate);
       Eigen::DiagonalMatrix<Float, 3> s(scale);

@@ -27,18 +27,22 @@ class Asset {
  public:
   inline Asset(BuildContext* ctx, const ConfigNode& cfg, AssetType type) : _type(type) {
     _name = cfg.Read<std::string>("name");
+    _location = cfg.Read<std::string>("location");
   }
   virtual ~Asset() noexcept = default;
 
   AssetType GetType() const { return _type; }
   const std::string& Name() const { return _name; }
   const std::string& Name() { return _name; }
+  const std::string& Location() const { return _location; }
+  const std::string& Location() { return _location; }
 
   virtual AssetLoadResult Load(const LocationResolver& resolver) = 0;
 
  protected:
   const AssetType _type;
   std::string _name;
+  std::string _location;
 };
 
 /**

@@ -4,7 +4,7 @@
 
 namespace Rad {
 
-template <typename T, size_t Size = 32>
+template <typename T, size_t Size = 16>
 class BlockBasedImage {
   constexpr static int BlockSize = Size;
   constexpr static float InvBlockSize = 1.0f / BlockSize;
@@ -24,6 +24,7 @@ class BlockBasedImage {
     _data.resize(x * BlockSize, y * BlockSize);
     _blockCountX = x;
     _blockCountY = y;
+    _invBlockCountX = Math::Rcp((Float32)_blockCountX);
   }
 
   BlockBasedImage(UInt32 width, UInt32 height, const T* data) : BlockBasedImage(width, height) {
@@ -67,7 +68,7 @@ class BlockBasedImage {
     UInt32 index = y * _width + x;
     UInt32 blockIndex = static_cast<UInt32>(index * InvBlockArea);
     UInt32 blockX = blockIndex % _blockCountX;
-    UInt32 blockY = blockIndex / _blockCountX;
+    UInt32 blockY = (UInt32)(blockIndex * _invBlockCountX);
     UInt32 innerIndex = index % BlockArea;
     UInt32 innerX = innerIndex % BlockSize;
     UInt32 innerY = static_cast<UInt32>(innerIndex * InvBlockSize);
@@ -79,6 +80,7 @@ class BlockBasedImage {
   UInt32 _height;
   UInt32 _blockCountX;
   UInt32 _blockCountY;
+  Float32 _invBlockCountX;
 };
 
 }  // namespace Rad

@@ -1,11 +1,10 @@
 #include <rad/offline/utility/image.h>
 
-#include <OpenEXR/ImfInputFile.h>
-#include <OpenEXR/ImfOutputFile.h>
-#include <OpenEXR/ImfChannelList.h>
+#include <OpenEXR/ImfHeader.h>
 #include <OpenEXR/ImfStringAttribute.h>
-#include <OpenEXR/ImfVersion.h>
-#include <OpenEXR/ImfIO.h>
+#include <OpenEXR/ImfChannelList.h>
+#include <OpenEXR/ImfFrameBuffer.h>
+#include <OpenEXR/ImfOutputFile.h>
 
 namespace Rad::Image {
 
@@ -14,15 +13,14 @@ class ExrOStream final : public Imf::OStream {
   ExrOStream(std::ostream& os) : Imf::OStream(""), _os(&os) {}
   ~ExrOStream() override {}
   void write(const char c[/*n*/], int n) override { _os->write(c, n); }
-  Imf::Int64 tellp() override { return _os->tellp(); }
-  void seekp(Imf::Int64 pos) override { _os->seekp(pos); }
+  uint64_t tellp() override { return _os->tellp(); }
+  void seekp(uint64_t pos) override { _os->seekp(pos); }
 
  private:
   std::ostream* _os;
 };
 
 void SaveOpenExr(std::ostream& stream, const MatrixX<Color>& img) {
-  ExrOStream os(stream);
   Imf::Header header((int)img.rows(), (int)img.cols());
   header.insert("comments", Imf::StringAttribute("rad.offline"));
   Imf::ChannelList& channels = header.channels();
@@ -43,6 +41,7 @@ void SaveOpenExr(std::ostream& stream, const MatrixX<Color>& img) {
   frameBuffer.insert(
       "B",
       Imf::Slice(Imf::FLOAT, data + compStride * 2, pixelStride, rowStride));
+  ExrOStream os(stream);
   Imf::OutputFile output(os, header);
   output.setFrameBuffer(frameBuffer);
   output.writePixels((int)img.cols());

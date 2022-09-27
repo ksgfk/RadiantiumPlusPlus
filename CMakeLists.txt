@@ -82,7 +82,7 @@ target_link_libraries(rad.offline PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(rad.offline PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
 target_link_libraries(rad.offline PRIVATE embree)
 target_link_libraries(rad.offline PRIVATE Eigen3::Eigen)
-target_link_libraries(rad.offline PRIVATE OpenEXR::IlmImf OpenEXR::IlmImfUtil OpenEXR::IlmImfConfig)
+target_link_libraries(rad.offline PRIVATE OpenEXR::OpenEXR)
 
 add_executable(rad.offline.cli
     src/offline_cli/main.cpp)

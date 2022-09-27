@@ -172,6 +172,11 @@ class Sphere final : public Shape {
     const Matrix4& toWorld = ctx->GetShapeMatrix();
     Vector3 localCenter = cfg.ReadOrDefault("center", Vector3(Vector3::Constant(0)));
     Float localRadius = cfg.ReadOrDefault("radius", Float(1));
+    Matrix3 rotation = Matrix3::Identity();
+    ConfigNode rotateNode;
+    if (cfg.TryRead("rotate_uv", rotateNode)) {
+      rotation = rotateNode.AsRotate();
+    }
     Transform transform(toWorld);
     if (transform.HasNonUniformScale()) {
       throw RadArgumentException("Sphere does not support non uniform transformations");
@@ -181,10 +186,9 @@ class Sphere final : public Shape {
     Eigen::Translation<Float, 3> t(_center);
     Eigen::UniformScaling<Float> s(_radius);
     Eigen::Transform<Float, 3, Eigen::Affine> affine(toWorld);
-    auto trans = affine * t * s;
+    auto trans = (t * rotation * s) * affine;
     _toWorld = Transform(trans.matrix());
     _surfaceArea = 4 * PI * Sqr(_radius);
-
     _giveEmbreeData = (EmbreeSphere*)Memory::AlignedAlloc(16, sizeof(EmbreeSphere));
   }
 
@@ -319,8 +323,8 @@ class Sphere final : public Shape {
   }
 
   Float PdfDirection(const Interaction& ref, const DirectionSampleResult& dsr) const override {
-    Float sinAlpha = _radius * Rcp((_center - ref.P).norm()),
-          cosAlpha = SafeSqrt(Float(1) - sinAlpha * sinAlpha);
+    Float sinAlpha = _radius * Rcp((_center - ref.P).norm());
+    Float cosAlpha = SafeSqrt(Float(1) - sinAlpha * sinAlpha);
     return sinAlpha < OneMinusEpsilon<Float>()
                ? Warp::SquareToUniformConePdf(cosAlpha)
                : (1 / _surfaceArea) * Sqr(dsr.Dist) / AbsDot(dsr.Dir, dsr.N);

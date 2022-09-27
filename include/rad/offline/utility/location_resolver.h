@@ -16,6 +16,10 @@ class LocationResolver {
       const std::string& projName)
       : _workDir(workDir), _projectName(projName) {}
 
+  const std::filesystem::path& GetWorkDirectory() const {
+    return _workDir;
+  }
+
   inline Unique<std::istream> GetStream(const std::string& location, std::ios::openmode extMode = 0) const {
     auto mode = std::ios::in | extMode;
     std::filesystem::path p(location);
