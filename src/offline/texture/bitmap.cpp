@@ -19,6 +19,9 @@ enum class WrapMode {
   Clamp
 };
 
+/**
+ * @brief 图片纹理, 没啥好说的, 支持双线性过滤
+ */
 template <typename T>
 class Bitmap final : public Texture<T> {
  public:

@@ -25,6 +25,7 @@ RAD_FACTORY_FUNC_DECLARATION(Renderer, Path);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ModelObj);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ImageDefault);
 RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Bitmap);
+RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Chessboard);
 RAD_FACTORY_FUNC_DECLARATION(Light, DiffuseArea);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, Diffuse);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughMetal);
@@ -48,6 +49,7 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Asset, ModelObj),
       RAD_GET_FACTORY_FUNC(Asset, ImageDefault),
       RAD_GET_FACTORY_TEXTURE_FUNC(Bitmap),
+      RAD_GET_FACTORY_TEXTURE_FUNC(Chessboard),
       RAD_GET_FACTORY_FUNC(Light, DiffuseArea),
       RAD_GET_FACTORY_FUNC(Bsdf, Diffuse),
       RAD_GET_FACTORY_FUNC(Bsdf, RoughMetal),

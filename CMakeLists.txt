@@ -58,7 +58,8 @@ add_library(rad.offline
     src/offline/bsdf/perfect_mirror.cpp
     src/offline/bsdf/perfect_glass.cpp
     src/offline/light/area.cpp
-    src/offline/texture/bitmap.cpp)
+    src/offline/texture/bitmap.cpp
+    src/offline/texture/chessboard.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT32)
