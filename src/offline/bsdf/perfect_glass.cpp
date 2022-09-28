@@ -80,8 +80,8 @@ class PerfectGlass final : public Bsdf {
   }
 
  private:
-  Share<Texture<Color>> _reflectance;
-  Share<Texture<Color>> _transmittance;
+  Unique<TextureRGB> _reflectance;
+  Unique<TextureRGB> _transmittance;
   Float _eta;
 };
 

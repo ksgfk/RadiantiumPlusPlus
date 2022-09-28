@@ -5,6 +5,16 @@
 
 namespace Rad {
 
+bool ConfigNode::TryReadRotate(const std::string& name, Matrix3& result) const {
+  auto iter = data->find(name);
+  if (iter == data->end()) {
+    return false;
+  }
+  ConfigNode node(&iter.value());
+  result = node.AsRotate();
+  return true;
+}
+
 Matrix3 ConfigNode::AsRotate() const {
   if (data->type() == nlohmann::detail::value_t::object) {  //轴角
     Vector3 axis = ReadOrDefault("axis", Vector3(0, 1, 0));

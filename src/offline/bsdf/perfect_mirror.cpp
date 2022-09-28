@@ -59,9 +59,9 @@ class PerfectMirror final : public Bsdf {
   }
 
  private:
-  Share<Texture<Color>> _reflectance;
-  Share<Texture<Color>> _eta;
-  Share<Texture<Color>> _k;
+  Unique<TextureRGB> _reflectance;
+  Unique<TextureRGB> _eta;
+  Unique<TextureRGB> _k;
 };
 
 }  // namespace Rad

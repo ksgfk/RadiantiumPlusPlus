@@ -173,10 +173,7 @@ class Sphere final : public Shape {
     Vector3 localCenter = cfg.ReadOrDefault("center", Vector3(Vector3::Constant(0)));
     Float localRadius = cfg.ReadOrDefault("radius", Float(1));
     Matrix3 rotation = Matrix3::Identity();
-    ConfigNode rotateNode;
-    if (cfg.TryRead("rotate_uv", rotateNode)) {
-      rotation = rotateNode.AsRotate();
-    }
+    cfg.TryReadRotate("rotate_uv", rotation);
     Transform transform(toWorld);
     if (transform.HasNonUniformScale()) {
       throw RadArgumentException("Sphere does not support non uniform transformations");

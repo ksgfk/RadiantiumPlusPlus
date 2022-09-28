@@ -18,6 +18,7 @@ class ImageDefault final : public ImageAsset {
  public:
   ImageDefault(BuildContext* ctx, const ConfigNode& cfg) : ImageAsset(ctx, cfg) {
     _channel = cfg.ReadOrDefault("channel", 3);
+    _isFlipY = cfg.ReadOrDefault("is_flip_y", true);
   }
   ~ImageDefault() noexcept override = default;
 
@@ -65,7 +66,7 @@ class ImageDefault final : public ImageAsset {
       return stream->eof() || stream->bad() || stream->fail();
     };
     int x, y, channel;
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(_isFlipY);
     auto data = stbi_load_from_callbacks(
         &cb,
         stream.get(), &x, &y, &channel,
@@ -117,6 +118,7 @@ class ImageDefault final : public ImageAsset {
 
  private:
   Int32 _channel;
+  bool _isFlipY;
   Share<BlockBasedImage<Color>> _rgb;
   Share<BlockBasedImage<Float32>> _gray;
 };

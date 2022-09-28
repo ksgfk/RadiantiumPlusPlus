@@ -22,7 +22,7 @@ class RoughMetal final : public Bsdf {
     _k = cfg.ReadTexture(*ctx, "k", Color(3.9046354f, 2.4476316f, 2.1376500f));
     if (cfg.HasNode("alpha")) {
       _alphaU = cfg.ReadTexture(*ctx, "alpha", Float(0.1));
-      _alphaV = _alphaU;
+      _alphaV = cfg.ReadTexture(*ctx, "alpha", Float(0.1));
     } else {
       _alphaU = cfg.ReadTexture(*ctx, "alpha_u", Float(0.1));
       _alphaV = cfg.ReadTexture(*ctx, "alpha_v", Float(0.1));
@@ -168,11 +168,11 @@ class RoughMetal final : public Bsdf {
   }
 
  private:
-  Share<Texture<Color>> _reflectance;
-  Share<Texture<Color>> _eta;
-  Share<Texture<Color>> _k;
-  Share<Texture<Float>> _alphaU;
-  Share<Texture<Float>> _alphaV;
+  Unique<TextureRGB> _reflectance;
+  Unique<TextureRGB> _eta;
+  Unique<TextureRGB> _k;
+  Unique<TextureGray> _alphaU;
+  Unique<TextureGray> _alphaV;
   MicrofacetType _type;
   bool _isSampleVisible;
 };

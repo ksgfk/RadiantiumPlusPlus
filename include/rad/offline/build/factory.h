@@ -2,6 +2,7 @@
 
 #include "../common.h"
 #include "config_node.h"
+#include "../render/texture.h"
 
 #include <string>
 
@@ -23,22 +24,21 @@
     }                                                                                                     \
   };
 
-#define RAD_FACTORY_TEXTURE_BASE_DECLARATION(type, name)                                                      \
-  class RadTexture##type##RgbFactory__ : public Rad::TextureBaseFactory {                                     \
-   public:                                                                                                    \
-    RadTexture##type##RgbFactory__() : TextureBaseFactory(fmt::format("{}_rgb", name)) {}                     \
-    ~RadTexture##type##RgbFactory__() noexcept override = default;                                            \
-    Rad::Unique<Rad::TextureBase> Create(Rad::BuildContext* ctx, const Rad::ConfigNode& cfg) const override { \
-      return std::make_unique<Rad::type<Rad::Color>>(ctx, cfg);                                               \
-    }                                                                                                         \
-  };                                                                                                          \
-  class RadTexture##type##GrayFactory__ : public Rad::TextureBaseFactory {                                    \
-   public:                                                                                                    \
-    RadTexture##type##GrayFactory__() : TextureBaseFactory(fmt::format("{}_gray", name)) {}                   \
-    ~RadTexture##type##GrayFactory__() noexcept override = default;                                           \
-    Rad::Unique<Rad::TextureBase> Create(Rad::BuildContext* ctx, const Rad::ConfigNode& cfg) const override { \
-      return std::make_unique<Rad::type<Rad::Float32>>(ctx, cfg);                                             \
-    }                                                                                                         \
+#define RAD_FACTORY_TEXTURE_BASE_DECLARATION(type, name)                           \
+  class RadTexture##type##Factory__ : public Rad::TextureBaseFactory {             \
+   public:                                                                         \
+    RadTexture##type##Factory__() : TextureBaseFactory(fmt::format("{}", name)) {} \
+    ~RadTexture##type##Factory__() noexcept override = default;                    \
+    Rad::Unique<Rad::TextureRGB> CreateRgb(                                        \
+        Rad::BuildContext* ctx,                                                    \
+        const Rad::ConfigNode& cfg) const override {                               \
+      return std::make_unique<Rad::type<Rad::Color>>(ctx, cfg);                    \
+    }                                                                              \
+    Rad::Unique<Rad::TextureGray> CreateR(                                         \
+        Rad::BuildContext* ctx,                                                    \
+        const Rad::ConfigNode& cfg) const override {                               \
+      return std::make_unique<Rad::type<Rad::Float32>>(ctx, cfg);                  \
+    }                                                                              \
   };
 
 #define RAD_FACTORY_FUNC_DECLARATION(factory, type) \
@@ -49,16 +49,12 @@
     return std::make_unique<Rad##factory##type##Factory__>();                    \
   }
 
-#define RAD_FACTORY_TEXTURE_FUNC_DECLARATION(type)                                 \
-  Rad::Unique<Rad::TextureBaseFactory> RadCreateTexture##type##RgbFactoryFunc__(); \
-  Rad::Unique<Rad::TextureBaseFactory> RadCreateTexture##type##GrayFactoryFunc__();
+#define RAD_FACTORY_TEXTURE_FUNC_DECLARATION(type) \
+  Rad::Unique<Rad::TextureBaseFactory> RadCreateTexture##type##FactoryFunc__();
 
-#define RAD_FACTORY_TEXTURE_FUNC_DEFINITION(type)                                    \
-  Rad::Unique<Rad::TextureBaseFactory> RadCreateTexture##type##RgbFactoryFunc__() {  \
-    return std::make_unique<RadTexture##type##RgbFactory__>();                       \
-  }                                                                                  \
-  Rad::Unique<Rad::TextureBaseFactory> RadCreateTexture##type##GrayFactoryFunc__() { \
-    return std::make_unique<RadTexture##type##GrayFactory__>();                      \
+#define RAD_FACTORY_TEXTURE_FUNC_DEFINITION(type)                                \
+  Rad::Unique<Rad::TextureBaseFactory> RadCreateTexture##type##FactoryFunc__() { \
+    return std::make_unique<RadTexture##type##Factory__>();                      \
   }
 
 #define RAD_FACTORY_SHAPE_DECLARATION(type, name)  \
@@ -117,7 +113,13 @@ RAD_FACTORY(Camera);
 RAD_FACTORY(Sampler);
 RAD_FACTORY(Accel);
 RAD_FACTORY(Renderer);
-RAD_FACTORY(TextureBase);
+class TextureBaseFactory : public Factory {
+ public:
+  TextureBaseFactory(const std::string& name) : Factory(name) {}
+  virtual ~TextureBaseFactory() noexcept = default;
+  virtual Unique<TextureRGB> CreateRgb(BuildContext* ctx, const ConfigNode& cfg) const = 0;
+  virtual Unique<TextureGray> CreateR(BuildContext* ctx, const ConfigNode& cfg) const = 0;
+};
 RAD_FACTORY(Asset);
 
 }  // namespace Rad

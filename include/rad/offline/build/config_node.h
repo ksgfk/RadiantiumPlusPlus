@@ -18,6 +18,8 @@ using JsonType = nlohmann::detail::value_t;
 template <typename T>  //类模板偏特化
 struct IsDefaultConfigData : std::false_type {};
 template <>
+struct IsDefaultConfigData<bool> : std::true_type {};
+template <>
 struct IsDefaultConfigData<Float> : std::true_type {};
 template <>
 struct IsDefaultConfigData<UInt32> : std::true_type {};
@@ -55,9 +57,12 @@ using IntDataType = ConfigDataType<JsonType::number_integer>;
 using StringDataType = ConfigDataType<JsonType::string>;
 using ArrayDataType = ConfigDataType<JsonType::array>;
 using ObjectDataType = ConfigDataType<JsonType::object>;
+using BoolDataType = ConfigDataType<JsonType::boolean>;
 
 template <typename T>
 struct NodeType : NullDataType {};
+template <>
+struct NodeType<bool> : BoolDataType {};
 template <>
 struct NodeType<Float> : FloatDataType {};
 template <>
@@ -212,36 +217,37 @@ struct ConfigNode {
     return iter == data->end() ? defVal : ReadValue<T>(iter.value());
   }
 
+  bool TryReadRotate(const std::string& name, Matrix3& result) const;
   Matrix3 AsRotate() const;
   Matrix4 AsTransform() const;
 
   template <typename T>
-  Share<Texture<T>> ReadTexture(
+  Unique<Texture<T>> ReadTexture(
       BuildContext& ctx,
       const std::string& name,
       const T& defVal) const {
+    static_assert(std::is_same_v<T, Color> || std::is_same_v<T, Float32>, "T must be Color or Float32");
     if (data == nullptr) {
-      return std::make_shared<Texture<T>>(defVal);
+      return std::make_unique<Texture<T>>(defVal);
     }
     auto iter = data->find(name);
     if (iter == data->end()) {
-      return std::make_shared<Texture<T>>(defVal);
+      return std::make_unique<Texture<T>>(defVal);
     }
     ConfigNode tex(&iter.value());
     if (tex.data->is_number() || tex.data->is_array()) {
       T value = tex.As<T>();
-      return std::make_shared<Texture<T>>(value);
+      return std::make_unique<Texture<T>>(value);
     }
     std::string type = tex.Read<std::string>("type");
     TextureBaseFactory* factory = ctx.GetFactory<TextureBaseFactory>(type);
-    Unique<TextureBase> texInstance = factory->Create(&ctx, tex);
-    Share<TextureBase> share = std::move(texInstance);
-#if defined(RAD_DEFINE_DEBUG)
-    Share<Texture<T>> result = std::dynamic_pointer_cast<Texture<T>, TextureBase>(share);
-#else
-    Share<Texture<T>> result = std::static_pointer_cast<Texture<T>, TextureBase>(share);
-#endif
-    return result;
+    Unique<TextureBase> texInstance;
+    if constexpr (std::is_same_v<T, Color>) {
+      return factory->CreateRgb(&ctx, tex);
+    } else if constexpr (std::is_same_v<T, Float32>) {
+      return factory->CreateR(&ctx, tex);
+    }
+    return nullptr;
   }
 
   const nlohmann::json* data = nullptr;

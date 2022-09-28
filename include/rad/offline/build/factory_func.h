@@ -10,7 +10,7 @@
   RadCreate##factory##type##FactoryFunc__
 
 #define RAD_GET_FACTORY_TEXTURE_FUNC(type) \
-  RadCreateTexture##type##RgbFactoryFunc__, RadCreateTexture##type##GrayFactoryFunc__
+  RadCreateTexture##type##FactoryFunc__
 
 RAD_FACTORY_FUNC_DECLARATION(Shape, Mesh);
 RAD_FACTORY_FUNC_DECLARATION(Shape, Sphere);

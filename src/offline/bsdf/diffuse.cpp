@@ -96,7 +96,7 @@ class Diffuse final : public Bsdf {
   }
 
  private:
-  Share<Texture<Color>> _reflectance;
+  Unique<TextureRGB> _reflectance;
 };
 
 }  // namespace Rad

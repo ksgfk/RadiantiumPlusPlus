@@ -68,4 +68,7 @@ class Texture : public TextureBase {
   T _constColor;
 };
 
+using TextureRGB = Texture<Color>;
+using TextureGray = Texture<Float32>;
+
 }  // namespace Rad
