@@ -14,6 +14,7 @@
 
 RAD_FACTORY_FUNC_DECLARATION(Shape, Mesh);
 RAD_FACTORY_FUNC_DECLARATION(Shape, Sphere);
+RAD_FACTORY_FUNC_DECLARATION(Shape, Rectangle);
 RAD_FACTORY_FUNC_DECLARATION(Camera, Perspective);
 RAD_FACTORY_FUNC_DECLARATION(Accel, Embree);
 RAD_FACTORY_FUNC_DECLARATION(Sampler, Independent);
@@ -36,6 +37,7 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
   return {
       RAD_GET_FACTORY_FUNC(Shape, Mesh),
       RAD_GET_FACTORY_FUNC(Shape, Sphere),
+      RAD_GET_FACTORY_FUNC(Shape, Rectangle),
       RAD_GET_FACTORY_FUNC(Camera, Perspective),
       RAD_GET_FACTORY_FUNC(Accel, Embree),
       RAD_GET_FACTORY_FUNC(Sampler, Independent),

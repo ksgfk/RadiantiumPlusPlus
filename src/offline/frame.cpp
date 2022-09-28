@@ -11,6 +11,9 @@ Frame::Frame(const Vector3& n) noexcept {
   N = n;
 }
 
+Frame::Frame(const Vector3& s, const Vector3& t, const Vector3& n) noexcept
+    : S(s), T(t), N(n) {}
+
 Vector3 Frame::ToWorld(const Vector3& v) const {
   return N * v.z() + (T * v.y() + (S * v.x()));
 }

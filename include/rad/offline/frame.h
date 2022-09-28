@@ -9,6 +9,7 @@ namespace Rad {
 struct Frame {
   Frame() = default;
   Frame(const Vector3& n) noexcept;
+  explicit Frame(const Vector3& s, const Vector3& t, const Vector3& n) noexcept;
 
   Vector3 ToWorld(const Vector3& v) const;
   Vector3 ToLocal(const Vector3& v) const;

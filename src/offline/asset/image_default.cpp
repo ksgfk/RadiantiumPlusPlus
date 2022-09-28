@@ -65,6 +65,7 @@ class ImageDefault final : public ImageAsset {
       return stream->eof() || stream->bad() || stream->fail();
     };
     int x, y, channel;
+    stbi_set_flip_vertically_on_load(true);
     auto data = stbi_load_from_callbacks(
         &cb,
         stream.get(), &x, &y, &channel,
@@ -86,7 +87,8 @@ class ImageDefault final : public ImageAsset {
             Float32 fr = Float32(r) / std::numeric_limits<UInt8>::max();
             Float32 fg = Float32(g) / std::numeric_limits<UInt8>::max();
             Float32 fb = Float32(b) / std::numeric_limits<UInt8>::max();
-            _rgb->Write(i, j, Color(fr, fg, fb));
+            Color gamma(fr, fg, fb);
+            _rgb->Write(i, j, gamma);
           }
         }
         result.IsSuccess = true;

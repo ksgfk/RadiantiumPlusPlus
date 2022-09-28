@@ -44,6 +44,7 @@ add_library(rad.offline
     src/offline/build/build_context.cpp
     src/offline/shape/mesh.cpp
     src/offline/shape/sphere.cpp
+    src/offline/shape/rectangle.cpp
     src/offline/camera/perspective.cpp
     src/offline/accel/embree.cpp
     src/offline/sampler/independent.cpp

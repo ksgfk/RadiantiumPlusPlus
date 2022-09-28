@@ -9,13 +9,13 @@ RadiantiumPlusPlus是一个非常简单的光线追踪渲染器, 只是基于兴
 
 使用vcpkg作为包管理
 
-* Embree
-* oneTBB
-* nlohmann json
-* spdlog
-* Eigen
-* OpenEXR
-* stb_image
+* Embree 3.12.2
+* oneTBB 2021.5.0
+* nlohmann-json 3.11.2
+* spdlog 1.10.0
+* Eigen 3.4.0
+* OpenEXR 3.1.5
+* stb_image 2021-09-10
 
 ## Gallery
 
