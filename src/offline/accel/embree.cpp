@@ -63,7 +63,16 @@ class Embree final : public Accel {
     return rtcray;
   }
 
-  bool RayIntersect(const Ray& ray) override {
+  BoundingBox3 GetWorldBound() const override {
+    struct RTCBounds rtcBound;
+    rtcGetSceneBounds(_scene, &rtcBound);
+    BoundingBox3 result(
+        Vector3(rtcBound.lower_x, rtcBound.lower_y, rtcBound.lower_z),
+        Vector3(rtcBound.upper_x, rtcBound.upper_y, rtcBound.upper_z));
+    return result;
+  }
+
+  bool RayIntersect(const Ray& ray) const override {
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
     struct RTCRay rtcray = ToEmbreeRay(ray);
@@ -71,7 +80,7 @@ class Embree final : public Accel {
     return rtcray.tfar != ray.MaxT;
   }
 
-  bool RayIntersectPreliminary(const Ray& ray, HitShapeRecord& hsr) override {
+  bool RayIntersectPreliminary(const Ray& ray, HitShapeRecord& hsr) const override {
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
     struct RTCRayHit rayhit;

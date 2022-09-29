@@ -41,7 +41,8 @@ Vector3 SquareToCosineHemisphere(const Vector2& u) {
   Vector2 bottom = SquareToUniformDisk(u);
   Float x = bottom.x();
   Float y = bottom.y();
-  return Vector3(x, y, std::sqrt(1 - Sqr(x) - Sqr(y)));
+  Float z = SafeSqrt(1 - Sqr(x) - Sqr(y));
+  return Vector3(x, y, z);
 #endif
 }
 Float SquareToCosineHemispherePdf(const Vector3& v) {

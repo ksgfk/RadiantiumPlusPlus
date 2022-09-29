@@ -79,6 +79,11 @@ class Light {
    */
   virtual Float PdfPosition(const PositionSampleResult& psr) const = 0;
 
+  /**
+   * @brief 有些光源需要了解场景中的信息
+   */
+  virtual void SetScene(const Scene* scene) {}
+
  protected:
   UInt32 _flag;
   Shape* _shape = nullptr;

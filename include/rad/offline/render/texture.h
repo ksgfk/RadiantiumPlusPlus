@@ -55,6 +55,10 @@ class Texture : public TextureBase {
     return Read(x, y);
   }
 
+  bool IsConstColor() const {
+    return _isConstColor;
+  }
+
  protected:
   virtual T EvalImpl(const SurfaceInteraction& si) const {
     throw RadInvalidOperationException("texture is not const but hasn't impl eval func");

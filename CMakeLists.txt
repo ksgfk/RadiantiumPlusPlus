@@ -34,12 +34,14 @@ add_library(rad.offline
     src/offline/microfacet.cpp
     src/offline/fresnel.cpp
     src/offline/memory.cpp
+    src/offline/bounding_sphere.cpp
     src/offline/utility/image.cpp
     src/offline/utility/stop_watch.cpp
     src/offline/asset/triangle_model.cpp
     src/offline/asset/wavefront_obj_reader.cpp
     src/offline/asset/model_obj.cpp
     src/offline/asset/image_default.cpp
+    src/offline/asset/image_exr.cpp
     src/offline/build/config_node.cpp
     src/offline/build/build_context.cpp
     src/offline/shape/mesh.cpp
@@ -58,6 +60,7 @@ add_library(rad.offline
     src/offline/bsdf/perfect_mirror.cpp
     src/offline/bsdf/perfect_glass.cpp
     src/offline/light/area.cpp
+    src/offline/light/skybox.cpp
     src/offline/texture/bitmap.cpp
     src/offline/texture/chessboard.cpp)
 

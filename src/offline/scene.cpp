@@ -15,6 +15,7 @@ Scene::Scene(Unique<Accel> accel, Unique<Camera> camera, std::vector<Unique<Ligh
         Logger::Get()->warn("multiple env light. only one valid");
       }
       _envLight = light.get();
+      _envLight->SetScene(this);
     }
   }
 }
@@ -26,6 +27,7 @@ bool Scene::RayIntersect(const Ray& ray) const {
 bool Scene::RayIntersect(const Ray& ray, SurfaceInteraction& si) const {
   HitShapeRecord record;
   if (!_accel->RayIntersectPreliminary(ray, record)) {
+    si.Wi = -ray.D;
     return false;
   }
   si = record.ComputeSurfaceInteraction(ray);
@@ -93,6 +95,10 @@ std::optional<Light*> Scene::GetLight(const SurfaceInteraction& si) const {
 Spectrum Scene::EvalLight(const SurfaceInteraction& si) const {
   std::optional<Light*> light = GetLight(si);
   return light.has_value() ? (*light)->Eval(si) : Spectrum(0);
+}
+
+BoundingBox3 Scene::GetWorldBound() const {
+  return _accel->GetWorldBound();
 }
 
 }  // namespace Rad

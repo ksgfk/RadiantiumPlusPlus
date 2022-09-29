@@ -20,6 +20,13 @@ class Scene {
   Camera& GetCamera() { return *_camera; }
   const Light* GetLight(UInt32 index) const { return _lights[index].get(); }
   Light* GetLight(UInt32 index) { return _lights[index].get(); }
+  const Light* GetEnvLight() const { return _envLight; }
+  Light* GetEnvLight() { return _envLight; }
+
+  /**
+   * @brief 获取包围整个场景的包围盒
+   */
+  BoundingBox3 GetWorldBound() const;
 
   /**
    * @brief shadow ray, 检查射线是否与场景中任何一个 shape 有交点
@@ -56,7 +63,14 @@ class Scene {
       const Vector2& xi) const;
   Float PdfLightDirection(const Light* light, const Interaction& ref, const DirectionSampleResult& dsr) const;
 
+  /**
+   * @brief 根据碰撞点获取光源, 如果碰到是光源则返回光源对象, 如果什么都没碰到则返回环境光
+   * 如果optional里什么都没说明获取不到任何光源
+   */
   std::optional<Light*> GetLight(const SurfaceInteraction& si) const;
+  /**
+   * @brief 根据碰撞评估光源radiance
+   */
   Spectrum EvalLight(const SurfaceInteraction& si) const;
 
  private:

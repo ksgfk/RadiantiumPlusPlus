@@ -149,6 +149,14 @@ inline Float UnitAngleZ(const Vector3& v) {
   return v.z() >= 0 ? temp : PI - temp;
 }
 /**
+ * @brief 从球面坐标转化为直角坐标
+ */
+inline Vector3 SphericalCoordinates(Float theta, Float phi) {
+  auto [sinTheta, cosTheta] = SinCos(theta);
+  auto [sinPhi, cosPhi] = SinCos(phi);
+  return Vector3(cosPhi * sinTheta, sinPhi * sinTheta, cosTheta);
+}
+/**
  * @brief 近似erf函数的逆函数
  */
 inline Float ErfInv(Float x) {

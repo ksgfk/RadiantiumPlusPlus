@@ -52,6 +52,7 @@ using Vector3 = Eigen::Vector3<Float>;
 using Vector4 = Eigen::Vector4<Float>;
 using Matrix3 = Eigen::Matrix3<Float>;
 using Matrix4 = Eigen::Matrix4<Float>;
+using BoundingBox3 = Eigen::AlignedBox<Float, 3>;
 
 template <typename T>
 using MatrixX = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;

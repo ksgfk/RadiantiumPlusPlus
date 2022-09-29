@@ -41,7 +41,7 @@ struct SurfaceInteraction : public Interaction {
   Vector3 dPdU, dPdV;
   Vector3 dNdU, dNdV;
   /**
-   * @brief 本地坐标系下的入射方向
+   * @brief 本地坐标系下的入射方向, 如果这个碰撞点不可用(没碰到任何物体), 则表示入射方向的反方向
    */
   Vector3 Wi;
 

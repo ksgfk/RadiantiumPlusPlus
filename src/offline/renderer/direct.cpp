@@ -93,13 +93,11 @@ class Direct final : public SampleRenderer {
 
 #if 1
     Spectrum result(0);
-    SurfaceInteraction si;
+    SurfaceInteraction si{};
     bool anyHit = scene.RayIntersect(ray, si);
-    if (!anyHit) {
+    result += scene.EvalLight(si);
+    if (!anyHit || si.Shape->IsLight()) {  //直接击中光源
       return result;
-    }
-    if (si.Shape->IsLight()) {  //直接击中光源
-      return si.Shape->GetLight()->Eval(si);
     }
     BsdfContext ctx{};
     Bsdf* bsdf = si.Shape->GetBsdf();
@@ -129,19 +127,16 @@ class Direct final : public SampleRenderer {
       if (bsr.Pdf <= 0) {
         continue;
       }
-      SurfaceInteraction bsdfSi;
+      SurfaceInteraction bsdfSi{};
       bool bsdfHit = scene.RayIntersect(si.SpawnRay(si.ToWorld(bsr.Wo)), bsdfSi);
-      if (!bsdfHit) {
+      std::optional<Light*> light = scene.GetLight(bsdfSi);
+      if (!light.has_value()) {
         continue;
       }
-      if (!bsdfSi.Shape->IsLight()) {  //击中光源才能对路径有贡献
-        continue;
-      }
-      Light* light = bsdfSi.Shape->GetLight();
-      bool isDelta = bsr.HasType(BsdfType::Delta);
+      Spectrum li = (*light)->Eval(bsdfSi);
       DirectionSampleResult dsr = bsdfSi.ToDsr(si);
-      Float lightPdf = isDelta ? 0 : light->PdfDirection(si, dsr);
-      Spectrum li = light->Eval(bsdfSi);
+      bool isDelta = bsr.HasType(BsdfType::Delta);
+      Float lightPdf = isDelta ? 0 : scene.PdfLightDirection(*light, si, dsr);
       Float mis = MisWeight(bsr.Pdf * _fracBsdf, lightPdf * _fracLight) * _weightBsdf;
       auto le = f.cwiseProduct(li) * mis / bsr.Pdf;
       result += Spectrum(le);

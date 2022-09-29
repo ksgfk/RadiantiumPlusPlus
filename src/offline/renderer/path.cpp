@@ -5,6 +5,8 @@
 #include <rad/offline/render.h>
 #include <rad/offline/asset.h>
 
+//#define RAD_IS_CHECK_PATH_NAN //有时候路径上会出现一些奇怪的NaN...开这个debug
+
 namespace Rad {
 
 /**
@@ -152,6 +154,11 @@ class Path final : public SampleRenderer {
         }
         Spectrum li = (*hitLight)->Eval(si);
         Spectrum le(throughput.cwiseProduct(li) * weight);
+#if defined(RAD_IS_CHECK_PATH_NAN)
+        if (le.HasNaN()) {
+          Logger::Get()->warn("1 weight: {} li: {}", weight, li);
+        }
+#endif
         result += le;
       }
       //没碰到任何物体, 或者深度到达最大值了就强制结束游走
@@ -174,6 +181,11 @@ class Path final : public SampleRenderer {
         if (!scene.IsOcclude(si, dsr.P)) {
           Float weight = dsr.IsDelta ? 1 : MisWeight(dsr.Pdf, bsdfPdf);  //如果是delta的光源则不使用BSDF的权重
           Spectrum le(throughput.cwiseProduct(f).cwiseProduct(li) * weight / dsr.Pdf);
+#if defined(RAD_IS_CHECK_PATH_NAN)
+          if (le.HasNaN()) {
+            Logger::Get()->warn("2 weight: {} pdf: {}", weight, dsr.Pdf);
+          }
+#endif
           result += le;
         }
       }
@@ -184,6 +196,11 @@ class Path final : public SampleRenderer {
           break;
         } else {
           throughput = Spectrum(throughput.cwiseProduct(f) / bsr.Pdf);
+#if defined(RAD_IS_CHECK_PATH_NAN)
+          if (throughput.HasNaN()) {
+            Logger::Get()->warn("3 f: {} pdf: {} bsdf: {}", f, bsr.Pdf, bsdf->Flags());
+          }
+#endif
           eta *= bsr.Eta;
         }
         ray = si.SpawnRay(si.ToWorld(bsr.Wo));
@@ -199,6 +216,11 @@ class Path final : public SampleRenderer {
           break;
         }
         throughput *= Math::Rcp(rr);
+#if defined(RAD_IS_CHECK_PATH_NAN)
+        if (throughput.HasNaN()) {
+          Logger::Get()->warn("4 rr: {}", Math::Rcp(rr));
+        }
+#endif
       }
     }
     return result;

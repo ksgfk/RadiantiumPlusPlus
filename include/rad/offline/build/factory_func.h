@@ -24,9 +24,11 @@ RAD_FACTORY_FUNC_DECLARATION(Renderer, Direct);
 RAD_FACTORY_FUNC_DECLARATION(Renderer, Path);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ModelObj);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ImageDefault);
+RAD_FACTORY_FUNC_DECLARATION(Asset, ImageExr);
 RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Bitmap);
 RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Chessboard);
 RAD_FACTORY_FUNC_DECLARATION(Light, DiffuseArea);
+RAD_FACTORY_FUNC_DECLARATION(Light, Skybox);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, Diffuse);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughMetal);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, PerfectMirror);
@@ -48,9 +50,11 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Renderer, Path),
       RAD_GET_FACTORY_FUNC(Asset, ModelObj),
       RAD_GET_FACTORY_FUNC(Asset, ImageDefault),
+      RAD_GET_FACTORY_FUNC(Asset, ImageExr),
       RAD_GET_FACTORY_TEXTURE_FUNC(Bitmap),
       RAD_GET_FACTORY_TEXTURE_FUNC(Chessboard),
       RAD_GET_FACTORY_FUNC(Light, DiffuseArea),
+      RAD_GET_FACTORY_FUNC(Light, Skybox),
       RAD_GET_FACTORY_FUNC(Bsdf, Diffuse),
       RAD_GET_FACTORY_FUNC(Bsdf, RoughMetal),
       RAD_GET_FACTORY_FUNC(Bsdf, PerfectMirror),

@@ -24,7 +24,7 @@ namespace Rad {
  * R与Ei都是常数, 由于BRDF积分域在上半球上, 所以需要将微元从立体角转化到极坐标系
  * 如何在半球上积分: https://chengkehan.github.io/HemisphericalCoordinates.html
  * 众所周知, dω = sinθdθdφ
- * 因此, 积分变成了 
+ * 因此, 积分变成了
  * R\int_{0}^{2\pi}\int_{0}^{\pi}\mathrm{cos}\theta\mathrm{sin}\theta\mathrm{d}\theta\mathrm{d}\phi\leq 1
  * 不等式左边是个定积分, 可以直接解出结果
  * R\pi\leq 1

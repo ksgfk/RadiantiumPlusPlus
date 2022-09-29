@@ -9,3 +9,4 @@
 #include "frame.h"
 #include "warp.h"
 #include "ray.h"
+#include "bounding_sphere.h"
