@@ -216,7 +216,7 @@ class Rectangle final : public Shape {
   PositionSampleResult SamplePosition(const Vector2& xi) const override {
     PositionSampleResult psr{};
     Vector2 sample = xi * 2 - Vector2::Constant(1);
-    psr.P = _toWorld.ApplyAffineToWorld(Vector3(sample.x(), sample.y(), 0.f));
+    psr.P = _toWorld.ApplyAffineToWorld(Vector3(sample.x(), sample.y(), 0));
     psr.N = _frame.N;
     psr.Pdf = 1 / _surfaceArea;
     psr.UV = xi;
@@ -226,6 +226,22 @@ class Rectangle final : public Shape {
 
   Float PdfPosition(const PositionSampleResult& psr) const override {
     return 1 / _surfaceArea;
+  }
+
+  SurfaceInteraction EvalParamSurface(const Vector2& uv) override {
+    Vector2 tmp = uv * 2 - Vector2::Constant(1);
+    SurfaceInteraction si{};
+    si.T = 0;
+    si.P = _toWorld.ApplyAffineToWorld(Vector3(tmp.x(), tmp.y(), 0));
+    si.N = _frame.N;
+    si.Shading = _frame;
+    si.UV = uv;
+    si.dPdU = _frame.S;
+    si.dPdV = _frame.T;
+    si.dNdU = Vector3::Zero();
+    si.dNdV = Vector3::Zero();
+    si.Shape = this;
+    return si;
   }
 
  private:

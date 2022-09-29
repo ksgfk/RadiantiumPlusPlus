@@ -49,6 +49,11 @@ class Shape {
    */
   virtual Float PdfDirection(const Interaction& ref, const DirectionSampleResult& dsr) const;
 
+  /**
+   * @brief 通过UV计算表面参数
+   */
+  virtual SurfaceInteraction EvalParamSurface(const Vector2& uv);
+
   bool HasBsdf() const { return _bsdf != nullptr; }
   const Bsdf* GetBsdf() const { return _bsdf.get(); }
   Bsdf* GetBsdf() { return _bsdf.get(); }

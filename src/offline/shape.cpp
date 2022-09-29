@@ -22,4 +22,8 @@ Float Shape::PdfDirection(const Interaction& ref, const DirectionSampleResult& d
   return pdf;
 }
 
+SurfaceInteraction Shape::EvalParamSurface(const Vector2& uv) {
+  throw RadInvalidOperationException("no impl EvalParamSurface()");
+}
+
 }  // namespace Rad
