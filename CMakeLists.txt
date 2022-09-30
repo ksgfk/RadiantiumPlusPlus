@@ -59,8 +59,10 @@ add_library(rad.offline
     src/offline/bsdf/rough_metal.cpp
     src/offline/bsdf/perfect_mirror.cpp
     src/offline/bsdf/perfect_glass.cpp
+    src/offline/bsdf/two_side.cpp
     src/offline/light/area.cpp
     src/offline/light/skybox.cpp
+    src/offline/light/point.cpp
     src/offline/texture/bitmap.cpp
     src/offline/texture/chessboard.cpp)
 

@@ -42,10 +42,9 @@ Matrix4 ConfigNode::AsTransform() const {
   } else if (data->type() == nlohmann::detail::value_t::object) {
     Vector3 translate = ReadOrDefault("translate", Vector3(0, 0, 0));
     Vector3 scale = ReadOrDefault("scale", Vector3(1, 1, 1));
-    Matrix3 rotation = Matrix3::Identity();
-    ConfigNode rotateNode;
-    if (TryRead("rotate", rotateNode)) {
-      rotation = rotateNode.AsRotate();
+    Matrix3 rotation;
+    if (!TryReadRotate("rotate", rotation)) {
+      rotation = Matrix3::Identity();
     }
     Eigen::Translation<Float, 3> t(translate);
     Eigen::DiagonalMatrix<Float, 3> s(scale);
