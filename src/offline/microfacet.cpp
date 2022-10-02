@@ -175,7 +175,7 @@ Float GGX::SmithG1Impl(const Vector3& v, const Vector3& wh) const {
   if (xyAlpha2 == 0) {
     result = 1;
   }
-  if (v.dot(wh) * Frame::CosTheta(v) <= 0.f) {
+  if (v.dot(wh) * Frame::CosTheta(v) <= 0) {
     result = 0;
   }
   return result;
@@ -271,6 +271,14 @@ std::pair<Vector3, Float> GGX::SampleImpl(const Vector3& wi, const Vector2& xi) 
         cosTheta);
     return {m, pdf};
   }
+}
+
+bool Beckmann::IsSampleVisibleImpl() const {
+  return sampleVisible;
+}
+
+bool GGX::IsSampleVisibleImpl() const {
+  return sampleVisible;
 }
 
 }  // namespace Rad

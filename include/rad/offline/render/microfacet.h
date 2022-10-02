@@ -52,6 +52,9 @@ class MicrofacetDistribution {  // Curiously Recurring Template Pattern (CRTP)
   std::pair<Vector3, Float> Sample(const Vector3& wi, const Vector2& xi) const {
     return static_cast<const T*>(this)->SampleImpl(wi, xi);
   }
+  bool IsSampleVisible() const {
+    return static_cast<const T*>(this)->IsSampleVisibleImpl();
+  }
 
   Float alphaX, alphaY;
 };
@@ -63,6 +66,7 @@ class Beckmann final : public MicrofacetDistribution<Beckmann> {
   Float GImpl(const Vector3& wi, const Vector3& wo, const Vector3& wh) const;
   Float PdfImpl(const Vector3& wi, const Vector3& wh) const;
   std::pair<Vector3, Float> SampleImpl(const Vector3& wi, const Vector2& xi) const;
+  bool IsSampleVisibleImpl() const;
 
   bool sampleVisible;
 };
@@ -74,6 +78,7 @@ class GGX final : public MicrofacetDistribution<GGX> {
   Float GImpl(const Vector3& wi, const Vector3& wo, const Vector3& wh) const;
   Float PdfImpl(const Vector3& wi, const Vector3& wh) const;
   std::pair<Vector3, Float> SampleImpl(const Vector3& wi, const Vector2& xi) const;
+  bool IsSampleVisibleImpl() const;
 
   bool sampleVisible;
 };

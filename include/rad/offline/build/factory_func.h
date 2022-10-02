@@ -35,6 +35,7 @@ RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughMetal);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, PerfectMirror);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, PerfectGlass);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, TwoSide);
+RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughGlass);
 
 namespace Rad::Factories {
 
@@ -63,6 +64,7 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Bsdf, PerfectMirror),
       RAD_GET_FACTORY_FUNC(Bsdf, PerfectGlass),
       RAD_GET_FACTORY_FUNC(Bsdf, TwoSide),
+      RAD_GET_FACTORY_FUNC(Bsdf, RoughGlass),
   };
 }
 

@@ -1,5 +1,7 @@
 #include "../common.h"
 
+#include <optional>
+
 namespace Rad {
 
 /**
@@ -36,6 +38,14 @@ class Fresnel {
    * @param etaTI 折射率的倒数
    */
   static Vector3 Refract(const Vector3& wi, const Vector3& wh, Float cosThetaT, Float etaTI);
+  /**
+   * @brief 折射
+   *
+   * @param wi 入射方向
+   * @param wh 法线
+   * @param eta 折射率
+   */
+  static std::optional<Vector3> Refract(const Vector3& wi, const Vector3& wh, Float eta);
 
   /**
    * @brief 电介质菲涅尔

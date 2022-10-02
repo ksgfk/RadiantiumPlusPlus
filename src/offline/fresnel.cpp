@@ -20,6 +20,18 @@ Vector3 Fresnel::Refract(const Vector3& wi, const Vector3& wh, Float cosThetaT, 
   return Fmadd(wh, Vector3::Constant(Fmadd(wi.dot(wh), etaTI, cosThetaT)), -(wi * etaTI));
 }
 
+std::optional<Vector3> Fresnel::Refract(const Vector3& wi, const Vector3& wh, Float eta) {
+  Float cosThetaI = wh.dot(wi);
+  Float sin2ThetaI = std::max(Float(0), 1 - Sqr(cosThetaI * cosThetaI));
+  Float sin2ThetaT = eta * eta * sin2ThetaI;
+  if (sin2ThetaT >= 1) {
+    return std::nullopt;
+  }
+  Float cosThetaT = std::sqrt(1 - sin2ThetaT);
+  Vector3 wo = (eta * -wi + (eta * cosThetaI - cosThetaT) * wh).normalized();
+  return std::make_optional(wo);
+}
+
 std::tuple<Float, Float, Float, Float> Fresnel::Dielectric(Float cosThetaI, Float eta) {
   auto isOutside = cosThetaI >= 0;
   Float rcpEta = Rcp(eta);
@@ -39,8 +51,8 @@ std::tuple<Float, Float, Float, Float> Fresnel::Dielectric(Float cosThetaI, Floa
   if (specialCase) {
     r = rSC;
   }
-  Float cos_theta_t = MulSign(absCosThetaT, -cosThetaI);
-  return std::make_tuple(r, cos_theta_t, etaIT, etaTI);
+  Float cosThetaT = cosThetaI >= 0 ? -absCosThetaT : absCosThetaT;
+  return std::make_tuple(r, cosThetaT, etaIT, etaTI);
 }
 
 Vector3 Fresnel::Conductor(Float cosThetaI, const Vector3& eta, const Vector3& k) {

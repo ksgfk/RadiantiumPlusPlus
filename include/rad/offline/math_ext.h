@@ -49,6 +49,8 @@ constexpr T Sign(T v) { return v >= 0 ? T(1) : T(-1); }
  */
 template <typename T>
 constexpr T MulSign(T v1, T v2) { return v2 >= 0 ? v1 : -v1; }
+template <typename TA, typename TB>
+constexpr TA MulSign(const TA& v1, const TB& v2) { return v2 >= 0 ? v1 : -v1; }
 /**
  * @brief v的倒数
  */
