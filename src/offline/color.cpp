@@ -39,4 +39,18 @@ Scalar& Color::G() { return this->operator[](1); }
 Scalar Color::B() const { return this->operator[](2); }
 Scalar& Color::B() { return this->operator[](2); }
 
+Float ToLinearImpl(Float value) {
+  return value <= 0.04045f ? value * (1.0f / 12.92f) : std::pow((value + 0.055f) * (1.0f / 1.055f), 2.4f);
+}
+Color Color::ToLinear(const Color& color) {
+  return Color(ToLinearImpl(color.x()), ToLinearImpl(color.y()), ToLinearImpl(color.z()));
+}
+
+Float ToSrgb(Float value) {
+  return value <= 0.0031308f ? 12.92f * value : (1.0f + 0.055f) * std::pow(value, 1.0f / 2.4f) - 0.055f;
+}
+Color Color::ToSRGB(const Color& color) {
+  return Color(ToSrgb(color.x()), ToSrgb(color.y()), ToSrgb(color.z()));
+}
+
 }  // namespace Rad

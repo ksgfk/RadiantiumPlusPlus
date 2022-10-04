@@ -41,39 +41,32 @@ bool Transform::HasNonUniformScale() const {
 }
 
 Vector3 Transform::TranslationToWorld() const {
-  // return ApplyAffineToWorld(Vector3(0, 0, 0));
   return Eigen::Transform<Float, 3, Eigen::Affine>(ToWorld).translation();
 }
 
 Vector3 Transform::TranslationToLocal() const {
-  // return ApplyAffineToLocal(Vector3(0, 0, 0));
   return Eigen::Transform<Float, 3, Eigen::Affine>(ToLocal).translation();
 }
 
 Vector3 Transform::ApplyAffineToWorld(const Vector3& v) const {
-  // Vector4 result = ToWorld * Vector4(v[0], v[1], v[2], 1.0f);
-  // return result.head<3>() / result.w();
-  return Eigen::Transform<Float, 3, Eigen::Affine>(ToWorld) * v;
+  Vector4 result = ToWorld * Vector4(v[0], v[1], v[2], 1.0f);
+  return result.head<3>() / result.w();
 }
 
 Vector3 Transform::ApplyLinearToWorld(const Vector3& v) const {
-  // return ToWorld.topLeftCorner<3, 3>() * v;
   return Eigen::Transform<Float, 3, Eigen::Affine>(ToWorld).linear() * v;
 }
 
 Vector3 Transform::ApplyNormalToWorld(const Vector3& v) const {
-  // return ToLocal.topLeftCorner<3, 3>().transpose() * v;
   return Eigen::Transform<Float, 3, Eigen::Affine>(ToLocal).linear().transpose() * v;
 }
 
 Vector3 Transform::ApplyAffineToLocal(const Vector3& v) const {
-  // Vector4 result = ToLocal * Vector4(v[0], v[1], v[2], 1.0f);
-  // return result.head<3>() / result.w();
-  return Eigen::Transform<Float, 3, Eigen::Affine>(ToLocal) * v;
+  Vector4 result = ToLocal * Vector4(v[0], v[1], v[2], 1.0f);
+  return result.head<3>() / result.w();
 }
 
 Vector3 Transform::ApplyLinearToLocal(const Vector3& v) const {
-  // return ToLocal.topLeftCorner<3, 3>() * v;
   return Eigen::Transform<Float, 3, Eigen::Affine>(ToLocal).linear() * v;
 }
 

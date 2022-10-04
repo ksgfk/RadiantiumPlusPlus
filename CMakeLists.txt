@@ -64,6 +64,7 @@ add_library(rad.offline
     src/offline/light/area.cpp
     src/offline/light/skybox.cpp
     src/offline/light/point.cpp
+    src/offline/light/projection.cpp
     src/offline/texture/bitmap.cpp
     src/offline/texture/chessboard.cpp)
 

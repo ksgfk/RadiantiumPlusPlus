@@ -30,6 +30,7 @@ RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Chessboard);
 RAD_FACTORY_FUNC_DECLARATION(Light, DiffuseArea);
 RAD_FACTORY_FUNC_DECLARATION(Light, Skybox);
 RAD_FACTORY_FUNC_DECLARATION(Light, Point);
+RAD_FACTORY_FUNC_DECLARATION(Light, Projection);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, Diffuse);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughMetal);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, PerfectMirror);
@@ -59,6 +60,7 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Light, DiffuseArea),
       RAD_GET_FACTORY_FUNC(Light, Skybox),
       RAD_GET_FACTORY_FUNC(Light, Point),
+      RAD_GET_FACTORY_FUNC(Light, Projection),
       RAD_GET_FACTORY_FUNC(Bsdf, Diffuse),
       RAD_GET_FACTORY_FUNC(Bsdf, RoughMetal),
       RAD_GET_FACTORY_FUNC(Bsdf, PerfectMirror),

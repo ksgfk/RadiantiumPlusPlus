@@ -19,6 +19,7 @@ class ImageDefault final : public ImageAsset {
   ImageDefault(BuildContext* ctx, const ConfigNode& cfg) : ImageAsset(ctx, cfg) {
     _channel = cfg.ReadOrDefault("channel", 3);
     _isFlipY = cfg.ReadOrDefault("is_flip_y", true);
+    _isToLinear = cfg.ReadOrDefault("is_to_linear", _channel == 3);
   }
   ~ImageDefault() noexcept override = default;
 
@@ -88,8 +89,11 @@ class ImageDefault final : public ImageAsset {
             Float32 fr = Float32(r) / std::numeric_limits<UInt8>::max();
             Float32 fg = Float32(g) / std::numeric_limits<UInt8>::max();
             Float32 fb = Float32(b) / std::numeric_limits<UInt8>::max();
-            Color gamma(fr, fg, fb);
-            _rgb->Write(i, j, gamma);
+            Color color(fr, fg, fb);
+            if (_isToLinear) {
+              color = Color::ToLinear(color);
+            }
+            _rgb->Write(i, j, color);
           }
         }
         result.IsSuccess = true;
@@ -119,6 +123,7 @@ class ImageDefault final : public ImageAsset {
  private:
   Int32 _channel;
   bool _isFlipY;
+  bool _isToLinear;
   Share<BlockBasedImage<Color>> _rgb;
   Share<BlockBasedImage<Float32>> _gray;
 };

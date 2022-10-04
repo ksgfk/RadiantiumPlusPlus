@@ -171,22 +171,21 @@ class Path final : public SampleRenderer {
       Bsdf* bsdf = si.Shape->GetBsdf();
       if (bsdf->HasAnyTypeExceptDelta()) {  // BSDF只有delta的lobe就不启用光源采样了
         auto [l, dsr, li] = scene.SampleLightDirection(si, sampler->Next1D(), sampler->Next2D());
-        if (dsr.Pdf <= 0) {
-          break;
-        }
-        Vector3 wo = si.ToLocal(dsr.Dir);
-        Spectrum f = bsdf->Eval(ctx, si, wo);
-        Float bsdfPdf = bsdf->Pdf(ctx, si, wo);
-        //可见性测试, 通过测试才能建立有效光路
-        if (!scene.IsOcclude(si, dsr.P)) {
-          Float weight = dsr.IsDelta ? 1 : MisWeight(dsr.Pdf, bsdfPdf);  //如果是delta的光源则不使用BSDF的权重
-          Spectrum le(throughput.cwiseProduct(f).cwiseProduct(li) * weight / dsr.Pdf);
+        if (dsr.Pdf > 0) {
+          Vector3 wo = si.ToLocal(dsr.Dir);
+          Spectrum f = bsdf->Eval(ctx, si, wo);
+          Float bsdfPdf = bsdf->Pdf(ctx, si, wo);
+          //可见性测试, 通过测试才能建立有效光路
+          if (!scene.IsOcclude(si, dsr.P)) {
+            Float weight = dsr.IsDelta ? 1 : MisWeight(dsr.Pdf, bsdfPdf);  //如果是delta的光源则不使用BSDF的权重
+            Spectrum le(throughput.cwiseProduct(f).cwiseProduct(li) * weight / dsr.Pdf);
 #if defined(RAD_IS_CHECK_PATH_NAN)
-          if (le.HasNaN()) {
-            Logger::Get()->warn("2 weight: {} pdf: {}", weight, dsr.Pdf);
-          }
+            if (le.HasNaN()) {
+              Logger::Get()->warn("2 weight: {} pdf: {}", weight, dsr.Pdf);
+            }
 #endif
-          result += le;
+            result += le;
+          }
         }
       }
       {

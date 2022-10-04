@@ -41,6 +41,9 @@ struct Color : Vector3 {
   Scalar& G();
   Scalar B() const;
   Scalar& B();
+
+  static Color ToLinear(const Color& color);
+  static Color ToSRGB(const Color& color);
 };
 
 inline Color Clamp(const Color& v, const Color& l, const Color& r) {
