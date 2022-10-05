@@ -37,9 +37,22 @@ struct SurfaceInteraction : public Interaction {
    * @brief 着色法线所在的本地坐标系
    */
   Frame Shading;
+  /**
+   * @brief 表面UV纹理坐标
+   */
   Vector2 UV;
+  /**
+   * @brief 表面坐标对于纹理坐标的偏导数
+   */
   Vector3 dPdU, dPdV;
+  /**
+   * @brief 表面法线对于纹理坐标的偏导数
+   */
   Vector3 dNdU, dNdV;
+  /**
+   * @brief UV坐标对于屏幕空间坐标的偏导数
+   */
+  Vector2 dUVdX = Vector2::Zero(), dUVdY = Vector2::Zero();
   /**
    * @brief 本地坐标系下的入射方向, 如果这个碰撞点不可用(没碰到任何物体), 则表示入射方向的反方向
    */
@@ -55,7 +68,8 @@ struct SurfaceInteraction : public Interaction {
   PositionSampleResult ToPsr() const;
   DirectionSampleResult ToDsr(const Interaction& ref) const;
 
-  Spectrum Le() const;
+  Bsdf* BSDF();
+  Bsdf* BSDF(const RayDifferential& ray);
 };
 
 struct HitShapeRecord {

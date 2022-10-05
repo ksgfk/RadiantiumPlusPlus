@@ -12,7 +12,7 @@ class GBuffer final : public SampleRenderer {
   GBuffer(BuildContext* ctx, const ConfigNode& cfg) : SampleRenderer(ctx, cfg) {}
   ~GBuffer() noexcept override = default;
 
-  Spectrum Li(const Ray& ray, const Scene& scene, Sampler* sampler) const override {
+  Spectrum Li(const RayDifferential& ray, const Scene& scene, Sampler* sampler) const override {
     SurfaceInteraction si;
     if (!scene.RayIntersect(ray, si)) {
       return Spectrum(0);

@@ -50,11 +50,16 @@ class Perspective final : public Camera {
 
     _position = _cameraToWorld.ApplyAffineToWorld(Vector3(0, 0, 0));
 
+    _dx = _cameraToClip.ApplyAffineToLocal(Vector3(Float(1) / _resolution.x(), 0, 0)) -
+          _cameraToClip.ApplyAffineToLocal(Vector3::Constant(0));
+    _dy = _cameraToClip.ApplyAffineToLocal(Vector3(0, Float(1) / _resolution.y(), 0)) -
+          _cameraToClip.ApplyAffineToLocal(Vector3::Constant(0));
+
     InitCamera();
   }
   ~Perspective() noexcept override = default;
 
-  Ray SampleRay(Vector2 screenPosition) const override {
+  Ray SampleRay(const Vector2& screenPosition) const override {
     Vector2 t = screenPosition.cwiseProduct(_rcpResolution);
     Vector3 ndc = Vector3(t.x(), t.y(), 0);
     Vector3 near = _cameraToClip.ApplyAffineToLocal(ndc);  //标准设备空间的近平面变换到摄像机空间
@@ -65,12 +70,30 @@ class Perspective final : public Camera {
     return Ray{o, d, _near * invZ, _far * invZ};
   }
 
+  RayDifferential SampleRayDifferential(const Vector2& screenPosition) const override {
+    Vector2 t = screenPosition.cwiseProduct(_rcpResolution);
+    Vector3 ndc = Vector3(t.x(), t.y(), 0);
+    Vector3 near = _cameraToClip.ApplyAffineToLocal(ndc);  //标准设备空间的近平面变换到摄像机空间
+    Vector3 dir = near.normalized();
+    Float invZ = Math::Rcp(dir.z());
+    Vector3 o = _cameraToWorld.ApplyAffineToWorld(Vector3(0, 0, 0));  //从摄像机空间变换到世界空间
+    Vector3 d = _cameraToWorld.ApplyLinearToWorld(dir).normalized();
+    RayDifferential diff{
+        {o, d, _near * invZ, _far * invZ},
+        o,
+        o,
+        _cameraToWorld.ApplyLinearToWorld((near + _dx).normalized()),
+        _cameraToWorld.ApplyLinearToWorld((near + _dy).normalized())};
+    return diff;
+  }
+
  private:
   Float _near;
   Float _far;
   Vector2 _rcpResolution;
   Transform _cameraToWorld;
   Transform _cameraToClip;
+  Vector3 _dx, _dy;
 };
 
 }  // namespace Rad

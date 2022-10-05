@@ -57,7 +57,7 @@ void SampleRenderer::Start() {
                 }
                 localSampler->Advance();
                 Vector2 scrPos(x + dist(rng), y + dist(rng));
-                Ray ray = camera.SampleRay(scrPos);
+                RayDifferential ray = camera.SampleRayDifferential(scrPos);
                 Spectrum li = Li(ray, scene, localSampler.get());
                 if (li.HasNaN() || li.HasInfinity() || li.HasNegative()) {
                   _logger->warn("invalid spectrum {}", li);

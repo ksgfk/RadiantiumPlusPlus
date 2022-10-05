@@ -30,7 +30,8 @@ class Camera {
   /**
    * @brief 根据屏幕空间坐标生成一条光线
    */
-  virtual Ray SampleRay(Vector2 screenPosition) const = 0;
+  virtual Ray SampleRay(const Vector2& screenPosition) const = 0;
+  virtual RayDifferential SampleRayDifferential(const Vector2& screenPosition) const = 0;
 
  protected:
   /**

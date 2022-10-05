@@ -31,7 +31,7 @@ class Direct final : public SampleRenderer {
   }
   ~Direct() noexcept override = default;
 
-  Spectrum Li(const Ray& ray, const Scene& scene, Sampler* sampler) const override {
+  Spectrum Li(const RayDifferential& ray, const Scene& scene, Sampler* sampler) const override {
 #if 0
     Spectrum result(0);
     SurfaceInteraction si;

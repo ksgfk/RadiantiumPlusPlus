@@ -47,7 +47,7 @@ class SampleRenderer : public Renderer {
   virtual void SaveResult(const LocationResolver& resolver) const override;
 
  protected:
-  virtual Spectrum Li(const Ray& ray, const Scene& scene, Sampler* sampler) const = 0;
+  virtual Spectrum Li(const RayDifferential& ray, const Scene& scene, Sampler* sampler) const = 0;
 
  private:
   Unique<Scene> _scene;

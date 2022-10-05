@@ -27,7 +27,7 @@ class Path final : public SampleRenderer {
     _rrDepth = cfg.ReadOrDefault("rr_depth", 3);
   }
 
-  Spectrum Li(const Ray& ray_, const Scene& scene, Sampler* sampler) const override {
+  Spectrum Li(const RayDifferential& ray_, const Scene& scene, Sampler* sampler) const override {
 #if 0
     Ray ray = ray_;
     Spectrum throughput(1);
@@ -128,7 +128,7 @@ class Path final : public SampleRenderer {
 #endif
 
 #if 1
-    Ray ray = ray_;
+    RayDifferential ray = ray_;
     Spectrum throughput(1);       //路径吞吐量
     Spectrum result(0);           //最终结果
     Float eta = 1;                //路径上由于透射造成的辐射缩放
@@ -168,7 +168,7 @@ class Path final : public SampleRenderer {
       if (si.Shape->IsLight()) {
         break;
       }
-      Bsdf* bsdf = si.Shape->GetBsdf();
+      Bsdf* bsdf = si.BSDF(ray);
       if (bsdf->HasAnyTypeExceptDelta()) {  // BSDF只有delta的lobe就不启用光源采样了
         auto [l, dsr, li] = scene.SampleLightDirection(si, sampler->Next1D(), sampler->Next2D());
         if (dsr.Pdf > 0) {

@@ -90,10 +90,16 @@ class ImageDefault final : public ImageAsset {
             Float32 fg = Float32(g) / std::numeric_limits<UInt8>::max();
             Float32 fb = Float32(b) / std::numeric_limits<UInt8>::max();
             Color color(fr, fg, fb);
-            if (_isToLinear) {
-              color = Color::ToLinear(color);
-            }
             _rgb->Write(i, j, color);
+          }
+        }
+        if (_isToLinear) {
+          for (UInt32 j = 0; j < UInt32(y); j++) {
+            for (UInt32 i = 0; i < UInt32(x); i++) {
+              Color gamma = _rgb->Read(i, j);
+              Color linear = Color::ToLinear(gamma);
+              _rgb->Write(i, j, linear);
+            }
           }
         }
         result.IsSuccess = true;
