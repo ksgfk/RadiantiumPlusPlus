@@ -53,6 +53,8 @@ class Bitmap final : public Texture<T> {
     }
     bool enableMipMap = _filter == FilterMode::Trilinear || _filter == FilterMode::Anisotropic;
     Int32 maxLevel = cfg.ReadOrDefault("max_level", enableMipMap ? -1 : 0);
+    bool useAniso = _filter == FilterMode::Anisotropic;
+    _anisoLevel = cfg.ReadOrDefault("anisotropic_level", useAniso ? Float(8) : 0);
 
     this->_width = image->Width();
     this->_height = image->Height();
@@ -72,17 +74,13 @@ class Bitmap final : public Texture<T> {
   T EvalImpl(const SurfaceInteraction& si) const override {
     switch (_filter) {
       case FilterMode::Nearest:
-        return _mipmap.Eval(si.UV, FilterMode::Nearest);
+        return _mipmap.EvalNearest(si.UV);
       case FilterMode::Bilinear:
-        return _mipmap.Eval(si.UV, FilterMode::Bilinear);
-      case FilterMode::Trilinear: {
-        Float x = si.dUVdX.squaredNorm();
-        Float y = si.dUVdY.squaredNorm();
-        Float weight = std::sqrt(std::max(x, y));
-        return _mipmap.Eval(si.UV, weight);
-      }
+        return _mipmap.EvalBilinear(si.UV);
+      case FilterMode::Trilinear:
+        return _mipmap.EvalTrilinear(si.UV, si.dUVdX, si.dUVdY);
       case FilterMode::Anisotropic:
-        return T(0);
+        return _mipmap.EvalAnisotropic(si.UV, si.dUVdX, si.dUVdY, _anisoLevel);
       default:
         return T(0);
     }
@@ -95,6 +93,7 @@ class Bitmap final : public Texture<T> {
  private:
   MipMap<T> _mipmap;
   FilterMode _filter;
+  Float _anisoLevel;
 };
 
 }  // namespace Rad
