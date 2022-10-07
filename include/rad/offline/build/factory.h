@@ -65,6 +65,14 @@
   RAD_FACTORY_BASE_DECLARATION(Bsdf, type, name); \
   RAD_FACTORY_FUNC_DEFINITION(Bsdf, type)
 
+#define RAD_FACTORY_MEDIUM_DECLARATION(type, name)  \
+  RAD_FACTORY_BASE_DECLARATION(Medium, type, name); \
+  RAD_FACTORY_FUNC_DEFINITION(Medium, type)
+
+#define RAD_FACTORY_PHASEFUNCTION_DECLARATION(type, name)  \
+  RAD_FACTORY_BASE_DECLARATION(PhaseFunction, type, name); \
+  RAD_FACTORY_FUNC_DEFINITION(PhaseFunction, type)
+
 #define RAD_FACTORY_LIGHT_DECLARATION(type, name)  \
   RAD_FACTORY_BASE_DECLARATION(Light, type, name); \
   RAD_FACTORY_FUNC_DEFINITION(Light, type)
@@ -108,6 +116,8 @@ class Factory {
 
 RAD_FACTORY(Shape);
 RAD_FACTORY(Bsdf);
+RAD_FACTORY(Medium);
+RAD_FACTORY(PhaseFunction);
 RAD_FACTORY(Light);
 RAD_FACTORY(Camera);
 RAD_FACTORY(Sampler);

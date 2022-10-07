@@ -14,7 +14,11 @@ namespace Rad {
  */
 class Scene {
  public:
-  Scene(Unique<Accel> accel, Unique<Camera> camera, std::vector<Unique<Light>>&& lights);
+  Scene(
+      Unique<Accel> accel,
+      Unique<Camera> camera,
+      std::vector<Unique<Light>>&& lights,
+      std::vector<Unique<Medium>>&& mediums);
 
   const Camera& GetCamera() const { return *_camera; }
   Camera& GetCamera() { return *_camera; }
@@ -77,6 +81,7 @@ class Scene {
   Unique<Accel> _accel;
   Unique<Camera> _camera;
   std::vector<Unique<Light>> _lights;
+  std::vector<Unique<Medium>> _mediums;
   Float _lightPdf;
   Light* _envLight = nullptr;
 };

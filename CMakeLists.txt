@@ -34,6 +34,7 @@ add_library(rad.offline
     src/offline/microfacet.cpp
     src/offline/fresnel.cpp
     src/offline/memory.cpp
+    src/offline/medium.cpp
     src/offline/bounding_sphere.cpp
     src/offline/utility/image.cpp
     src/offline/utility/stop_watch.cpp
@@ -66,7 +67,9 @@ add_library(rad.offline
     src/offline/light/point.cpp
     src/offline/light/projection.cpp
     src/offline/texture/bitmap.cpp
-    src/offline/texture/chessboard.cpp)
+    src/offline/texture/chessboard.cpp
+    src/offline/medium/homogeneous.cpp
+    src/offline/phase_function/isotropic.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT32)

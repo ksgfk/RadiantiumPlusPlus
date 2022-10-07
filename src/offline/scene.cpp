@@ -4,10 +4,15 @@
 
 namespace Rad {
 
-Scene::Scene(Unique<Accel> accel, Unique<Camera> camera, std::vector<Unique<Light>>&& lights)
+Scene::Scene(
+    Unique<Accel> accel,
+    Unique<Camera> camera,
+    std::vector<Unique<Light>>&& lights,
+    std::vector<Unique<Medium>>&& mediums)
     : _accel(std::move(accel)),
       _camera(std::move(camera)),
-      _lights(std::move(lights)) {
+      _lights(std::move(lights)),
+      _mediums(std::move(mediums)) {
   _lightPdf = Math::Rcp(Float(_lights.size()));
   for (const auto& light : _lights) {
     if (light->IsEnv()) {
@@ -18,6 +23,8 @@ Scene::Scene(Unique<Accel> accel, Unique<Camera> camera, std::vector<Unique<Ligh
       _envLight->SetScene(this);
     }
   }
+  _lights.shrink_to_fit();
+  _mediums.shrink_to_fit();
 }
 
 bool Scene::RayIntersect(const Ray& ray) const {

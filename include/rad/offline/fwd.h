@@ -4,6 +4,8 @@ namespace Rad {
 
 class Shape;
 class Bsdf;
+class Medium;
+class PhaseFunction;
 class Camera;
 class Light;
 class Sampler;

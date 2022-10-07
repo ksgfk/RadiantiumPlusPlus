@@ -42,6 +42,7 @@ SurfaceInteraction::SurfaceInteraction(const PositionSampleResult& psr) {
 }
 
 void SurfaceInteraction::ComputeShadingFrame() {
+  // Gram-schmidt 正交化求正交基
   if (dPdU.isZero()) {
     Shading.S = Math::CoordinateSystem(Shading.N).first;
   } else {
@@ -107,6 +108,10 @@ Bsdf* SurfaceInteraction::BSDF(const RayDifferential& ray) {
   }
   return Shape->GetBsdf();
 }
+
+Vector3 MediumInteraction::ToWorld(const Vector3& v) const { return Shading.ToWorld(v); }
+
+Vector3 MediumInteraction::ToLocal(const Vector3& v) const { return Shading.ToLocal(v); }
 
 SurfaceInteraction HitShapeRecord::ComputeSurfaceInteraction(const Ray& ray) const {
   SurfaceInteraction si = ShapePtr->ComputeInteraction(ray, *this);

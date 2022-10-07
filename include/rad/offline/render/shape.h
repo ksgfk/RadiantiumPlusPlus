@@ -66,14 +66,23 @@ class Shape {
   const Light* GetLight() const { return _light; }
   Light* GetLight() { return _light; }
   /**
-   * @brief Light的生命周期不由Shape管理, 但保证需要用到Light时, Light是可用的
+   * @brief Light的生命周期不由Shape管理, 但保证需要用到Light时, 它是可用的
    */
   void AttachLight(Light* light) { _light = light; }
+  /**
+   * @brief Medium的生命周期不由Shape管理, 但保证需要用到Medium时, 它是可用的
+   */
+  inline void AttachMedium(Medium* inMedium, Medium* outMedium) {
+    _insideMedium = inMedium;
+    _outsideMedium = outMedium;
+  }
 
  protected:
   Float _surfaceArea;
   Unique<Bsdf> _bsdf;
   Light* _light = nullptr;
+  Medium* _insideMedium = nullptr;
+  Medium* _outsideMedium = nullptr;
 };
 
 }  // namespace Rad

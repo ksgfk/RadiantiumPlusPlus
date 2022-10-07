@@ -24,7 +24,7 @@ class MipMap {
   MipMap() noexcept = default;
   MipMap(const TImage& image, Int32 maxLevel, WrapMode wrap) {
     _wrap = wrap;
-    if (!Math::IsPowOf2(image.Width()) || Math::IsPowOf2(image.Height())) {
+    if ((image.Width() % 2 != 0) || (image.Height() % 2 != 0)) {
       Logger::Get()->warn("分辨率是2的整数倍的纹理才支持mipmap: {}, {}", image.Width(), image.Height());
       maxLevel = 0;
     }

@@ -144,33 +144,44 @@ class BuildContextImpl {
       throw RadArgumentException("配置文件必须有 scene 属性");
     }
     Unique<Camera> mainCamera;
+    Unique<Medium> globalMedium;
     {
       ConfigNode cameraNode;
-      std::string type;
+      std::string cameraType;
       if (_root.TryRead<ConfigNode>("camera", cameraNode)) {
-        type = GetTypeFromConfig(cameraNode);
+        cameraType = GetTypeFromConfig(cameraNode);
       } else {
-        type = "perspective";
+        cameraType = "perspective";
       }
-      CameraFactory* factory = GetFactory<CameraFactory>(type);
-      mainCamera = factory->Create(_ctxPtr, cameraNode);
+      CameraFactory* cameraFactory = GetFactory<CameraFactory>(cameraType);
+      mainCamera = cameraFactory->Create(_ctxPtr, cameraNode);
 
       Unique<Sampler> samplerInstance;
       {
         ConfigNode samplerNode;
-        std::string type;
+        std::string samplerType;
         if (_root.TryRead<ConfigNode>("sampler", samplerNode)) {
-          type = GetTypeFromConfig(samplerNode);
+          samplerType = GetTypeFromConfig(samplerNode);
         } else {
-          type = "independent";
+          samplerType = "independent";
         }
-        SamplerFactory* factory = GetFactory<SamplerFactory>(type);
-        samplerInstance = factory->Create(_ctxPtr, samplerNode);
+        SamplerFactory* samplerFactory = GetFactory<SamplerFactory>(samplerType);
+        samplerInstance = samplerFactory->Create(_ctxPtr, samplerNode);
       }
       mainCamera->AttachSampler(std::move(samplerInstance));
+
+      {
+        ConfigNode globalMediumNode;
+        if (_root.TryRead<ConfigNode>("global_medium", globalMediumNode)) {
+          std::string globalMediumType = GetTypeFromConfig(globalMediumNode);
+          MediumFactory* mediumFactory = GetFactory<MediumFactory>(globalMediumType);
+          globalMedium = mediumFactory->Create(_ctxPtr, globalMediumNode);
+        }
+      }
     }
     std::vector<Unique<Shape>> shapes;
     std::vector<Unique<Light>> lights;
+    std::vector<Unique<Medium>> mediums;
     {
       std::queue<EntityConfig> q;
       for (const ConfigNode& entityNode : worldNodes) {
@@ -228,6 +239,26 @@ class BuildContextImpl {
             bsdfInstance = factory->Create(_ctxPtr, bsdfNode);
           }
         }
+        Unique<Medium> mediumInsideInstance;
+        Unique<Medium> mediumOutsideInstance;
+        bool isMediumOutsideUseGlobal;
+        {
+          ConfigNode inMediumNode;
+          if (entityNode.TryRead("in_medium", inMediumNode)) {
+            std::string type = GetTypeFromConfig(inMediumNode);
+            MediumFactory* factory = GetFactory<MediumFactory>(type);
+            mediumInsideInstance = factory->Create(_ctxPtr, inMediumNode);
+          }
+          ConfigNode outMediumNode;
+          if (entityNode.TryRead("out_medium", outMediumNode)) {
+            if (!outMediumNode.TryRead("is_global", isMediumOutsideUseGlobal)) {
+              std::string type = GetTypeFromConfig(outMediumNode);
+              MediumFactory* factory = GetFactory<MediumFactory>(type);
+              mediumOutsideInstance = factory->Create(_ctxPtr, outMediumNode);
+            }
+          }
+        }
+
         if (lightInstance != nullptr &&
             shapeInstance != nullptr &&
             bsdfInstance == nullptr) {
@@ -246,6 +277,19 @@ class BuildContextImpl {
         if (lightInstance != nullptr) {
           lightInstance->AttachShape(shapeInstance.get());
         }
+        Medium* inMedPtr = nullptr;
+        Medium* outMedPtr = nullptr;
+        if (mediumInsideInstance != nullptr) {
+          inMedPtr = mediumInsideInstance.get();
+        }
+        if (mediumOutsideInstance == nullptr) {
+          if (isMediumOutsideUseGlobal && globalMedium != nullptr) {
+            outMedPtr = globalMedium.get();
+          }
+        } else {
+          outMedPtr = mediumOutsideInstance.get();
+        }
+        shapeInstance->AttachMedium(inMedPtr, outMedPtr);
 
         if (shapeInstance != nullptr) {
           shapes.emplace_back(std::move(shapeInstance));
@@ -253,10 +297,20 @@ class BuildContextImpl {
         if (lightInstance != nullptr) {
           lights.emplace_back(std::move(lightInstance));
         }
+        if (mediumInsideInstance != nullptr) {
+          mediums.emplace_back(std::move(mediumInsideInstance));
+        }
+        if (mediumOutsideInstance != nullptr) {
+          mediums.emplace_back(std::move(mediumOutsideInstance));
+        }
       }
     }
 
     _shapes = std::move(shapes);
+    if (globalMedium != nullptr) {
+      mediums.emplace_back(std::move(globalMedium));
+    }
+
     Unique<Accel> accelInstance;
     {
       ConfigNode accelNode;
@@ -272,7 +326,8 @@ class BuildContextImpl {
     return Scene(
         std::move(accelInstance),
         std::move(mainCamera),
-        std::move(lights));
+        std::move(lights),
+        std::move(mediums));
   }
 
   static std::string GetTypeFromConfig(const ConfigNode& cfg) {

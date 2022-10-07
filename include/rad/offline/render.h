@@ -2,6 +2,8 @@
 
 #include "render/accel.h"
 #include "render/bsdf.h"
+#include "render/medium.h"
+#include "render/phase_function.h"
 #include "render/camera.h"
 #include "render/interaction.h"
 #include "render/light.h"
