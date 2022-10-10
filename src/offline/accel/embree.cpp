@@ -50,14 +50,14 @@ class Embree final : public Accel {
 
   static struct RTCRay ToEmbreeRay(const Ray& ray) {
     struct RTCRay rtcray;
-    rtcray.org_x = ray.O.x();
-    rtcray.org_y = ray.O.y();
-    rtcray.org_z = ray.O.z();
-    rtcray.dir_x = ray.D.x();
-    rtcray.dir_y = ray.D.y();
-    rtcray.dir_z = ray.D.z();
-    rtcray.tnear = ray.MinT;
-    rtcray.tfar = ray.MaxT;
+    rtcray.org_x = float(ray.O.x());
+    rtcray.org_y = float(ray.O.y());
+    rtcray.org_z = float(ray.O.z());
+    rtcray.dir_x = float(ray.D.x());
+    rtcray.dir_y = float(ray.D.y());
+    rtcray.dir_z = float(ray.D.z());
+    rtcray.tnear = float(ray.MinT);
+    rtcray.tfar = float(ray.MaxT);
     rtcray.mask = 0;
     rtcray.flags = 0;
     return rtcray;
@@ -77,7 +77,7 @@ class Embree final : public Accel {
     rtcInitIntersectContext(&context);
     struct RTCRay rtcray = ToEmbreeRay(ray);
     rtcOccluded1(_scene, &context, &rtcray);
-    return rtcray.tfar != ray.MaxT;
+    return rtcray.tfar != float(ray.MaxT);
   }
 
   bool RayIntersectPreliminary(const Ray& ray, HitShapeRecord& hsr) const override {
@@ -89,7 +89,7 @@ class Embree final : public Accel {
     rtcIntersect1(_scene, &context, &rayhit);
     HitShapeRecord rec{};
     bool anyHit;
-    if (rayhit.ray.tfar != ray.MaxT) {  // hit
+    if (rayhit.ray.tfar != float(ray.MaxT)) {  // hit
       uint32_t shapeIndex = rayhit.hit.geomID;
       uint32_t primIndex = rayhit.hit.primID;
       rec.ShapePtr = _shapes[shapeIndex].get();

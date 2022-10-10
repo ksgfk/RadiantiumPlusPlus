@@ -8,7 +8,7 @@
 
 namespace Rad {
 
-struct alignas(16) EmbreeRectangle {
+struct alignas(32) EmbreeRectangle {
   Eigen::Matrix4f ToWorld;
   Eigen::Matrix4f ToObject;
   Eigen::Vector3f N;
@@ -170,7 +170,7 @@ class Rectangle final : public Shape {
     Vector3 normal = _toWorld.ApplyNormalToWorld(Vector3(0, 0, 1)).normalized();
     _frame = Frame(dpdu, dpdv, normal);
     _surfaceArea = dpdu.cross(dpdv).norm();
-    _giveEmbreeData = (EmbreeRectangle*)Memory::AlignedAlloc(16, sizeof(EmbreeRectangle));
+    _giveEmbreeData = (EmbreeRectangle*)Memory::AlignedAlloc(32, sizeof(EmbreeRectangle));
   }
   ~Rectangle() noexcept override {
     if (_giveEmbreeData != nullptr) {

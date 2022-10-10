@@ -27,6 +27,8 @@
 
 namespace Rad {
 
+struct RgbSpectrum;
+
 #if defined(RAD_USE_FLOAT32)
 using Float = float;
 #elif defined(RAD_USE_FLOAT64)
@@ -34,6 +36,8 @@ using Float = double;
 #else
 using Float = float;
 #endif
+
+using Spectrum = RgbSpectrum;
 
 using Byte = std::byte;
 using Int8 = std::int8_t;

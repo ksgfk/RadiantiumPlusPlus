@@ -27,7 +27,7 @@ Float Frame::AbsCosTheta(const Vector3& v) { return std::abs(v.z()); }
 Float Frame::Cos2Theta(const Vector3& v) { return Sqr(v.z()); }
 Float Frame::Sin2Theta(const Vector3& v) { return Fmadd(v.x(), v.x(), Sqr(v.y())); }
 Float Frame::SinTheta(const Vector3& v) { return SafeSqrt(Sin2Theta(v)); }
-Float Frame::TanTheta(const Vector3& v) { return SafeSqrt(Fmadd(-v.z(), v.z(), 1.0f)) / v.z(); }
+Float Frame::TanTheta(const Vector3& v) { return SafeSqrt(Fmadd(-v.z(), v.z(), Float(1))) / v.z(); }
 Float Frame::Tan2Theta(const Vector3& v) {
   return std::max(Fmadd(-v.z(), v.z(), 1), Float(0)) / Sqr(v.z());
 }
@@ -35,15 +35,15 @@ Float Frame::CosPhi(const Vector3& v) {
   Float sin2Theta = Sin2Theta(v);
   Float invSinTheta = Rsqrt(Sin2Theta(v));
   return std::abs(sin2Theta) <= 4 * std::numeric_limits<Float>::epsilon()
-             ? 1.0f
-             : std::clamp(v.x() * invSinTheta, -1.0f, 1.0f);
+             ? Float(1)
+             : std::clamp(v.x() * invSinTheta, Float(-1), Float(1));
 }
 Float Frame::SinPhi(const Vector3& v) {
   Float sin2Theta = Sin2Theta(v);
   Float invSinTheta = Rsqrt(Sin2Theta(v));
   return std::abs(sin2Theta) <= 4 * std::numeric_limits<Float>::epsilon()
-             ? 0.0f
-             : std::clamp(v.y() * invSinTheta, -1.0f, 1.0f);
+             ? Float(0)
+             : std::clamp(v.y() * invSinTheta, Float(-1), Float(1));
 }
 std::pair<Float, Float> Frame::SinCosPhi(const Vector3& v) {
   Float sin2Theta = Sin2Theta(v);
@@ -57,14 +57,14 @@ std::pair<Float, Float> Frame::SinCosPhi(const Vector3& v) {
 Float Frame::Cos2Phi(const Vector3& v) {
   Float sin2Theta = Sin2Theta(v);
   return std::abs(sin2Theta) <= 4 * std::numeric_limits<Float>::epsilon()
-             ? 1.0f
-             : std::clamp(Sqr(v.x()) / sin2Theta, -1.0f, 1.0f);
+             ? Float(1)
+             : std::clamp(Sqr(v.x()) / sin2Theta, Float(-1), Float(1));
 }
 Float Frame::Sin2Phi(const Vector3& v) {
   Float sin2Theta = Sin2Theta(v);
   return std::abs(sin2Theta) <= 4 * std::numeric_limits<Float>::epsilon()
-             ? 0.0f
-             : std::clamp(Sqr(v.y()) / sin2Theta, -1.0f, 1.0f);
+             ? Float(0)
+             : std::clamp(Sqr(v.y()) / sin2Theta, Float(-1), Float(1));
 }
 
 bool Frame::IsSameHemisphere(const Vector3& x, const Vector3& y) {

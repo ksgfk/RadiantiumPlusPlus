@@ -36,7 +36,8 @@ class LocationResolver {
   inline void SaveOpenExr(const MatrixX<Spectrum> fb) const {
     std::filesystem::path savePath = _workDir / fmt::format("{}.exr", _projectName);
     std::ofstream stream(savePath, std::ios::out | std::ios::binary);
-    Image::SaveOpenExr(stream, fb);
+    MatrixX<Color> color = Spectrum::CastToRGB(fb);
+    Image::SaveOpenExr(stream, color);
   }
 
  private:

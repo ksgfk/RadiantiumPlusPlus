@@ -78,7 +78,7 @@ Float Beckmann::PdfImpl(const Vector3& wi, const Vector3& wh) const {
 
 static Vector2 SampleVisibleBeckmann(Float cosThetaI, Vector2 sample) {
   // mitsuba impl
-  Float tanThetaI = SafeSqrt(Fmadd(-cosThetaI, cosThetaI, 1.f)) / cosThetaI;
+  Float tanThetaI = SafeSqrt(Fmadd(-cosThetaI, cosThetaI, Float(1))) / cosThetaI;
   Float cotThetaI = Rcp(tanThetaI);
   Float maxval = std::erf(cotThetaI);
   sample = sample.cwiseMin(Float(1 - 1e-6)).cwiseMax(Float(1e-6));
@@ -90,7 +90,7 @@ static Vector2 SampleVisibleBeckmann(Float cosThetaI, Vector2 sample) {
     Float derivative = 1 - slope * tanThetaI;
     x -= value / derivative;
   }
-  return Vector2(ErfInv(x), ErfInv(Fmadd(2.f, sample.y(), -1.f)));
+  return Vector2(ErfInv(x), ErfInv(Fmadd(Float(2), sample.y(), Float(-1))));
 }
 
 std::pair<Vector3, Float> Beckmann::SampleImpl(const Vector3& wi, const Vector2& xi) const {
@@ -121,7 +121,7 @@ std::pair<Vector3, Float> Beckmann::SampleImpl(const Vector3& wi, const Vector2&
     }
     Float cosTheta = Rsqrt(Fmadd(-alpha2, std::log(1 - xi.x()), 1));
     Float cos2Theta = Sqr(cosTheta);
-    Float cos3Theta = std::max(cos2Theta * cosTheta, 1e-20f);
+    Float cos3Theta = std::max(cos2Theta * cosTheta, Float(1e-20));
     Float pdf = (1.f - xi.x()) / (PI * alphaX * alphaY * cos3Theta);
     Float sinTheta = std::sqrt(1 - cos2Theta);
     Vector3 m(
@@ -262,7 +262,7 @@ std::pair<Vector3, Float> GGX::SampleImpl(const Vector3& wi, const Vector2& xi) 
     Float cosTheta = Rsqrt(1.f + tanThetaM2);
     Float cos2Theta = Sqr(cosTheta);
     Float temp = 1 + tanThetaM2 / alpha2;
-    Float cos3Theta = std::max(cos2Theta * cosTheta, 1e-20f);
+    Float cos3Theta = std::max(cos2Theta * cosTheta, Float(1e-20));
     Float pdf = Rcp(PI * alphaX * alphaY * cos3Theta * Sqr(temp));
     Float sinTheta = std::sqrt(1 - cos2Theta);
     Vector3 m(

@@ -23,7 +23,7 @@ class AO final : public SampleRenderer {
       return Spectrum(0);
     }
     Vector3 wo = Warp::SquareToCosineHemisphere(sampler->Next2D());
-    float pdf = Warp::SquareToCosineHemispherePdf(wo);
+    Float pdf = Warp::SquareToCosineHemispherePdf(wo);
     Ray shadowRay = si.SpawnRay(si.ToWorld(wo));
     bool visibility = scene.RayIntersect(shadowRay);
     Spectrum l(0);

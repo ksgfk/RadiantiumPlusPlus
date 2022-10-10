@@ -30,11 +30,11 @@ class RoughGlass final : public Bsdf {
       _type = MicrofacetType::GGX;
     }
     if (cfg.HasNode("alpha")) {
-      _alphaU = cfg.ReadTexture(*ctx, "alpha", Float(0.1));
-      _alphaV = cfg.ReadTexture(*ctx, "alpha", Float(0.1));
+      _alphaU = cfg.ReadTexture(*ctx, "alpha", Float32(0.1));
+      _alphaV = cfg.ReadTexture(*ctx, "alpha", Float32(0.1));
     } else {
-      _alphaU = cfg.ReadTexture(*ctx, "alpha_u", Float(0.1));
-      _alphaV = cfg.ReadTexture(*ctx, "alpha_v", Float(0.1));
+      _alphaU = cfg.ReadTexture(*ctx, "alpha_u", Float32(0.1));
+      _alphaV = cfg.ReadTexture(*ctx, "alpha_v", Float32(0.1));
     }
     _isSampleVisible = cfg.ReadOrDefault("sample_visible", true);
   }
@@ -152,7 +152,7 @@ class RoughGlass final : public Bsdf {
     Spectrum result(0);
     if (hasReflection && reflect) {
       Float brdf = std::abs(F * D * G / (cosThetaI * 4));
-      Spectrum r = _reflectance->Eval(si);
+      Spectrum r(_reflectance->Eval(si));
       result = Spectrum(r * brdf);
     }
     if (hasTransmission && !reflect) {
@@ -161,7 +161,7 @@ class RoughGlass final : public Bsdf {
       Float odm = wo.dot(m);
       Float btdf = std::abs((scale * (1 - F) * D * G * eta * eta * idm * odm) /
                             (cosThetaI * Sqr(idm + eta * odm)));
-      Spectrum t = _transmittance->Eval(si);
+      Spectrum t(_transmittance->Eval(si));
       result = Spectrum(t * btdf);
     }
     return result;

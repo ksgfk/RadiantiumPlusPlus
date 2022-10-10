@@ -2,6 +2,7 @@
 
 namespace Rad {
 
+struct RgbSpectrum;
 class Shape;
 class Bsdf;
 class Medium;

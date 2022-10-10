@@ -4,6 +4,7 @@
 #include "types.h"
 #include "logger.h"
 #include "math_ext.h"
+#include "spectrum.h"
 #include "color.h"
 #include "transform.h"
 #include "frame.h"

@@ -43,7 +43,7 @@ class ImageDefault final : public ImageAsset {
     auto gray = std::make_shared<BlockBasedImage<Float32>>(_rgb->Width(), _rgb->Height());
     for (UInt32 j = 0; j < gray->Height(); j++) {
       for (UInt32 i = 0; i < gray->Width(); i++) {
-        gray->Write(i, j, _rgb->Read(i, j).R());
+        gray->Write(i, j, Float32(_rgb->Read(i, j).R()));
       }
     }
     return gray;

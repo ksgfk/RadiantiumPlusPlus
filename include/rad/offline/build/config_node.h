@@ -20,7 +20,9 @@ struct IsDefaultConfigData : std::false_type {};
 template <>
 struct IsDefaultConfigData<bool> : std::true_type {};
 template <>
-struct IsDefaultConfigData<Float> : std::true_type {};
+struct IsDefaultConfigData<float> : std::true_type {};
+template <>
+struct IsDefaultConfigData<double> : std::true_type {};
 template <>
 struct IsDefaultConfigData<UInt32> : std::true_type {};
 template <>
@@ -64,7 +66,9 @@ struct NodeType : NullDataType {};
 template <>
 struct NodeType<bool> : BoolDataType {};
 template <>
-struct NodeType<Float> : FloatDataType {};
+struct NodeType<float> : FloatDataType {};
+template <>
+struct NodeType<double> : FloatDataType {};
 template <>
 struct NodeType<UInt32> : UnsignedIntDataType {};
 template <>

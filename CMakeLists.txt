@@ -86,7 +86,9 @@ else()
   message(STATUS "RAD in Debug mode")
 endif()
 if(MSVC)
-target_compile_options(rad.offline PUBLIC /utf-8)
+target_compile_options(rad.offline PUBLIC /utf-8
+                                          /fp:fast
+                                          /arch:AVX2)
 endif()
 target_include_directories(rad.offline PUBLIC include)
 target_include_directories(rad.offline PRIVATE ${STB_INCLUDE_DIRS})

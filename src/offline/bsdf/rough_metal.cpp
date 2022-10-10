@@ -21,11 +21,11 @@ class RoughMetal final : public Bsdf {
     _eta = cfg.ReadTexture(*ctx, "eta", Color(0.1999899f, 0.9220823f, 1.0998751f));
     _k = cfg.ReadTexture(*ctx, "k", Color(3.9046354f, 2.4476316f, 2.1376500f));
     if (cfg.HasNode("alpha")) {
-      _alphaU = cfg.ReadTexture(*ctx, "alpha", Float(0.1));
-      _alphaV = cfg.ReadTexture(*ctx, "alpha", Float(0.1));
+      _alphaU = cfg.ReadTexture(*ctx, "alpha", Float32(0.1));
+      _alphaV = cfg.ReadTexture(*ctx, "alpha", Float32(0.1));
     } else {
-      _alphaU = cfg.ReadTexture(*ctx, "alpha_u", Float(0.1));
-      _alphaV = cfg.ReadTexture(*ctx, "alpha_v", Float(0.1));
+      _alphaU = cfg.ReadTexture(*ctx, "alpha_u", Float32(0.1));
+      _alphaV = cfg.ReadTexture(*ctx, "alpha_v", Float32(0.1));
     }
     std::string distribution = cfg.ReadOrDefault("distribution", std::string("ggx"));
     if (distribution == "ggx") {
@@ -65,9 +65,11 @@ class RoughMetal final : public Bsdf {
     bsr.Pdf /= 4 * bsr.Wo.dot(m);
     Float D = dist.D(m);
     Float G = dist.G(si.Wi, bsr.Wo, m);
-    Spectrum F = Fresnel::Conductor(si.Wi.dot(m), _eta->Eval(si), _k->Eval(si));
+    Spectrum eta(_eta->Eval(si));
+    Spectrum k(_k->Eval(si));
+    Spectrum F = Fresnel::Conductor(si.Wi.dot(m), eta, k);
     auto brdf = (F * D * G) / (4 * Frame::CosTheta(si.Wi) * Frame::CosTheta(bsr.Wo));
-    Spectrum r = _reflectance->Eval(si);
+    Spectrum r(_reflectance->Eval(si));
     auto result = r.cwiseProduct(brdf) * Frame::CosTheta(bsr.Wo);
     return {bsr, Spectrum(result)};
   }
@@ -104,7 +106,7 @@ class RoughMetal final : public Bsdf {
       return Spectrum(0);
     }
     Vector3 wh = (wo + si.Wi).normalized();
-    Spectrum eta = _eta->Eval(si), k = _k->Eval(si), r = _reflectance->Eval(si);
+    Spectrum eta = Spectrum(_eta->Eval(si)), k = Spectrum(_k->Eval(si)), r = Spectrum(_reflectance->Eval(si));
     Vector3 F = Fresnel::Conductor(si.Wi.dot(wh), eta, k);
     Float D = dist.D(wh);
     Float G = dist.G(si.Wi, wo, wh);

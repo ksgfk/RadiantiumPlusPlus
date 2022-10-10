@@ -241,7 +241,7 @@ class BuildContextImpl {
         }
         Unique<Medium> mediumInsideInstance;
         Unique<Medium> mediumOutsideInstance;
-        bool isMediumOutsideUseGlobal;
+        bool isMediumOutsideUseGlobal = false;
         {
           ConfigNode inMediumNode;
           if (entityNode.TryRead("in_medium", inMediumNode)) {

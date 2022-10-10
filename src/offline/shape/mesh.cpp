@@ -69,13 +69,13 @@ class Mesh final : public Shape {
       _position = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[model->VertexCount()]);
       std::shared_ptr<Eigen::Vector3f[]> p = model->GetPosition();
       for (size_t i = 0; i < model->VertexCount(); i++) {
-        _position[i] = _toWorld.ApplyAffineToWorld(p[i]);
+        _position[i] = _toWorld.ApplyAffineToWorld(p[i].cast<Float>()).cast<Float32>();
       }
       if (model->HasNormal()) {
         _normal = std::shared_ptr<Eigen::Vector3f[]>(new Eigen::Vector3f[model->VertexCount()]);
         std::shared_ptr<Eigen::Vector3f[]> n = model->GetNormal();
         for (size_t i = 0; i < model->VertexCount(); i++) {
-          _normal[i] = _toWorld.ApplyNormalToWorld(n[i]);
+          _normal[i] = _toWorld.ApplyNormalToWorld(n[i].cast<Float>()).cast<Float32>();
         }
       }
     }
@@ -88,10 +88,10 @@ class Mesh final : public Shape {
     std::vector<Float> areaData;
     areaData.reserve(_triangleCount);
     for (UInt32 i = 0; i < _triangleCount; i++) {
-      Vector3 p0 = _position[_indices[i * 3 + 0]];
-      Vector3 p1 = _position[_indices[i * 3 + 1]];
-      Vector3 p2 = _position[_indices[i * 3 + 2]];
-      areaData.emplace_back(TriangleArea(p0, p1, p2));
+      Eigen::Vector3f p0 = _position[_indices[i * 3 + 0]];
+      Eigen::Vector3f p1 = _position[_indices[i * 3 + 1]];
+      Eigen::Vector3f p2 = _position[_indices[i * 3 + 2]];
+      areaData.emplace_back(TriangleArea(p0.cast<Float>(), p1.cast<Float>(), p2.cast<Float>()));
     }
     _dist = DiscreteDistribution1D(areaData);
     _surfaceArea = _dist.Sum();
@@ -128,7 +128,7 @@ class Mesh final : public Shape {
   SurfaceInteraction ComputeInteraction(const Ray& ray, const HitShapeRecord& rec) override {
     UInt32 face = rec.PrimitiveIndex * 3;
     UInt32 f0 = _indices[face + 0], f1 = _indices[face + 1], f2 = _indices[face + 2];
-    Vector3 p0 = _position[f0], p1 = _position[f1], p2 = _position[f2];
+    Vector3 p0 = _position[f0].cast<Float>(), p1 = _position[f1].cast<Float>(), p2 = _position[f2].cast<Float>();
     Float t = rec.T;
     Vector2 primUV = rec.PrimitiveUV;
     Vector3 bary(1.f - primUV.x() - primUV.y(), primUV.x(), primUV.y());
@@ -142,7 +142,7 @@ class Mesh final : public Shape {
       si.UV = primUV;
       std::tie(si.dPdU, si.dPdV) = CoordinateSystem(si.N);
     } else {
-      Vector2 uv0 = _uv[f0], uv1 = _uv[f1], uv2 = _uv[f2];
+      Vector2 uv0 = _uv[f0].cast<Float>(), uv1 = _uv[f1].cast<Float>(), uv2 = _uv[f2].cast<Float>();
       si.UV = uv0 * bary.x() + (uv1 * bary.y() + (uv2 * bary.z()));
       Vector2 duv0 = uv1 - uv0, duv1 = uv2 - uv0;
       Float det = duv0.x() * duv1.y() - (duv0.y() * duv1.x());
@@ -158,7 +158,7 @@ class Mesh final : public Shape {
     if (_normal == nullptr) {
       si.Shading.N = si.N;
     } else {
-      Vector3 n0 = _normal[f0], n1 = _normal[f1], n2 = _normal[f2];
+      Vector3 n0 = _normal[f0].cast<Float>(), n1 = _normal[f1].cast<Float>(), n2 = _normal[f2].cast<Float>();
       Vector3 shN = n0 * bary.x() + (n1 * bary.y() + (n2 * bary.z()));
       Float il = Rsqrt(shN.squaredNorm());
       shN *= il;
@@ -177,7 +177,7 @@ class Mesh final : public Shape {
     std::tie(index, txi.y()) = _dist.SampleReuse(txi.y());
     UInt32 face = UInt32(index) * 3;
     UInt32 f0 = _indices[face + 0], f1 = _indices[face + 1], f2 = _indices[face + 2];
-    Vector3 p0 = _position[f0], p1 = _position[f1], p2 = _position[f2];
+    Vector3 p0 = _position[f0].cast<Float>(), p1 = _position[f1].cast<Float>(), p2 = _position[f2].cast<Float>();
     Vector3 e0 = p1 - p0, e1 = p2 - p0;
     Vector2 b = Warp::SquareToUniformTriangle(txi);
     PositionSampleResult psr{};
@@ -187,13 +187,13 @@ class Mesh final : public Shape {
     if (_uv == nullptr) {
       psr.UV = b;
     } else {
-      Vector2 uv0 = _uv[f0], uv1 = _uv[f1], uv2 = _uv[f2];
+      Vector2 uv0 = _uv[f0].cast<Float>(), uv1 = _uv[f1].cast<Float>(), uv2 = _uv[f2].cast<Float>();
       psr.UV = uv0 * (1 - b.x() - b.y()) + (uv1 * b.x() + (uv2 * b.y()));
     }
     if (_normal == nullptr) {
       psr.N = e0.cross(e1).normalized();
     } else {
-      Vector3 n0 = _normal[f0], n1 = _normal[f1], n2 = _normal[f2];
+      Vector3 n0 = _normal[f0].cast<Float>(), n1 = _normal[f1].cast<Float>(), n2 = _normal[f2].cast<Float>();
       psr.N = (n0 * (1 - b.x() - b.y()) + (n1 * b.x() + (n2 * b.y()))).normalized();
     }
     return psr;

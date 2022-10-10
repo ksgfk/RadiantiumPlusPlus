@@ -57,7 +57,7 @@ class Projection final : public Light {
     Float squaredNorm = dsr.Dir.squaredNorm();
     dsr.Dist = std::sqrt(squaredNorm);
     dsr.Dir *= Math::Rcp(dsr.Dist);
-    Spectrum irradiance = _irradiance->Eval(SurfaceInteraction(dsr));
+    Spectrum irradiance(_irradiance->Eval(SurfaceInteraction(dsr)));
     Spectrum result = Spectrum(irradiance.cwiseProduct(_scale) * Math::PI / (Math::Sqr(local.z()) * (-dsr.Dir).dot(dsr.N)));
     return std::make_pair(dsr, result);
   }

@@ -7,18 +7,18 @@ namespace Rad {
 /**
  * @brief RGB颜色
  */
-struct Color : Vector3 {
-  using Scalar = Vector3::Scalar;
+struct Color : Eigen::Vector3f {
+  using Scalar = Eigen::Vector3f::Scalar;
 
-  Color() noexcept : Vector3(0, 0, 0) {}
-  Color(Float value) noexcept : Vector3(value, value, value) {}
-  Color(Float r, Float g, Float b) noexcept : Vector3(r, g, b) {}
-  Color(const Vector3& v) noexcept : Vector3(v) {}
+  Color() noexcept : Eigen::Vector3f(0, 0, 0) {}
+  Color(Float32 value) noexcept : Eigen::Vector3f(value, value, value) {}
+  Color(Float32 r, Float32 g, Float32 b) noexcept : Eigen::Vector3f(r, g, b) {}
+  Color(const Eigen::Vector3f& v) noexcept : Eigen::Vector3f(v) {}
   template <typename Derived>
-  Color(const Eigen::ArrayBase<Derived>& p) noexcept : Vector3(p) {}
+  Color(const Eigen::ArrayBase<Derived>& p) noexcept : Eigen::Vector3f(p) {}
   template <typename Derived>
   Color& operator=(const Eigen::ArrayBase<Derived>& p) noexcept {
-    this->Vector3::operator=(p);
+    this->Eigen::Vector3f::operator=(p);
     return *this;
   }
 
@@ -50,11 +50,9 @@ inline Color Clamp(const Color& v, const Color& l, const Color& r) {
   return Color(v.cwiseMax(l).cwiseMin(r));
 }
 
-inline Color Clamp(const Color& v, Float l, Float r) {
+inline Color Clamp(const Color& v, Float32 l, Float32 r) {
   return Color(v.cwiseMax(l).cwiseMin(r));
 }
-
-using Spectrum = Color;
 
 }  // namespace Rad
 

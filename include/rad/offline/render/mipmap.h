@@ -181,7 +181,7 @@ class MipMap {
         Float ss = is - st[0];
         Float r2 = A * ss * ss + B * ss * tt + C * tt * tt;
         if (r2 < 1) {
-          Float weight = std::expf(-2 * r2) - std::expf(-2);
+          Float weight = std::exp(Float(-2) * r2) - std::exp(Float(-2));
           T value = map.Eval(Vector2(is, it).cwiseProduct(invR), FilterMode::Nearest, _wrap);
           auto weighted = value * weight;
           sum += T(weighted);
