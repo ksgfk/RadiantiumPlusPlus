@@ -22,6 +22,7 @@ RAD_FACTORY_FUNC_DECLARATION(Renderer, AO);
 RAD_FACTORY_FUNC_DECLARATION(Renderer, GBuffer);
 RAD_FACTORY_FUNC_DECLARATION(Renderer, Direct);
 RAD_FACTORY_FUNC_DECLARATION(Renderer, Path);
+RAD_FACTORY_FUNC_DECLARATION(Renderer, VolPath);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ModelObj);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ImageDefault);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ImageExr);
@@ -54,6 +55,7 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Renderer, GBuffer),
       RAD_GET_FACTORY_FUNC(Renderer, Direct),
       RAD_GET_FACTORY_FUNC(Renderer, Path),
+      RAD_GET_FACTORY_FUNC(Renderer, VolPath),
       RAD_GET_FACTORY_FUNC(Asset, ModelObj),
       RAD_GET_FACTORY_FUNC(Asset, ImageDefault),
       RAD_GET_FACTORY_FUNC(Asset, ImageExr),

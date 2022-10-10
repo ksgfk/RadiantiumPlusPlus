@@ -50,7 +50,7 @@ MediumInteraction Medium::SampleInteraction(const Ray& ray, Float xi, UInt32 cha
 }
 
 std::pair<Spectrum, Spectrum> Medium::EvalTrAndPdf(const MediumInteraction& mi, const SurfaceInteraction& si) const {
-  Float t = std::min(mi.T, si.T) - mi.MinT;
+  Float t = std::min(std::numeric_limits<Float>::max(), std::min(mi.T, si.T)) - mi.MinT;
   auto tmp = (mi.Extinction * (-t));
   Spectrum tr(std::exp(tmp.x()), std::exp(tmp.y()), std::exp(tmp.z()));
   Spectrum pdf = si.T < mi.T ? tr : Spectrum(tr.cwiseProduct(mi.Extinction));

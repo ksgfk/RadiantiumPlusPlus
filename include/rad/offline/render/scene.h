@@ -18,7 +18,8 @@ class Scene {
       Unique<Accel> accel,
       Unique<Camera> camera,
       std::vector<Unique<Light>>&& lights,
-      std::vector<Unique<Medium>>&& mediums);
+      std::vector<Unique<Medium>>&& mediums,
+      Medium* globalMedium);
 
   const Camera& GetCamera() const { return *_camera; }
   Camera& GetCamera() { return *_camera; }
@@ -77,6 +78,8 @@ class Scene {
    */
   Spectrum EvalLight(const SurfaceInteraction& si) const;
 
+  Medium* GetGlobalMedium() const { return _globalMedium; }
+
  private:
   Unique<Accel> _accel;
   Unique<Camera> _camera;
@@ -84,6 +87,7 @@ class Scene {
   std::vector<Unique<Medium>> _mediums;
   Float _lightPdf;
   Light* _envLight = nullptr;
+  Medium* _globalMedium = nullptr;
 };
 
 }  // namespace Rad

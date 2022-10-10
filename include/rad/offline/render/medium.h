@@ -21,9 +21,11 @@ class Medium {
   std::pair<Spectrum, Spectrum> EvalTrAndPdf(const MediumInteraction& mi, const SurfaceInteraction& si) const;
 
   const PhaseFunction* GetPhase() const { return _phaseFunction.get(); }
+  bool IsHomogeneous() const { return _isHomogeneous; }
 
- private:
+ protected:
   Unique<PhaseFunction> _phaseFunction;
+  bool _isHomogeneous = false;
 };
 
 }  // namespace Rad

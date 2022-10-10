@@ -10,6 +10,7 @@ namespace Rad {
 class HomogeneousMedium final : public Medium {
  public:
   HomogeneousMedium(BuildContext* ctx, const ConfigNode& cfg) : Medium(ctx, cfg) {
+    _isHomogeneous = true;
     Vector3 sigmaT = cfg.ReadOrDefault("sigma_t", Vector3(1, 1, 1));
     Vector3 albedo = cfg.ReadOrDefault("albedo", Vector3(Vector3::Constant(Float(0.75))));
     _sigmaT = Spectrum(sigmaT);

@@ -8,11 +8,13 @@ Scene::Scene(
     Unique<Accel> accel,
     Unique<Camera> camera,
     std::vector<Unique<Light>>&& lights,
-    std::vector<Unique<Medium>>&& mediums)
+    std::vector<Unique<Medium>>&& mediums,
+    Medium* globalMedium)
     : _accel(std::move(accel)),
       _camera(std::move(camera)),
       _lights(std::move(lights)),
-      _mediums(std::move(mediums)) {
+      _mediums(std::move(mediums)),
+      _globalMedium(globalMedium) {
   _lightPdf = Math::Rcp(Float(_lights.size()));
   for (const auto& light : _lights) {
     if (light->IsEnv()) {
@@ -34,6 +36,7 @@ bool Scene::RayIntersect(const Ray& ray) const {
 bool Scene::RayIntersect(const Ray& ray, SurfaceInteraction& si) const {
   HitShapeRecord record;
   if (!_accel->RayIntersectPreliminary(ray, record)) {
+    si = {};
     si.Wi = -ray.D;
     return false;
   }

@@ -307,6 +307,7 @@ class BuildContextImpl {
     }
 
     _shapes = std::move(shapes);
+    Medium* globalMediumPtr = globalMedium.get();
     if (globalMedium != nullptr) {
       mediums.emplace_back(std::move(globalMedium));
     }
@@ -327,7 +328,8 @@ class BuildContextImpl {
         std::move(accelInstance),
         std::move(mainCamera),
         std::move(lights),
-        std::move(mediums));
+        std::move(mediums),
+        globalMediumPtr);
   }
 
   static std::string GetTypeFromConfig(const ConfigNode& cfg) {
