@@ -104,6 +104,9 @@ struct ConfigNode {
 
   template <typename T>
   static bool CheckNodeType(const nlohmann::json& j, JsonType type) {
+    if (type == JsonType::object) {
+      return true;
+    }
     if (j.type() == type) {
       return true;
     }
@@ -173,7 +176,16 @@ struct ConfigNode {
       for (size_t i = 0; i < j.size(); i++) {
         arr[i] = j[i].get<typename T::Scalar>();
       }
-      return Eigen::Map<T>(arr.data());
+      // return Eigen::Map<T>(arr.data());
+      T mat;
+      int k = 0;
+      for (int i = 0; i < T::MaxRowsAtCompileTime; i++) {
+        for (int j = 0; j < T::MaxColsAtCompileTime; j++) {
+          mat(i, j) = arr[k];
+          k++;
+        }
+      }
+      return mat;
     } else {
       throw RadInvalidOperationException("unknown type");
     }

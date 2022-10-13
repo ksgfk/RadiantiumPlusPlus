@@ -10,7 +10,7 @@ Transform::Transform() {
 Transform::Transform(const Matrix4& toWorld) {
   ToWorld = toWorld;
   bool canInv;
-  toWorld.computeInverseWithCheck(ToLocal, canInv);
+  toWorld.computeInverseWithCheck(ToLocal, canInv, 0);
   if (!canInv) {
     ToWorld = Matrix4::Zero();
     ToLocal = Matrix4::Zero();

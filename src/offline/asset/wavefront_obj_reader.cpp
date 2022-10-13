@@ -186,7 +186,7 @@ static bool ParseFaceVertex(std::string_view data, int mode, int& v, int& vt, in
         return false;
       }
       std::string_view vData = data.substr(0, delimiter);
-      std::string_view vnData = data.substr(delimiter + 1);
+      std::string_view vnData = data.substr(delimiter + 2);
       try {
         v = std::stoi(std::string(vData.data(), vData.size()));
         vt = 0;
@@ -194,6 +194,7 @@ static bool ParseFaceVertex(std::string_view data, int mode, int& v, int& vt, in
       } catch (const std::invalid_argument&) {
         return false;
       }
+      return true;
     }
     default:
       return false;

@@ -35,7 +35,12 @@ class Embree final : public Accel {
     for (size_t i = 0; i < _shapes.size(); i++) {
       _shapes[i]->SubmitToEmbree(_device, _scene, static_cast<UInt32>(i));
     }
+    _logger->info("embree start build accel");
+    Stopwatch sw;
+    sw.Start();
     rtcCommitScene(_scene);
+    sw.Stop();
+    _logger->info("embree build done. {} ms", sw.ElapsedMilliseconds());
   }
   ~Embree() noexcept override {
     if (_scene != nullptr) {

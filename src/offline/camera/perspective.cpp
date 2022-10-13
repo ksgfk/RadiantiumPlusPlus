@@ -18,11 +18,14 @@ class Perspective final : public Camera {
     Float fov = cfg.ReadOrDefault("fov", Float(30));
     _resolution = cfg.ReadOrDefault("resolution", Eigen::Vector2i(1280, 720));
     Matrix4 toWorld;
-    if (!cfg.TryRead("to_world", toWorld)) {
+    ConfigNode toWorldNode;
+    if (!cfg.TryRead("to_world", toWorldNode)) {
       Vector3 origin = cfg.ReadOrDefault("origin", Vector3(0, 0, -1));
       Vector3 target = cfg.ReadOrDefault("target", Vector3(0, 0, 0));
       Vector3 up = cfg.ReadOrDefault("up", Vector3(0, 1, 0));
       toWorld = Math::LookAtLeftHand(origin, target, up);
+    } else {
+      toWorld = toWorldNode.AsTransform();
     }
 
     _rcpResolution = _resolution.cast<Float>().cwiseInverse();
