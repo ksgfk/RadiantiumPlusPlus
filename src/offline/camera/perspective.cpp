@@ -58,6 +58,12 @@ class Perspective final : public Camera {
     _dy = _cameraToClip.ApplyAffineToLocal(Vector3(0, Float(1) / _resolution.y(), 0)) -
           _cameraToClip.ApplyAffineToLocal(Vector3::Constant(0));
 
+    Vector3 pMin = _cameraToClip.ApplyAffineToLocal(Vector3(0, 0, 0));
+    Vector3 pMax = _cameraToClip.ApplyAffineToLocal(Vector3(1, 1, 0));
+    _imageRect.extend(pMin.head<2>() / pMin.z());
+    _imageRect.extend(pMax.head<2>() / pMax.z());
+    _normalization = 1 / _imageRect.volume();
+
     InitCamera();
   }
   ~Perspective() noexcept override = default;
@@ -90,6 +96,46 @@ class Perspective final : public Camera {
     return diff;
   }
 
+  std::pair<DirectionSampleResult, Spectrum> SampleDirection(
+      const Interaction& ref,
+      const Vector2& xi) const override {
+    Vector3 refP = _cameraToWorld.ApplyAffineToLocal(ref.P);
+    DirectionSampleResult dsr{};
+    dsr.Pdf = 0;
+    if (refP.z() < _near || refP.z() > _far) {
+      return {dsr, Spectrum(0)};
+    }
+    Vector3 ndcPos = _cameraToClip.ApplyAffineToWorld(refP);
+    if (ndcPos.x() < 0 || ndcPos.x() > 1 || ndcPos.y() < 0 || ndcPos.y() > 1) {
+      return {dsr, Spectrum(0)};
+    }
+    dsr.UV = ndcPos.head<2>().cwiseProduct(_resolution.cast<Float>());
+    Float dist = refP.norm();
+    Float invDist = Math::Rcp(dist);
+    Vector3 dir = refP * invDist;
+    dsr.P = _cameraToWorld.ApplyAffineToWorld(Vector3::Zero());
+    dsr.Dir = (dsr.P - ref.P) * invDist;
+    dsr.Dist = dist;
+    dsr.N = _cameraToWorld.ApplyLinearToWorld(Vector3(0, 0, 1));
+    dsr.Pdf = 1;
+    Float importance = Importance(dir) * invDist * invDist;
+    return std::make_pair(dsr, Spectrum(importance));
+  }
+
+  Float Importance(const Vector3& d) const {
+    Float cosTheta = Frame::CosTheta(d);
+    if (cosTheta <= 0) {
+      return 0;
+    }
+    Float invCosTheta = Math::Rcp(cosTheta);
+    Vector2 p = d.head<2>() * invCosTheta;
+    if (!_imageRect.contains(p)) {
+      return 0;
+    }
+    Float importance = _normalization * invCosTheta * invCosTheta * invCosTheta;
+    return importance;
+  }
+
  private:
   Float _near;
   Float _far;
@@ -97,6 +143,8 @@ class Perspective final : public Camera {
   Transform _cameraToWorld;
   Transform _cameraToClip;
   Vector3 _dx, _dy;
+  BoundingBox2 _imageRect;
+  Float _normalization;
 };
 
 }  // namespace Rad

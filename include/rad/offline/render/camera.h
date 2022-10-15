@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../common.h"
+#include "interaction.h"
+#include "sample_result.h"
 
 namespace Rad {
 
@@ -32,6 +34,10 @@ class Camera {
    */
   virtual Ray SampleRay(const Vector2& screenPosition) const = 0;
   virtual RayDifferential SampleRayDifferential(const Vector2& screenPosition) const = 0;
+
+  virtual std::pair<DirectionSampleResult, Spectrum> SampleDirection(
+      const Interaction& ref,
+      const Vector2& xi) const = 0;
 
  protected:
   /**
