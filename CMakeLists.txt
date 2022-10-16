@@ -57,6 +57,7 @@ add_library(rad.offline
     src/offline/renderer/gbuffer.cpp
     src/offline/renderer/path.cpp
     src/offline/renderer/vol_path.cpp
+    src/offline/renderer/particle_tracer.cpp
     src/offline/bsdf/diffuse.cpp
     src/offline/bsdf/rough_metal.cpp
     src/offline/bsdf/perfect_mirror.cpp

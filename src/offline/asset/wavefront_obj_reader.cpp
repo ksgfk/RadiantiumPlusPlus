@@ -63,7 +63,8 @@ static bool IsStringWhiteSpace(const std::string& str) {
 static std::string_view TrimStart(std::string_view str) {
   size_t start = 0;
   for (; start < str.size(); start++) {
-    if (!std::isspace(str[start])) {
+    auto v = str[start];
+    if (v < -1 || !std::isspace(str[start])) {
       break;
     }
   }

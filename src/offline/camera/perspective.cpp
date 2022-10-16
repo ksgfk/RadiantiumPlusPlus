@@ -106,7 +106,7 @@ class Perspective final : public Camera {
       return {dsr, Spectrum(0)};
     }
     Vector3 ndcPos = _cameraToClip.ApplyAffineToWorld(refP);
-    if (ndcPos.x() < 0 || ndcPos.x() > 1 || ndcPos.y() < 0 || ndcPos.y() > 1) {
+    if (ndcPos.x() < 0 || ndcPos.x() >= 1 || ndcPos.y() < 0 || ndcPos.y() >= 1) {
       return {dsr, Spectrum(0)};
     }
     dsr.UV = ndcPos.head<2>().cwiseProduct(_resolution.cast<Float>());

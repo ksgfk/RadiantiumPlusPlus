@@ -77,4 +77,25 @@ Float SquareToUniformConePdf(Float cosCutoff) {
   return 1 / (2 * PI) / (1 - cosCutoff);
 }
 
+Vector2 SquareToUniformDiskConcentric(const Vector2& u) {
+  Float x = Fmadd(2, u.x(), -1);
+  Float y = Fmadd(2, u.y(), -1);
+  bool quadrant = std::abs(x) < std::abs(y);
+  Float r = quadrant ? y : x;
+  Float rp = quadrant ? x : y;
+  Float phi = Float(0.25) * PI * rp / r;
+  if (quadrant) {
+    phi = Float(0.5) * PI - phi;
+  }
+  if (x == 0 && y == 0) {
+    phi = 0;
+  }
+  auto [s, c] = SinCos(phi);
+  return Vector2(r * c, r * s);
+}
+
+Float SquareToUniformDiskConcentricPdf(const Vector2& p) {
+  return 1 / PI;
+}
+
 }  // namespace Rad::Warp

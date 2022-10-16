@@ -114,8 +114,18 @@ class DiffuseArea final : public Light {
     return _shape->PdfPosition(psr);
   }
 
+  std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const override {
+    auto [psr, pdf] = SamplePosition(xi2);
+    Vector3 local = Warp::SquareToCosineHemisphere(xi3);
+    SurfaceInteraction si(psr);
+    Ray ray = si.SpawnRay(si.ToWorld(local));
+    Spectrum eval = Eval(si);
+    auto li = eval * Math::PI / pdf;
+    return std::make_pair(ray, Spectrum(li));
+  }
+
  private:
-  Share<Texture<Color>> _radiance;
+  Unique<Texture<Color>> _radiance;
   bool _isUniform;
   ContinuousDistribution2D _dist;
 };

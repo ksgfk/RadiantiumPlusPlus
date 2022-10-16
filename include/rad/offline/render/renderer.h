@@ -16,21 +16,26 @@ namespace Rad {
  */
 class Renderer {
  public:
+  Renderer(BuildContext* ctx, const ConfigNode& cfg);
   virtual ~Renderer() noexcept = default;
 
   bool IsComplete() const { return _isComplete; }
-  UInt32 AllTaskCount() const { return _allTask; }
-  UInt32 CompletedTaskCount() const { return _completeTask; }
+  UInt64 AllTaskCount() const { return _allTask; }
+  UInt64 CompletedTaskCount() const { return _completeTask; }
   Int64 ElapsedTime() const { return _sw.ElapsedMilliseconds(); }
 
   virtual void Start() = 0;
-  virtual void Wait() = 0;
-  virtual void Stop() = 0;
+  virtual void Wait();
+  virtual void Stop();
   virtual void SaveResult(const LocationResolver& resolver) const = 0;
 
  protected:
-  UInt32 _allTask = 0;
-  std::atomic_uint32_t _completeTask = 0;  //已完成任务数量
+  Share<spdlog::logger> _logger;
+  Unique<Scene> _scene;
+  Unique<std::thread> _renderThread;
+  Int32 _threadCount;
+  UInt64 _allTask = 0;
+  std::atomic_uint64_t _completeTask = 0;  //已完成任务数量
   Stopwatch _sw{};
   bool _isComplete = false;
   bool _isStop = false;
@@ -42,18 +47,10 @@ class SampleRenderer : public Renderer {
   ~SampleRenderer() noexcept override;
 
   void Start() override;
-  void Wait() override;
-  void Stop() override;
   virtual void SaveResult(const LocationResolver& resolver) const override;
 
  protected:
   virtual Spectrum Li(const RayDifferential& ray, const Scene& scene, Sampler* sampler) const = 0;
-
- private:
-  Unique<Scene> _scene;
-  Unique<std::thread> _renderThread;
-  Share<spdlog::logger> _logger;
-  Int32 _threadCount;
 };
 
 }  // namespace Rad

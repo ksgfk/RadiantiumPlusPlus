@@ -13,11 +13,23 @@
 
 namespace Rad {
 
-SampleRenderer::SampleRenderer(BuildContext* ctx, const ConfigNode& cfg) {
+Renderer::Renderer(BuildContext* ctx, const ConfigNode& cfg) {
   _logger = Logger::GetCategory("renderer");
   _scene = ctx->GetScene();
   _threadCount = cfg.ReadOrDefault("thread_count", -1);
 }
+
+void Renderer::Wait() {
+  if (_renderThread->joinable()) {
+    _renderThread->join();
+  }
+}
+
+void Renderer::Stop() {
+  _isStop = true;
+}
+
+SampleRenderer::SampleRenderer(BuildContext* ctx, const ConfigNode& cfg) : Renderer(ctx, cfg) {}
 
 SampleRenderer::~SampleRenderer() noexcept {
   if (_renderThread->joinable()) {
@@ -47,6 +59,8 @@ void SampleRenderer::Start() {
         block, [&](const tbb::blocked_range2d<UInt32>& r) {
           UInt32 seed = r.rows().begin() * camera.Resolution().x() + r.cols().begin();
           thread_local auto rng = std::mt19937(seed);
+          thread_local UInt64 completeCount = 0;
+          completeCount = 0;
           std::uniform_real_distribution<Float> dist;
           Unique<Sampler> localSampler = sampler.Clone(sampler.GetSeed() + seed);
           for (UInt32 y = r.cols().begin(); y != r.cols().end(); y++) {
@@ -65,7 +79,7 @@ void SampleRenderer::Start() {
                   frameBuffer(x, y) += li;
                 }
               }
-              _completeTask++;
+              completeCount++;
             }
           }
           Float32 coeff = 1.0f / sampler.SampleCount();
@@ -74,21 +88,12 @@ void SampleRenderer::Start() {
               frameBuffer(x, y) *= coeff;
             }
           }
+          _completeTask += completeCount;
         },
         part);
     _sw.Stop();
   });
   _renderThread = std::make_unique<std::thread>(std::move(renderThread));
-}
-
-void SampleRenderer::Wait() {
-  if (_renderThread->joinable()) {
-    _renderThread->join();
-  }
-}
-
-void SampleRenderer::Stop() {
-  _isStop = true;
 }
 
 void SampleRenderer::SaveResult(const LocationResolver& resolver) const {

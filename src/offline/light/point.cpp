@@ -60,6 +60,12 @@ class Point final : public Light {
     throw RadInvalidOperationException("impossible to get pos pdf from point light");
   }
 
+  std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const override {
+    auto li = _intensity * 4 * Math::PI;
+    Ray ray{_worldPos, Warp::SquareToUniformSphere(xi3), 0, std::numeric_limits<Float>::max()};
+    return std::make_pair(ray, Spectrum(li));
+  }
+
  private:
   Vector3 _worldPos;
   Spectrum _intensity;

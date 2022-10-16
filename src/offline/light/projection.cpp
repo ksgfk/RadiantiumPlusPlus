@@ -31,6 +31,11 @@ class Projection final : public Light {
         0, 0, 1, 0;
     Matrix4 toClip = scale * translate * perspective;
     _toClip = Transform(toClip);
+
+    Vector3 pMin = _toClip.ApplyAffineToLocal(Vector3(0, 0, 0));
+    Vector3 pMax = _toClip.ApplyAffineToLocal(Vector3(1, 1, 0));
+    BoundingBox2 rect(pMin.head<2>() / pMin.z(), pMax.head<2>() / pMax.z());
+    _cameraArea = 1 / rect.volume();
   }
   ~Projection() noexcept override = default;
 
@@ -80,11 +85,23 @@ class Projection final : public Light {
     return 0;
   }
 
+  std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const override {
+    Vector2 uv = xi3;  //这里得重要性采样
+    Vector3 nearP = _toClip.ApplyAffineToLocal(Vector3(uv.x(), uv.y(), 0));
+    Vector3 nearDir = nearP.normalized();
+    Ray ray{_toWorld.TranslationToWorld(), _toWorld.ApplyLinearToWorld(nearDir), 0, std::numeric_limits<Float>::max()};
+    SurfaceInteraction si{};
+    si.UV = uv;
+    auto li = _irradiance->Eval(si) * Math::PI * _cameraArea;
+    return std::make_pair(ray, Spectrum(li));
+  }
+
  private:
   Unique<Texture<Color>> _irradiance;
   Spectrum _scale;
   Transform _toWorld;
   Transform _toClip;
+  Float _cameraArea;
 };
 
 }  // namespace Rad

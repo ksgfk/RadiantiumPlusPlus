@@ -49,6 +49,7 @@ class Light {
    * @brief 给面光源之类的, 需要在形状表面采样的光源用的, 生命周期不归Light管, 但保证Shape生命周期比Light长
    */
   void AttachShape(Shape* shape) { _shape = shape; }
+  Shape* GetShape() const { return _shape; }
 
   /**
    * @brief 给定一个光源上的点, 返回沿入射方向的反方向发出的 radiance
@@ -83,6 +84,8 @@ class Light {
    * @brief 有些光源需要了解场景中的信息
    */
   virtual void SetScene(const Scene* scene) {}
+
+  virtual std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const = 0;
 
  protected:
   UInt32 _flag;

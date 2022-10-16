@@ -136,6 +136,25 @@ class Skybox final : public Light {
     _worldSphere = sph;
   }
 
+  std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const override {
+    Vector2 offset = Warp::SquareToUniformDiskConcentric(xi2);
+    auto [worldDir, pdfDir, uv] = SampleLightDir(xi3);
+    if (pdfDir <= 0) {
+      return {{}, {}};
+    }
+    Float theta = uv.y() * PI, phi = uv.x() * PI * 2;
+    Vector3 d = Math::SphericalCoordinates(theta, phi);
+    d = Vector3(d.y(), d.z(), -d.x());
+    Vector3 worldD = _toWorld.ApplyAffineToWorld(-d);
+    Vector3 perpendicularOffset = Frame(d).ToWorld(Vector3(offset.x(), offset.y(), 0));
+    Vector3 origin = _worldSphere.Center + (perpendicularOffset - worldD) * _worldSphere.Radius;
+    Ray ray{origin, worldD, 0, std::numeric_limits<Float>::max()};
+    SurfaceInteraction q{};
+    q.UV = uv;
+    auto li = _map->Eval(q) * PI * Sqr(_worldSphere.Radius) / pdfDir;
+    return std::make_pair(ray, Spectrum(li));
+  }
+
  private:
   std::tuple<Vector3, Float, Vector2> SampleLightDir(const Vector2& xi) const {
     auto [index, _, pdf] = _dist.Sample(xi);
