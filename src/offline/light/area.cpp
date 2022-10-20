@@ -124,6 +124,20 @@ class DiffuseArea final : public Light {
     return std::make_pair(ray, Spectrum(li));
   }
 
+  std::tuple<Ray, Spectrum, Float, Float, Float> SampleRayWithPdf(
+      const Vector2& xi2,
+      const Vector2& xi3) const override {
+    auto [psr, pdfArea] = SamplePosition(xi2);
+    Vector3 local = Warp::SquareToCosineHemisphere(xi3);
+    SurfaceInteraction si(psr);
+    Ray ray = si.SpawnRay(si.ToWorld(local));
+    Spectrum eval = Eval(si);
+    auto li = eval * Math::PI / pdfArea;
+    Float pdfDir = Warp::SquareToCosineHemispherePdf(local);
+    Float cosTheta = Frame::CosTheta(local);
+    return std::make_tuple(ray, Spectrum(li), pdfDir * pdfArea, pdfArea, cosTheta);
+  }
+
  private:
   Unique<Texture<Color>> _radiance;
   bool _isUniform;

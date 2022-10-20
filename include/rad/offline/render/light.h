@@ -87,6 +87,12 @@ class Light {
 
   virtual std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const = 0;
 
+  inline virtual std::tuple<Ray, Spectrum, Float, Float, Float> SampleRayWithPdf(
+      const Vector2& xi2,
+      const Vector2& xi3) const {
+    throw RadInvalidOperationException("no impl");
+  }
+
  protected:
   UInt32 _flag;
   Shape* _shape = nullptr;

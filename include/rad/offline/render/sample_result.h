@@ -38,9 +38,4 @@ struct DirectionSampleResult : PositionSampleResult {
   Float Dist;
 };
 
-struct PdfEvalResult {
-  Float Area;
-  Float Dir;
-};
-
 }  // namespace Rad

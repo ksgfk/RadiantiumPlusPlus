@@ -39,8 +39,9 @@ class Camera {
       const Interaction& ref,
       const Vector2& xi) const = 0;
 
-  virtual Spectrum EvalImportance(const Ray& ray) const = 0;
-  virtual PdfEvalResult PdfImportance(const Ray& ray) const = 0;
+  virtual std::tuple<DirectionSampleResult, Spectrum, Float, Float, Float> SampleDirectionWithPdf(
+      const Interaction& ref,
+      const Vector2& xi) const = 0;
 
  protected:
   /**

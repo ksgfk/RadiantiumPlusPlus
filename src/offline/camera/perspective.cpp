@@ -64,6 +64,8 @@ class Perspective final : public Camera {
     _imageRect.extend(pMax.head<2>() / pMax.z());
     _normalization = 1 / _imageRect.volume();
 
+    _imagePlaneDist = _resolution.x() * cot * Float(0.5);
+
     InitCamera();
   }
   ~Perspective() noexcept override = default;
@@ -136,17 +138,31 @@ class Perspective final : public Camera {
     return importance;
   }
 
-  Spectrum EvalImportance(const Ray& ray) const override {
-    Vector3 localDir = _cameraToWorld.ApplyLinearToLocal(ray.D);
-    Float importance = Importance(localDir);
-    return Spectrum(importance);
-  }
-  PdfEvalResult PdfImportance(const Ray& ray) const override {
-    Vector3 localDir = _cameraToWorld.ApplyLinearToLocal(ray.D);
-    Float cosTheta = Frame::CosTheta(localDir);
-    Float area = 0;
-    Float dir = 1 / (_normalization * cosTheta * cosTheta * cosTheta);
-    return PdfEvalResult{area, dir};
+  std::tuple<DirectionSampleResult, Spectrum, Float, Float, Float> SampleDirectionWithPdf(
+      const Interaction& ref,
+      const Vector2& xi) const override {
+    Vector3 refP = _cameraToWorld.ApplyAffineToLocal(ref.P);
+    DirectionSampleResult dsr{};
+    dsr.Pdf = 0;
+    if (refP.z() < _near || refP.z() > _far) {
+      return {};
+    }
+    Vector3 ndcPos = _cameraToClip.ApplyAffineToWorld(refP);
+    if (ndcPos.x() < 0 || ndcPos.x() >= 1 || ndcPos.y() < 0 || ndcPos.y() >= 1) {
+      return {};
+    }
+    dsr.UV = ndcPos.head<2>().cwiseProduct(_resolution.cast<Float>());
+    Float dist = refP.norm();
+    Float invDist = Math::Rcp(dist);
+    Vector3 dir = refP * invDist;
+    dsr.P = _cameraToWorld.ApplyAffineToWorld(Vector3::Zero());
+    dsr.Dir = (dsr.P - ref.P) * invDist;
+    dsr.Dist = dist;
+    dsr.N = _cameraToWorld.ApplyLinearToWorld(Vector3(0, 0, 1));
+    dsr.Pdf = 1;
+    Float importance = Importance(dir);
+    Float we = importance * invDist * invDist;
+    return std::make_tuple(dsr, Spectrum(we), importance, Float(1), Frame::CosTheta(dir));
   }
 
  private:
@@ -158,6 +174,7 @@ class Perspective final : public Camera {
   Vector3 _dx, _dy;
   BoundingBox2 _imageRect;
   Float _normalization;
+  Float _imagePlaneDist;
 };
 
 }  // namespace Rad
