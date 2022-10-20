@@ -136,6 +136,19 @@ class Perspective final : public Camera {
     return importance;
   }
 
+  Spectrum EvalImportance(const Ray& ray) const override {
+    Vector3 localDir = _cameraToWorld.ApplyLinearToLocal(ray.D);
+    Float importance = Importance(localDir);
+    return Spectrum(importance);
+  }
+  PdfEvalResult PdfImportance(const Ray& ray) const override {
+    Vector3 localDir = _cameraToWorld.ApplyLinearToLocal(ray.D);
+    Float cosTheta = Frame::CosTheta(localDir);
+    Float area = 0;
+    Float dir = 1 / (_normalization * cosTheta * cosTheta * cosTheta);
+    return PdfEvalResult{area, dir};
+  }
+
  private:
   Float _near;
   Float _far;

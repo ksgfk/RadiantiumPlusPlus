@@ -64,7 +64,13 @@ void SampleRenderer::Start() {
           std::uniform_real_distribution<Float> dist;
           Unique<Sampler> localSampler = sampler.Clone(sampler.GetSeed() + seed);
           for (UInt32 y = r.cols().begin(); y != r.cols().end(); y++) {
+            if (_isStop) {
+              break;
+            }
             for (UInt32 x = r.rows().begin(); x != r.rows().end(); x++) {
+              if (_isStop) {
+                break;
+              }
               for (UInt32 i = 0; i < sampler.SampleCount(); i++) {
                 if (_isStop) {
                   break;

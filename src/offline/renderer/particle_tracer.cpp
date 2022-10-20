@@ -13,7 +13,7 @@ using namespace Rad::Math;
 
 namespace Rad {
 
-class ParticleTracer : public Renderer {
+class ParticleTracer final : public Renderer {
  public:
   ParticleTracer(BuildContext* ctx, const ConfigNode& cfg) : Renderer(ctx, cfg) {
     _maxDepth = cfg.ReadOrDefault("max_depth", -1);

@@ -39,6 +39,9 @@ class Camera {
       const Interaction& ref,
       const Vector2& xi) const = 0;
 
+  virtual Spectrum EvalImportance(const Ray& ray) const = 0;
+  virtual PdfEvalResult PdfImportance(const Ray& ray) const = 0;
+
  protected:
   /**
    * @brief 应该在相机构造完成后调用这个函数, 来生成frame buffer

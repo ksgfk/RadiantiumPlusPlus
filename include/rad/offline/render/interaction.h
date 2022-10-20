@@ -15,11 +15,11 @@ struct Interaction {
   /**
    * @brief 交点坐标
    */
-  Vector3 P;
+  Vector3 P = Vector3::Zero();
   /**
    * @brief 交点的法线方向
    */
-  Vector3 N;
+  Vector3 N = Vector3::Zero();
 
   Ray SpawnRay(const Vector3& d) const;
   Ray SpawnRayTo(const Vector3& p) const;
