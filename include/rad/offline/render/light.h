@@ -93,6 +93,15 @@ class Light {
     throw RadInvalidOperationException("no impl");
   }
 
+  inline std::tuple<Spectrum, Float, Float> GetRadiance(
+      const Interaction& ref,
+      const DirectionSampleResult& dsr) const {
+    Float pdfW = PdfDirection(ref, dsr);
+    Float pdfA = PdfPosition(dsr);
+    Spectrum radiance = Eval(SurfaceInteraction(dsr));
+    return std::make_tuple(radiance, pdfW, pdfA);
+  }
+
  protected:
   UInt32 _flag;
   Shape* _shape = nullptr;

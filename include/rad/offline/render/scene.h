@@ -56,6 +56,7 @@ class Scene {
    * @brief 采样光源的概率密度
    */
   Float PdfLight(UInt32 index) const;
+  Float PdfLight(const Light* light) const;
   /**
    * @brief 给定世界空间中的一个参考点, 采样一个光源, 并采样参考点到光源上某个点的方向
    * 采样方向的概率密度定义在单位立体角上

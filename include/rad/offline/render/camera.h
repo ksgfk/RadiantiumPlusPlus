@@ -42,6 +42,7 @@ class Camera {
   virtual std::tuple<DirectionSampleResult, Spectrum, Float, Float, Float> SampleDirectionWithPdf(
       const Interaction& ref,
       const Vector2& xi) const = 0;
+  virtual std::pair<Float, Float> PdfDirection(const Ray& ray) const = 0;
 
  protected:
   /**

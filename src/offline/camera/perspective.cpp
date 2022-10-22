@@ -165,6 +165,11 @@ class Perspective final : public Camera {
     return std::make_tuple(dsr, Spectrum(we), importance, Float(1), Frame::CosTheta(dir));
   }
 
+  std::pair<Float, Float> PdfDirection(const Ray& ray) const override {
+    Vector3 localD = _cameraToWorld.ApplyLinearToLocal(ray.D);
+    return std::make_pair(Importance(localD), Float(1));
+  }
+
  private:
   Float _near;
   Float _far;

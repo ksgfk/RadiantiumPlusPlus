@@ -74,6 +74,10 @@ Float Scene::PdfLight(UInt32 index) const {
   return _lightPdf;
 }
 
+Float Scene::PdfLight(const Light* light) const {
+  return _lightPdf;
+}
+
 std::tuple<Light*, DirectionSampleResult, Spectrum> Scene::SampleLightDirection(
     const Interaction& ref,
     Float sampleLight,
