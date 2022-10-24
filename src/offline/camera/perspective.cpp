@@ -138,36 +138,11 @@ class Perspective final : public Camera {
     return importance;
   }
 
-  std::tuple<DirectionSampleResult, Spectrum, Float, Float, Float> SampleDirectionWithPdf(
-      const Interaction& ref,
-      const Vector2& xi) const override {
-    Vector3 refP = _cameraToWorld.ApplyAffineToLocal(ref.P);
-    DirectionSampleResult dsr{};
-    dsr.Pdf = 0;
-    if (refP.z() < _near || refP.z() > _far) {
-      return {};
-    }
-    Vector3 ndcPos = _cameraToClip.ApplyAffineToWorld(refP);
-    if (ndcPos.x() < 0 || ndcPos.x() >= 1 || ndcPos.y() < 0 || ndcPos.y() >= 1) {
-      return {};
-    }
-    dsr.UV = ndcPos.head<2>().cwiseProduct(_resolution.cast<Float>());
-    Float dist = refP.norm();
-    Float invDist = Math::Rcp(dist);
-    Vector3 dir = refP * invDist;
-    dsr.P = _cameraToWorld.ApplyAffineToWorld(Vector3::Zero());
-    dsr.Dir = (dsr.P - ref.P) * invDist;
-    dsr.Dist = dist;
-    dsr.N = _cameraToWorld.ApplyLinearToWorld(Vector3(0, 0, 1));
-    dsr.Pdf = 1;
-    Float importance = Importance(dir);
-    Float we = importance * invDist * invDist;
-    return std::make_tuple(dsr, Spectrum(we), importance, Float(1), Frame::CosTheta(dir));
-  }
-
-  std::pair<Float, Float> PdfDirection(const Ray& ray) const override {
-    Vector3 localD = _cameraToWorld.ApplyLinearToLocal(ray.D);
-    return std::make_pair(Importance(localD), Float(1));
+  std::pair<Float, Float> PdfWe(const Ray& ray) const override {
+    Vector3 dir = _cameraToWorld.ApplyLinearToLocal(ray.D);
+    Float pdfPos = 1;
+    Float pdfDir = Importance(dir);
+    return std::make_pair(pdfPos, pdfDir);
   }
 
  private:

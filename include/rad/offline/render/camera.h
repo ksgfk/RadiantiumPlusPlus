@@ -38,11 +38,11 @@ class Camera {
   virtual std::pair<DirectionSampleResult, Spectrum> SampleDirection(
       const Interaction& ref,
       const Vector2& xi) const = 0;
-
-  virtual std::tuple<DirectionSampleResult, Spectrum, Float, Float, Float> SampleDirectionWithPdf(
-      const Interaction& ref,
-      const Vector2& xi) const = 0;
-  virtual std::pair<Float, Float> PdfDirection(const Ray& ray) const = 0;
+  /**
+   * @brief 评估射线方向上采样响应的pdf
+   * @return std::pair<Float, Float> 面积上的pdf, 立体角方向上的pdf
+   */
+  virtual std::pair<Float, Float> PdfWe(const Ray& ray) const = 0;
 
  protected:
   /**

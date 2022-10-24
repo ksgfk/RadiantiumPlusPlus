@@ -124,18 +124,23 @@ class DiffuseArea final : public Light {
     return std::make_pair(ray, Spectrum(li));
   }
 
-  std::tuple<Ray, Spectrum, Float, Float, Float> SampleRayWithPdf(
+  std::tuple<PositionSampleResult, Ray, Spectrum, Float> SampleLe(
       const Vector2& xi2,
       const Vector2& xi3) const override {
-    auto [psr, pdfArea] = SamplePosition(xi2);
+    auto [psr, pdf] = SamplePosition(xi2);
     Vector3 local = Warp::SquareToCosineHemisphere(xi3);
     SurfaceInteraction si(psr);
     Ray ray = si.SpawnRay(si.ToWorld(local));
-    Spectrum eval = Eval(si);
-    auto li = eval * Math::PI / pdfArea;
     Float pdfDir = Warp::SquareToCosineHemispherePdf(local);
-    Float cosTheta = Frame::CosTheta(local);
-    return std::make_tuple(ray, Spectrum(li), pdfDir * pdfArea, pdfArea, cosTheta);
+    Spectrum le = Eval(si);
+    return std::make_tuple(psr, ray, le, pdfDir);
+  }
+
+  std::pair<Float, Float> PdfLe(const PositionSampleResult& psr, const Vector3& dir) const override {
+    Float pdfPos = PdfPosition(psr);
+    SurfaceInteraction si(psr);
+    Float pdfDir = Warp::SquareToCosineHemispherePdf(si.ToLocal(dir));
+    return std::make_pair(pdfPos, pdfDir);
   }
 
  private:

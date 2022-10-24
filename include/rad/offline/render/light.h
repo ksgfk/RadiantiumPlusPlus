@@ -85,21 +85,25 @@ class Light {
    */
   virtual void SetScene(const Scene* scene) {}
 
+  /**
+   * @brief 采样一个从光源发射的光粒子, 和SampleLe几乎一致, 只是返回值不太一样
+   *
+   * @return std::pair<Ray, Spectrum> [出射射线, 这条光线的radiance也就是Le(已经计算了pdf和cosine)]
+   */
   virtual std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const = 0;
 
-  inline virtual std::tuple<Ray, Spectrum, Float, Float, Float> SampleRayWithPdf(
+  /**
+   * @brief 采样一个从光源发射的光粒子
+   *
+   * @return std::tuple<PositionSampleResult, Ray, Spectrum, Float> [采样点信息, 出射射线, 原始Le, 出射方向pdf]
+   */
+  virtual std::tuple<PositionSampleResult, Ray, Spectrum, Float> SampleLe(
       const Vector2& xi2,
       const Vector2& xi3) const {
     throw RadInvalidOperationException("no impl");
   }
-
-  inline std::tuple<Spectrum, Float, Float> GetRadiance(
-      const Interaction& ref,
-      const DirectionSampleResult& dsr) const {
-    Float pdfW = PdfDirection(ref, dsr);
-    Float pdfA = PdfPosition(dsr);
-    Spectrum radiance = Eval(SurfaceInteraction(dsr));
-    return std::make_tuple(radiance, pdfW, pdfA);
+  virtual std::pair<Float, Float> PdfLe(const PositionSampleResult& psr, const Vector3& dir) const {
+    throw RadInvalidOperationException("no impl");
   }
 
  protected:
