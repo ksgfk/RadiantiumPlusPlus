@@ -92,15 +92,12 @@ class Light {
    */
   virtual std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const = 0;
 
-  virtual std::tuple<Ray, Spectrum, Float, Float, Float> Emit(const Vector2& xi2, const Vector2& xi3) const {
+  virtual std::tuple<Ray, Spectrum, PositionSampleResult, Float, Float> SampleLe(
+      const Vector2& xi2,
+      const Vector2& xi3) const {
     throw RadInvalidOperationException("no impl");
   }
-  virtual std::tuple<Spectrum, Float, Float> GetRadiance(const Interaction& ref, const SurfaceInteraction& si) const {
-    throw RadInvalidOperationException("no impl");
-  }
-  virtual std::tuple<DirectionSampleResult, Spectrum, Float, Float, Float> Illuminate(
-      const Interaction& ref,
-      const Vector2& xi) const {
+  virtual std::pair<Float, Float> PdfLe(const PositionSampleResult& psr, const Vector3& dir) const {
     throw RadInvalidOperationException("no impl");
   }
 

@@ -124,41 +124,23 @@ class DiffuseArea final : public Light {
     return std::make_pair(ray, Spectrum(li));
   }
 
-  std::tuple<Ray, Spectrum, Float, Float, Float> Emit(const Vector2& xi2, const Vector2& xi3) const override {
-    auto [psr, directPdfA] = SamplePosition(xi2);
+  std::tuple<Ray, Spectrum, PositionSampleResult, Float, Float> SampleLe(
+      const Vector2& xi2,
+      const Vector2& xi3) const override {
+    auto [psr, pdfPos] = SamplePosition(xi2);
     Vector3 local = Warp::SquareToCosineHemisphere(xi3);
+    Float pdfDir = Warp::SquareToCosineHemispherePdf(local);
     SurfaceInteraction si(psr);
     Ray ray = si.SpawnRay(si.ToWorld(local));
-    Spectrum eval = Eval(si);
-    Float emissionPdfW = Warp::SquareToCosineHemispherePdf(local) * directPdfA;
-    Float cosTheta = Frame::CosTheta(local);
-    Spectrum le(eval * cosTheta);
-    return std::make_tuple(ray, le, emissionPdfW, directPdfA, cosTheta);
-  }
-
-  std::tuple<Spectrum, Float, Float> GetRadiance(
-      const Interaction& ref,
-      const SurfaceInteraction& si) const override {
     Spectrum le = Eval(si);
-    if (le.IsBlack()) {
-      return {Spectrum(0), Float(0), Float(0)};
-    }
-    Float directPdfA = PdfPosition(si.ToPsr());
-    Float emissionPdfW = PdfDirection(ref, si.ToDsr(ref)) * directPdfA;
-    return std::make_tuple(le, directPdfA, emissionPdfW);
+    return std::make_tuple(ray, le, psr, pdfPos, pdfDir);
   }
 
-  std::tuple<DirectionSampleResult, Spectrum, Float, Float, Float> Illuminate(
-      const Interaction& ref,
-      const Vector2& xi) const override {
-    auto [dsr, li] = SampleDirection(ref, xi);
-    if (li.IsBlack()) {
-      return {};
-    }
-    Float cosNormalDir = std::abs(dsr.Dir.dot(dsr.N));
-    Float directPdfW = dsr.Pdf;
-    Float emissionPdfW = PdfPosition(dsr) * cosNormalDir * (1 / Math::PI);
-    return std::make_tuple(dsr, li, directPdfW, emissionPdfW, cosNormalDir);
+  std::pair<Float, Float> PdfLe(const PositionSampleResult& psr, const Vector3& dir) const override {
+    SurfaceInteraction si(psr);
+    Float pdfPos = PdfPosition(psr);
+    Float pdfDir = Warp::SquareToCosineHemispherePdf(si.ToLocal(dir));
+    return std::make_pair(pdfPos, std::abs(pdfDir));
   }
 
  private:
