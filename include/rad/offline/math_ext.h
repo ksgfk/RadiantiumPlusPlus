@@ -72,6 +72,9 @@ inline Vector3 SafeSqrt(const Vector3& v) {
 inline Float AbsDot(const Vector3& v1, const Vector3& v2) {
   return std::abs(v1.dot(v2));
 }
+inline Float Lerp(Float a, Float b, Float t) {
+  return Fmadd(b, t, Fmadd(-a, t, a));
+}
 /**
  * @brief 判断输入的数字是不是2的n次方
  */

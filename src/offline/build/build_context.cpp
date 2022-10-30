@@ -205,7 +205,9 @@ class BuildContextImpl {
               chcfg.Config = childNode;
               ConfigNode toWorldNode;
               if (childNode.TryRead("to_world", toWorldNode)) {
-                chcfg.ToWorld = toWorldNode.AsTransform();
+                chcfg.ToWorld = toWorldNode.AsTransform() * ecfg.ToWorld;
+              } else {
+                chcfg.ToWorld = ecfg.ToWorld;
               }
               q.emplace(chcfg);
             }
@@ -289,7 +291,9 @@ class BuildContextImpl {
         } else {
           outMedPtr = mediumOutsideInstance.get();
         }
-        shapeInstance->AttachMedium(inMedPtr, outMedPtr);
+        if (shapeInstance != nullptr) {
+          shapeInstance->AttachMedium(inMedPtr, outMedPtr);
+        }
 
         if (shapeInstance != nullptr) {
           shapes.emplace_back(std::move(shapeInstance));

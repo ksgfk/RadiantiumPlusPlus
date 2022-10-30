@@ -65,6 +65,14 @@ inline RgbSpectrum Clamp(const RgbSpectrum& v, Float l, Float r) {
   return RgbSpectrum(v.cwiseMax(l).cwiseMin(r));
 }
 
+inline RgbSpectrum LerpSpectrum(const RgbSpectrum& a, const RgbSpectrum& b, Float t) {
+  return RgbSpectrum(a + RgbSpectrum(t).cwiseProduct(b - a));
+}
+
+inline RgbSpectrum LerpSpectrum(const RgbSpectrum& a, const RgbSpectrum& b, const RgbSpectrum& t) {
+  return RgbSpectrum(a + t.cwiseProduct(b - a));
+}
+
 }  // namespace Rad
 
 template <>

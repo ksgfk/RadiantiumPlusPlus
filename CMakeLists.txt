@@ -65,6 +65,7 @@ add_library(rad.offline
     src/offline/bsdf/perfect_glass.cpp
     src/offline/bsdf/two_side.cpp
     src/offline/bsdf/rough_glass.cpp
+    src/offline/bsdf/disney.cpp
     src/offline/light/area.cpp
     src/offline/light/skybox.cpp
     src/offline/light/point.cpp
