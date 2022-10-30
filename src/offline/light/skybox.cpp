@@ -138,7 +138,15 @@ class Skybox final : public Light {
 
   std::pair<Ray, Spectrum> SampleRay(const Vector2& xi2, const Vector2& xi3) const override {
     Vector2 offset = Warp::SquareToUniformDiskConcentric(xi2);
-    auto [worldDir, pdfDir, uv] = SampleLightDir(xi3);
+    Float pdfDir;
+    Vector2 uv;
+    if (_isUniformMap) {
+      pdfDir = Warp::SquareToUniformSpherePdf();
+      uv = xi3;
+    } else {
+      Vector3 unuse;
+      std::tie(unuse, pdfDir, uv) = SampleLightDir(xi3);
+    }
     if (pdfDir <= 0) {
       return {{}, {}};
     }
@@ -153,6 +161,50 @@ class Skybox final : public Light {
     q.UV = uv;
     auto li = _map->Eval(q) * PI * Sqr(_worldSphere.Radius) / pdfDir;
     return std::make_pair(ray, Spectrum(li));
+  }
+
+  std::tuple<Ray, Spectrum, PositionSampleResult, Float, Float> SampleLe(
+      const Vector2& xi2,
+      const Vector2& xi3) const override {
+    Vector2 offset = Warp::SquareToUniformDiskConcentric(xi2);
+    Float pdfDir;
+    Vector2 uv;
+    if (_isUniformMap) {
+      pdfDir = Warp::SquareToUniformSpherePdf();
+      uv = xi3;
+    } else {
+      Vector3 unuse;
+      std::tie(unuse, pdfDir, uv) = SampleLightDir(xi3);
+    }
+    if (pdfDir <= 0) {
+      return {};
+    }
+    Float theta = uv.y() * PI, phi = uv.x() * PI * 2;
+    Vector3 d = Math::SphericalCoordinates(theta, phi);
+    d = Vector3(d.y(), d.z(), -d.x());
+    Vector3 worldD = _toWorld.ApplyAffineToWorld(-d);
+    Vector3 perpendicularOffset = Frame(d).ToWorld(Vector3(offset.x(), offset.y(), 0));
+    Vector3 origin = _worldSphere.Center + (perpendicularOffset - worldD) * _worldSphere.Radius;
+    Ray ray{origin, worldD, 0, std::numeric_limits<Float>::max()};
+    SurfaceInteraction q{};
+    q.UV = uv;
+    Spectrum li = _map->Eval(q);
+    Float pdfPos = 1 / (PI * Sqr(_worldSphere.Radius));
+    PositionSampleResult psr{};
+    psr.P = ray.O;
+    psr.N = ray.D;
+    psr.UV = uv;
+    psr.Pdf = pdfPos;
+    psr.IsDelta = false;
+    return std::make_tuple(ray, li, psr, pdfPos, pdfDir);
+  }
+
+  std::pair<Float, Float> PdfLe(const PositionSampleResult& psr, const Vector3& dir) const override {
+    DirectionSampleResult dsr{};
+    dsr.Dir = dir;
+    Float pdfDir = PdfDirection(Interaction{}, dsr);
+    Float pdfPos = 1 / (PI * Sqr(_worldSphere.Radius));
+    return std::make_pair(pdfPos, pdfDir);
   }
 
  private:

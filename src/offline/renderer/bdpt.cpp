@@ -45,7 +45,9 @@ class BDPT final : public Renderer {
     }
     bool IsOnSurface() const { return ng() != Vector3::Zero(); }
     Float ConvertDensity(Float pdf, const PathVertex& next) const {  //把概率密度 立体角转换为面积
-      // TODO: Env
+      if (next.IsInfiniteLight()) {                                  //无限远定向光源, 无法使用面积密度表示概率
+        return pdf;
+      }
       Vector3 w = next.p() - p();
       Float dist2 = w.squaredNorm();
       if (dist2 == 0) {
@@ -62,6 +64,9 @@ class BDPT final : public Renderer {
     }
     const Light* GetLight() const {
       return Type == VertexType::Light ? Li : Si.Shape->GetLight();
+    }
+    bool IsInfiniteLight() const {
+      return Type == VertexType::Light && (Li != nullptr || HasFlag(Li->Flags(), LightType::Infinite) || HasFlag(Li->Flags(), LightType::DeltaDirection));
     }
     bool IsConnectible() const {  //非delta才能连接
       switch (Type) {
@@ -96,7 +101,11 @@ class BDPT final : public Renderer {
       }
       const Light* light = GetLight();
       if (light->IsEnv()) {
-        return Spectrum(0);  // TODO: Env
+        Vector3 toV = (v.p() - p()).normalized();
+        SurfaceInteraction si{};
+        si.Wi = -toV;
+        Spectrum le = light->Eval(si);
+        return le;
       } else {
         Vector3 toV = (v.p() - p()).normalized();
         SurfaceInteraction tsi = Si;
@@ -108,7 +117,8 @@ class BDPT final : public Renderer {
     Float PdfLightOrigin(const Scene& scene, const PathVertex& v) const {
       const Light* light = GetLight();
       if (light->IsEnv()) {
-        return 0;  // TODO: Env
+        Vector3 w = (v.p() - p()).normalized();
+        return InfiniteLightDensity(scene, w);
       } else {
         Float pdfChoice = scene.PdfLight(light);
         Vector3 w = (v.p() - p()).normalized();
@@ -124,7 +134,12 @@ class BDPT final : public Renderer {
       w *= std::sqrt(invDist2);
       Float pdf;
       if (light->IsEnv()) {
-        pdf = 0;  // TODO: Env
+        // BoundingBox3 bound = scene.GetWorldBound();
+        // BoundingSphere sph = BoundingSphere::FromBox(bound);
+        // sph.Radius = std::max(RayEpsilon, sph.Radius * (1 + ShadowEpsilon));
+        // pdf = 1 / (PI * Sqr(sph.Radius));
+        auto [pdfPos, pdfDir] = light->PdfLe(PositionSampleResult{}, -w);
+        pdf = pdfPos;
       } else {
         auto [pdfPos, pdfDir] = light->PdfLe(Si.ToPsr(), w);
         pdf = pdfDir * invDist2;
@@ -353,6 +368,15 @@ class BDPT final : public Renderer {
     lightVertex.Li = light;
     lightPath.emplace_back(lightVertex);
     RandomWalk(scene, camera, sampler, ray, throughput, pdfDir, TransportMode::Importance, lightPath);
+    if (lightVertex.IsInfiniteLight()) {
+      if (lightPath.size() > 1) {
+        lightPath[1].PdfFwd = pdfPos;
+        if (lightPath[1].IsOnSurface()) {
+          lightPath[1].PdfFwd *= AbsDot(ray.D, lightPath[1].ng());
+        }
+      }
+      lightPath[0].PdfFwd = InfiniteLightDensity(scene, ray.D);
+    }
   }
 
   void RandomWalk(
@@ -383,7 +407,16 @@ class BDPT final : public Renderer {
       SurfaceInteraction si{};
       bool isHit = scene.RayIntersect(ray, si);
       if (!isHit) {
-        // TODO: Env
+        if (mode == TransportMode::Radiance) {  //从相机出发时, 才去捕捉无限远处的灯光
+          PathVertex vex{};
+          vex.Type = VertexType::Light;
+          vex.Li = scene.GetEnvLight();
+          vex.Si.P = ray(-1);
+          vex.Si.N = -ray.D;
+          vex.Throughput = throughput;
+          vex.PdfFwd = pdfFwd;
+          path.emplace_back(vex);
+        }
         break;
       }
       if (!si.Shape->HasBsdf()) {
@@ -436,6 +469,7 @@ class BDPT final : public Renderer {
       int s, int t,
       Vector2& scrPos) {
     Spectrum l(0);
+    //不可能将 相机路径上的光源 连接到 光源路径上的顶点
     if (t > 1 && s != 0 && cameraPath[t - 1].Type == VertexType::Light) {
       return l;
     }
@@ -604,6 +638,13 @@ class BDPT final : public Renderer {
     Vector3 d = v0.p() - v1.p();
     Float g = 1 / d.squaredNorm();
     return g;
+  }
+
+  static Float InfiniteLightDensity(const Scene& scene, const Vector3& w) {
+    const Light* envLight = scene.GetEnvLight();
+    DirectionSampleResult dsr{};
+    dsr.Dir = -w;
+    return scene.PdfLightDirection(envLight, Interaction{}, dsr);
   }
 
   Int32 _maxDepth;
