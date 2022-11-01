@@ -30,25 +30,26 @@ class TwoSide final : public Bsdf {
       if (!instance.has_value()) {
         throw Rad::RadArgumentException("config must have {} node", "two_side");
       }
-      _outside = std::move(*instance);
-      _inside = std::move(*getBsdfInstance("two_side", ctx, cfg));
+      _resA = std::move(*instance);
+      _outside = _resA.get();
+      _inside = _resA.get();
     } else {
       auto outside = getBsdfInstance("out_side", ctx, cfg);
       auto inside = getBsdfInstance("in_side", ctx, cfg);
       if (outside.has_value()) {
-        _outside = std::move(*outside);
+        _resA = std::move(*outside);
       }
       if (inside.has_value()) {
-        _inside = std::move(*inside);
+        _resB = std::move(*inside);
       }
       if (_outside == nullptr && _inside == nullptr) {
         throw Rad::RadArgumentException("config must contains {} or {} at least", "out_side", "in_side");
       }
       if (_outside != nullptr) {
-        _inside = std::move(*getBsdfInstance("out_side", ctx, cfg));
+        _inside = _resB.get();
       }
       if (_inside != nullptr) {
-        _outside = std::move(*getBsdfInstance("in_side", ctx, cfg));
+        _outside = _resA.get();
       }
     }
     _flags = _inside->Flags() | _outside->Flags();
@@ -123,8 +124,10 @@ class TwoSide final : public Bsdf {
   }
 
  private:
-  Unique<Bsdf> _inside;
-  Unique<Bsdf> _outside;
+  Unique<Bsdf> _resA;
+  Unique<Bsdf> _resB;
+  Bsdf* _inside;
+  Bsdf* _outside;
 };
 
 }  // namespace Rad

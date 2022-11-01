@@ -66,7 +66,7 @@ class BDPT final : public Renderer {
       return Type == VertexType::Light ? Li : Si.Shape->GetLight();
     }
     bool IsInfiniteLight() const {
-      return Type == VertexType::Light && (Li != nullptr || HasFlag(Li->Flags(), LightType::Infinite) || HasFlag(Li->Flags(), LightType::DeltaDirection));
+      return Type == VertexType::Light && (HasFlag(Li->Flags(), LightType::Infinite) || HasFlag(Li->Flags(), LightType::DeltaDirection));
     }
     bool IsConnectible() const {  //非delta才能连接
       switch (Type) {
@@ -100,7 +100,8 @@ class BDPT final : public Renderer {
         return Spectrum(0);
       }
       const Light* light = GetLight();
-      if (light->IsEnv()) {
+      // if (light->IsEnv()) {
+      if (IsInfiniteLight()) {
         Vector3 toV = (v.p() - p()).normalized();
         SurfaceInteraction si{};
         si.Wi = -toV;
@@ -116,7 +117,8 @@ class BDPT final : public Renderer {
     //采样时选择光源的概率密度
     Float PdfLightOrigin(const Scene& scene, const PathVertex& v) const {
       const Light* light = GetLight();
-      if (light->IsEnv()) {
+      // if (light->IsEnv()) {
+      if (IsInfiniteLight()) {
         Vector3 w = (v.p() - p()).normalized();
         return InfiniteLightDensity(scene, w);
       } else {
@@ -133,7 +135,8 @@ class BDPT final : public Renderer {
       Float invDist2 = 1 / w.squaredNorm();
       w *= std::sqrt(invDist2);
       Float pdf;
-      if (light->IsEnv()) {
+      // if (light->IsEnv()) {
+      if (IsInfiniteLight()) {
         // BoundingBox3 bound = scene.GetWorldBound();
         // BoundingSphere sph = BoundingSphere::FromBox(bound);
         // sph.Radius = std::max(RayEpsilon, sph.Radius * (1 + ShadowEpsilon));
@@ -407,7 +410,7 @@ class BDPT final : public Renderer {
       SurfaceInteraction si{};
       bool isHit = scene.RayIntersect(ray, si);
       if (!isHit) {
-        if (mode == TransportMode::Radiance) {  //从相机出发时, 才去捕捉无限远处的灯光
+        if (scene.GetEnvLight() != nullptr && mode == TransportMode::Radiance) {  //从相机出发时, 才去捕捉无限远处的灯光
           PathVertex vex{};
           vex.Type = VertexType::Light;
           vex.Li = scene.GetEnvLight();
