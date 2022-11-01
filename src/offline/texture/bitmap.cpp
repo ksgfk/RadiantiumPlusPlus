@@ -42,14 +42,13 @@ class Bitmap final : public Texture<T> {
       _filter = FilterMode::Bilinear;
     }
     std::string wrapStr = cfg.ReadOrDefault("wrap", std::string("clamp"));
-    WrapMode wrap;
     if (wrapStr == "clamp") {
-      wrap = WrapMode::Clamp;
+      _wrap = WrapMode::Clamp;
     } else if (wrapStr == "repeat") {
-      wrap = WrapMode::Repeat;
+      _wrap = WrapMode::Repeat;
     } else {
       Logger::Get()->info("unknwon wrapper: {}, use clamp", wrapStr);
-      wrap = WrapMode::Clamp;
+      _wrap = WrapMode::Clamp;
     }
     bool enableMipMap = _filter == FilterMode::Trilinear || _filter == FilterMode::Anisotropic;
     Int32 maxLevel = cfg.ReadOrDefault("max_level", enableMipMap ? -1 : 0);
@@ -63,36 +62,46 @@ class Bitmap final : public Texture<T> {
       Logger::Get()->warn("mipmap not enable but input max level. set max level to 0");
       maxLevel = 0;
     }
-    _mipmap = MipMap<T>(*image, maxLevel, wrap);
     if (enableMipMap) {
-      Logger::Get()->info("generate mipmap, level: {}", _mipmap.MaxLevel());
+      _mipmapRes = std::make_unique<MipMap<T>>(*image, maxLevel, _wrap);
+      Logger::Get()->info("generate mipmap, level: {}", _mipmapRes->MaxLevel());
+    } else {
+      _rawImageRes = image;
     }
+    _enableMipmap = enableMipMap;
   }
   ~Bitmap() noexcept override = default;
 
  protected:
   T EvalImpl(const SurfaceInteraction& si) const override {
-    switch (_filter) {
-      case FilterMode::Nearest:
-        return _mipmap.EvalNearest(si.UV);
-      case FilterMode::Bilinear:
-        return _mipmap.EvalBilinear(si.UV);
-      case FilterMode::Trilinear:
-        return _mipmap.EvalTrilinear(si.UV, si.dUVdX, si.dUVdY);
-      case FilterMode::Anisotropic:
-        return _mipmap.EvalAnisotropic(si.UV, si.dUVdX, si.dUVdY, _anisoLevel);
-      default:
-        return T(0);
+    if (_enableMipmap) {
+      switch (_filter) {
+        case FilterMode::Nearest:
+          return _mipmapRes->EvalNearest(si.UV);
+        case FilterMode::Bilinear:
+          return _mipmapRes->EvalBilinear(si.UV);
+        case FilterMode::Trilinear:
+          return _mipmapRes->EvalTrilinear(si.UV, si.dUVdX, si.dUVdY);
+        case FilterMode::Anisotropic:
+          return _mipmapRes->EvalAnisotropic(si.UV, si.dUVdX, si.dUVdY, _anisoLevel);
+        default:
+          return T(0);
+      }
+    } else {
+      return _rawImageRes->Eval(si.UV, _filter, _wrap);
     }
   }
 
   T ReadImpl(UInt32 x, UInt32 y) const override {
-    return _mipmap.GetLevel(0).Read(x, y);
+    return _enableMipmap ? _mipmapRes->GetLevel(0).Read(x, y) : _rawImageRes->Read(x, y);
   }
 
  private:
-  MipMap<T> _mipmap;
+  Unique<MipMap<T>> _mipmapRes;
+  Share<BlockBasedImage<T>> _rawImageRes;
+  bool _enableMipmap;
   FilterMode _filter;
+  WrapMode _wrap;
   Float _anisoLevel;
 };
 
