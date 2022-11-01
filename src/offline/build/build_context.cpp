@@ -179,6 +179,21 @@ class BuildContextImpl {
         }
       }
     }
+    std::map<std::string, Unique<Bsdf>> bsdfVariables;
+    std::vector<ConfigNode> bsdfVarNodes;
+    if (_root.TryRead<std::vector<ConfigNode>>("bsdf_vars", bsdfVarNodes)) {
+      for (const ConfigNode& bsdfVar : bsdfVarNodes) {
+        std::string name = bsdfVar.Read<std::string>("name");
+        ConfigNode bsdfDefNode = bsdfVar.Read<ConfigNode>("bsdf");
+        std::string bsdfType = GetTypeFromConfig(bsdfDefNode);
+        BsdfFactory* bsdfFactory = GetFactory<BsdfFactory>(bsdfType);
+        Unique<Bsdf> bsdfIns = bsdfFactory->Create(_ctxPtr, bsdfDefNode);
+        auto [iter, isInsert] = bsdfVariables.emplace(name, std::move(bsdfIns));
+        if (!isInsert) {
+          throw RadArgumentException("重复的bsdf变量定义: {}", name);
+        }
+      }
+    }
     std::vector<Unique<Bsdf>> bsdfs;
     std::vector<Unique<Shape>> shapes;
     std::vector<Unique<Light>> lights;
@@ -234,12 +249,22 @@ class BuildContextImpl {
           }
         }
         Unique<Bsdf> bsdfInstance;
+        Bsdf* bsdfRef = nullptr;
         {
           ConfigNode bsdfNode;
           if (entityNode.TryRead("bsdf", bsdfNode)) {
-            std::string type = GetTypeFromConfig(bsdfNode);
-            BsdfFactory* factory = GetFactory<BsdfFactory>(type);
-            bsdfInstance = factory->Create(_ctxPtr, bsdfNode);
+            std::string bsdfRefName;
+            if (bsdfNode.TryRead("ref", bsdfRefName)) {
+              auto findBsdfRefIter = bsdfVariables.find(bsdfRefName);
+              if (findBsdfRefIter == bsdfVariables.end()) {
+                throw RadArgumentException("不存在的BSDF变量: {}", bsdfRefName);
+              }
+              bsdfRef = findBsdfRefIter->second.get();
+            } else {
+              std::string type = GetTypeFromConfig(bsdfNode);
+              BsdfFactory* factory = GetFactory<BsdfFactory>(type);
+              bsdfInstance = factory->Create(_ctxPtr, bsdfNode);
+            }
           }
         }
         Unique<Medium> mediumInsideInstance;
@@ -275,6 +300,9 @@ class BuildContextImpl {
           }
           if (bsdfInstance != nullptr) {
             shapeInstance->AttachBsdf(bsdfInstance.get());
+          }
+          if (!shapeInstance->HasBsdf() && bsdfRef != nullptr) {
+            shapeInstance->AttachBsdf(bsdfRef);
           }
         }
         if (lightInstance != nullptr) {
@@ -331,6 +359,9 @@ class BuildContextImpl {
       }
       AccelFactory* factory = GetFactory<AccelFactory>(type);
       accelInstance = factory->Create(_ctxPtr, accelNode);
+    }
+    for (auto& [name, bsdfIns] : bsdfVariables) {
+      bsdfs.emplace_back(std::move(bsdfIns));
     }
     return Scene(
         std::move(accelInstance),
