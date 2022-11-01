@@ -17,6 +17,7 @@ class Scene {
   Scene(
       Unique<Accel> accel,
       Unique<Camera> camera,
+      std::vector<Unique<Bsdf>>&& bsdfs,
       std::vector<Unique<Light>>&& lights,
       std::vector<Unique<Medium>>&& mediums,
       Medium* globalMedium);
@@ -84,6 +85,7 @@ class Scene {
  private:
   Unique<Accel> _accel;
   Unique<Camera> _camera;
+  std::vector<Unique<Bsdf>> _bsdfs;
   std::vector<Unique<Light>> _lights;
   std::vector<Unique<Medium>> _mediums;
   Float _lightPdf;

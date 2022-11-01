@@ -55,12 +55,12 @@ class Shape {
   virtual SurfaceInteraction EvalParamSurface(const Vector2& uv);
 
   bool HasBsdf() const { return _bsdf != nullptr; }
-  const Bsdf* GetBsdf() const { return _bsdf.get(); }
-  Bsdf* GetBsdf() { return _bsdf.get(); }
+  const Bsdf* GetBsdf() const { return _bsdf; }
+  Bsdf* GetBsdf() { return _bsdf; }
   /**
-   * @brief BSDF实例的生命周期由Shape管理
+   * @brief BSDF实例的生命周期不由Shape管理, 但保证需要用到BSDF时, 它是可用的
    */
-  void AttachBsdf(Unique<Bsdf> bsdf) { _bsdf = std::move(bsdf); }
+  void AttachBsdf(Bsdf* bsdf) { _bsdf = bsdf; }
 
   bool IsLight() const { return _light != nullptr; }
   const Light* GetLight() const { return _light; }
@@ -79,7 +79,7 @@ class Shape {
 
  protected:
   Float _surfaceArea;
-  Unique<Bsdf> _bsdf;
+  Bsdf* _bsdf = nullptr;
   Light* _light = nullptr;
   Medium* _insideMedium = nullptr;
   Medium* _outsideMedium = nullptr;

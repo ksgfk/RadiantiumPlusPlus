@@ -179,6 +179,7 @@ class BuildContextImpl {
         }
       }
     }
+    std::vector<Unique<Bsdf>> bsdfs;
     std::vector<Unique<Shape>> shapes;
     std::vector<Unique<Light>> lights;
     std::vector<Unique<Medium>> mediums;
@@ -273,7 +274,7 @@ class BuildContextImpl {
             shapeInstance->AttachLight(lightInstance.get());
           }
           if (bsdfInstance != nullptr) {
-            shapeInstance->AttachBsdf(std::move(bsdfInstance));
+            shapeInstance->AttachBsdf(bsdfInstance.get());
           }
         }
         if (lightInstance != nullptr) {
@@ -295,6 +296,9 @@ class BuildContextImpl {
           shapeInstance->AttachMedium(inMedPtr, outMedPtr);
         }
 
+        if (bsdfInstance != nullptr) {
+          bsdfs.emplace_back(std::move(bsdfInstance));
+        }
         if (shapeInstance != nullptr) {
           shapes.emplace_back(std::move(shapeInstance));
         }
@@ -331,6 +335,7 @@ class BuildContextImpl {
     return Scene(
         std::move(accelInstance),
         std::move(mainCamera),
+        std::move(bsdfs),
         std::move(lights),
         std::move(mediums),
         globalMediumPtr);

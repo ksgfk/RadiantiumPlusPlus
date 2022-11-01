@@ -7,11 +7,13 @@ namespace Rad {
 Scene::Scene(
     Unique<Accel> accel,
     Unique<Camera> camera,
+    std::vector<Unique<Bsdf>>&& bsdfs,
     std::vector<Unique<Light>>&& lights,
     std::vector<Unique<Medium>>&& mediums,
     Medium* globalMedium)
     : _accel(std::move(accel)),
       _camera(std::move(camera)),
+      _bsdfs(std::move(bsdfs)),
       _lights(std::move(lights)),
       _mediums(std::move(mediums)),
       _globalMedium(globalMedium) {
