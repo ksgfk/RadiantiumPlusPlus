@@ -64,7 +64,7 @@ class Disney final : public Bsdf {
     _hasSpecTrans = ConfigHasValue("spec_trans", cfg);
     _specTrans = cfg.ReadTexture(*ctx, "spec_trans", Float(0));
     _hasSheen = ConfigHasValue("sheen", cfg);
-    _sheen = cfg.ReadTexture(*ctx, "sheen", Float(0.5));
+    _sheen = cfg.ReadTexture(*ctx, "sheen", Float(0));
     _hasSheenTint = ConfigHasValue("sheen_tint", cfg);
     _sheen_tint = cfg.ReadTexture(*ctx, "sheen_tint", Float(0));
     _hasFlatness = ConfigHasValue("flatness", cfg);
@@ -75,7 +75,7 @@ class Disney final : public Bsdf {
     _metallic = cfg.ReadTexture(*ctx, "metallic", Float(0));
     _hasClearcoat = ConfigHasValue("clearcoat", cfg);
     _clearcoat = cfg.ReadTexture(*ctx, "clearcoat", Float(0));
-    _clearcoatGloss = cfg.ReadTexture(*ctx, "clearcoat_gloss", Float(0.5));
+    _clearcoatGloss = cfg.ReadTexture(*ctx, "clearcoat_gloss", Float(0));
     _specularSample = cfg.ReadOrDefault("main_specular_sampling_rate", Float(1));
     _clearcoatSample = cfg.ReadOrDefault("clearcoat_sampling_rate", Float(1));
     _diffuseReflectSample = cfg.ReadOrDefault("diffuse_reflectance_sampling_rate", Float(1));
