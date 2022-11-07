@@ -187,4 +187,21 @@ inline Float ErfInv(Float a) {
   return a * p;
 }
 
+template <typename Value, size_t N>
+constexpr Value RadHornerImpl(const Value& x, const Value (&coeff)[N]) {
+  Value accum = coeff[N - 1];
+  for (size_t i = 1; i < N; i++) {
+    accum = Fmadd(x, accum, coeff[N - 1 - i]);
+  }
+  return accum;
+}
+/**
+ * @brief 多项式求值
+ */
+template <typename Value, typename... Number>
+constexpr Value Horner(const Value& x, Number... n) {
+  Value coeffs[]{Value(n)...};
+  return RadHornerImpl(x, coeffs);
+}
+
 }  // namespace Rad::Math

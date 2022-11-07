@@ -73,4 +73,11 @@ Vector3 Fresnel::Conductor(Float cosThetaI, const Vector3& eta, const Vector3& k
   return (rs + rp) * Float(0.5);
 }
 
+Float Fresnel::DiffuseReflectance(Float eta) {
+  Float invEta = Rcp(eta);
+  return eta < 1
+             ? Fmadd(Float(0.0636f), invEta, Fmadd(eta, Fmadd(eta, Float(-1.4399f), Float(0.7099f)), Float(0.6681f)))
+             : Horner(invEta, Float(0.919317f), Float(-3.4793f), Float(6.75335f), Float(-7.80989f), Float(4.98554f), Float(-1.36881f));
+}
+
 }  // namespace Rad
