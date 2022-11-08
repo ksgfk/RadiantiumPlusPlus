@@ -42,6 +42,7 @@ RAD_FACTORY_FUNC_DECLARATION(Bsdf, TwoSide);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughGlass);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, Disney);
 RAD_FACTORY_FUNC_DECLARATION(Bsdf, Plastic);
+RAD_FACTORY_FUNC_DECLARATION(Bsdf, RoughPlastic);
 RAD_FACTORY_FUNC_DECLARATION(Medium, HomogeneousMedium);
 RAD_FACTORY_FUNC_DECLARATION(PhaseFunction, IsotropicPhase);
 
@@ -79,6 +80,7 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Bsdf, RoughGlass),
       RAD_GET_FACTORY_FUNC(Bsdf, Disney),
       RAD_GET_FACTORY_FUNC(Bsdf, Plastic),
+      RAD_GET_FACTORY_FUNC(Bsdf, RoughPlastic),
       RAD_GET_FACTORY_FUNC(Medium, HomogeneousMedium),
       RAD_GET_FACTORY_FUNC(PhaseFunction, IsotropicPhase),
   };
