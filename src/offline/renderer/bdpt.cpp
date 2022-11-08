@@ -211,7 +211,7 @@ class BDPT final : public Renderer {
 
   BDPT(BuildContext* ctx, const ConfigNode& cfg) : Renderer(ctx, cfg) {
     _maxDepth = cfg.ReadOrDefault("max_depth", -1);
-    _rrDepth = cfg.ReadOrDefault("rr_depth", 3);
+    _rrDepth = cfg.ReadOrDefault("rr_depth", 5);
     _useMis = cfg.ReadOrDefault("use_mis", true);
   }
   ~BDPT() noexcept override = default;

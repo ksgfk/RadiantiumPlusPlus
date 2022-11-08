@@ -52,7 +52,7 @@ class Texture : public TextureBase {
     if (_isConstColor) {
       return _constColor;
     }
-    return Read(x, y);
+    return ReadImpl(x, y);
   }
 
   bool IsConstColor() const {
