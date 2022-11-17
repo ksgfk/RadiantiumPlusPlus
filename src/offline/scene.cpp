@@ -117,4 +117,71 @@ BoundingBox3 Scene::GetWorldBound() const {
   return _accel->GetWorldBound();
 }
 
+Spectrum Scene::Transmittance(
+    const Interaction& ref,
+    const Vector3& to,
+    const Medium* rayMedium_,
+    Sampler& sampler) const {
+  Spectrum tr(1);
+  const Medium* rayMedium = rayMedium_;
+  Interaction start = ref;
+  while (true) {
+    Vector3 o = start.OffsetP(to - start.P);
+    Vector3 d = to - o;
+    Float dist = d.norm();
+    if (dist < Math::ShadowEpsilon) {
+      break;
+    }
+    d /= dist;
+    Ray ray{o, d, 0, dist * (1 - Math::ShadowEpsilon)};
+    SurfaceInteraction si{};
+    bool isHit = RayIntersect(ray, si);
+    if (rayMedium != nullptr) {
+      Ray mediumRay{ray.O, ray.D, ray.MinT, isHit ? si.T : ray.MaxT};
+      Spectrum mediumTr = rayMedium->Tr(mediumRay, sampler);
+      tr = Spectrum(tr.cwiseProduct(mediumTr));
+    }
+    if (isHit && si.Shape->HasBsdf()) {
+      tr = Spectrum(Spectrum::Zero());
+      break;
+    }
+    if (!isHit) {
+      break;
+    }
+    start = si;
+    rayMedium = si.GetMedium(ray);
+  }
+  return tr;
+}
+
+std::tuple<bool, Spectrum, SurfaceInteraction> Scene::RayIntersectWithTransmittance(
+    const Ray& ray_,
+    const Medium* rayMedium_,
+    Sampler& sampler) const {
+  Spectrum tr(1);
+  Ray ray = ray_;
+  const Medium* rayMedium = rayMedium_;
+  while (true) {
+    SurfaceInteraction si{};
+    bool isHit = RayIntersect(ray, si);
+    if (!isHit) {
+      if (rayMedium != nullptr) {
+        Spectrum mediumTr = rayMedium->Tr(ray, sampler);
+        tr = Spectrum(mediumTr.cwiseProduct(tr));
+      }
+      return std::make_tuple(false, tr, si);
+    }
+    if (rayMedium != nullptr) {
+      Ray mediumRay{ray.O, ray.D, ray.MinT, si.T};
+      Spectrum mediumTr = rayMedium->Tr(mediumRay, sampler);
+      tr = Spectrum(tr.cwiseProduct(mediumTr));
+    }
+    if (si.Shape->HasBsdf()) {
+      return std::make_tuple(true, tr, si);
+    }
+    ray = si.SpawnRay(ray.D);
+    rayMedium = si.GetMedium(ray);
+  }
+}
+
 }  // namespace Rad

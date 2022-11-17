@@ -76,6 +76,9 @@ class Shape {
     _insideMedium = inMedium;
     _outsideMedium = outMedium;
   }
+  bool HasMedia() const { return _insideMedium != nullptr || _outsideMedium != nullptr; }
+  const Medium* GetInsideMedium() const { return _insideMedium; }
+  const Medium* GetOutsideMedium() const { return _outsideMedium; }
 
  protected:
   Float _surfaceArea;

@@ -11,13 +11,13 @@ class IsotropicPhase final : public PhaseFunction {
  public:
   IsotropicPhase(BuildContext* ctx, const ConfigNode& cfg) {}
 
-  std::pair<Vector3, Float> Sample(const MediumInteraction& mi, const Vector2& xi) {
+  std::pair<Vector3, Float> Sample(const MediumInteraction& mi, const Vector2& xi) const {
     Vector3 wo = Warp::SquareToUniformSphere(xi);
     Float pdf = Warp::SquareToUniformSpherePdf();
     return std::make_pair(wo, pdf);
   }
 
-  Float Eval(const MediumInteraction& mi, const Vector3& wo) {
+  Float Eval(const MediumInteraction& mi, const Vector3& wo) const {
     return Warp::SquareToUniformSpherePdf();
   }
 };

@@ -13,19 +13,13 @@ class Medium {
   Medium(BuildContext* ctx, const ConfigNode& cfg);
   virtual ~Medium() noexcept = default;
 
-  virtual std::tuple<bool, Float, Float> IntersectAABB(const Ray& ray) const = 0;
-  virtual Spectrum GetMajorant(const MediumInteraction& mi) const = 0;
-  virtual std::tuple<Spectrum, Spectrum, Spectrum> GetScattingCoeff(const MediumInteraction& mi) const = 0;
+  virtual Spectrum Tr(const Ray& ray, Sampler& sampler) const = 0;
+  virtual std::pair<MediumInteraction, Spectrum> Sample(const Ray& ray, Sampler& sampler) const = 0;
 
-  MediumInteraction SampleInteraction(const Ray& ray, Float xi, UInt32 channel) const;
-  std::pair<Spectrum, Spectrum> EvalTrAndPdf(const MediumInteraction& mi, const SurfaceInteraction& si) const;
-
-  const PhaseFunction* GetPhase() const { return _phaseFunction.get(); }
-  bool IsHomogeneous() const { return _isHomogeneous; }
+  const PhaseFunction& GetPhaseFunction() const noexcept { return *_phaseFunction.get(); }
 
  protected:
   Unique<PhaseFunction> _phaseFunction;
-  bool _isHomogeneous = false;
 };
 
 }  // namespace Rad

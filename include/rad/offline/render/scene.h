@@ -82,6 +82,12 @@ class Scene {
 
   Medium* GetGlobalMedium() const { return _globalMedium; }
 
+  Spectrum Transmittance(const Interaction& ref, const Vector3& to, const Medium* rayMedium, Sampler& sampler) const;
+  std::tuple<bool, Spectrum, SurfaceInteraction> RayIntersectWithTransmittance(
+      const Ray& ray,
+      const Medium* rayMedium,
+      Sampler& sampler) const;
+
  private:
   Unique<Accel> _accel;
   Unique<Camera> _camera;

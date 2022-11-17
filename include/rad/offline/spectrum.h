@@ -10,6 +10,7 @@ namespace Rad {
  */
 struct RgbSpectrum : Vector3 {
   using Scalar = Vector3::Scalar;
+  static constexpr UInt32 ComponentCount = Vector3::SizeAtCompileTime;
 
   RgbSpectrum() noexcept : Vector3(0, 0, 0) {}
   RgbSpectrum(Float value) noexcept : Vector3(value, value, value) {}
@@ -71,6 +72,10 @@ inline RgbSpectrum LerpSpectrum(const RgbSpectrum& a, const RgbSpectrum& b, Floa
 
 inline RgbSpectrum LerpSpectrum(const RgbSpectrum& a, const RgbSpectrum& b, const RgbSpectrum& t) {
   return RgbSpectrum(a + t.cwiseProduct(b - a));
+}
+
+inline RgbSpectrum ExpSpectrum(const RgbSpectrum& v) {
+  return RgbSpectrum(std::exp(v.x()), std::exp(v.y()), std::exp(v.z()));
 }
 
 }  // namespace Rad

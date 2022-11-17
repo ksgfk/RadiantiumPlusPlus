@@ -10,7 +10,6 @@ namespace Rad {
 class HomogeneousMedium final : public Medium {
  public:
   HomogeneousMedium(BuildContext* ctx, const ConfigNode& cfg) : Medium(ctx, cfg) {
-    _isHomogeneous = true;
     Vector3 sigmaT = cfg.ReadOrDefault("sigma_t", Vector3(1, 1, 1));
     Vector3 albedo = cfg.ReadOrDefault("albedo", Vector3(Vector3::Constant(Float(0.75))));
     _sigmaT = Spectrum(sigmaT);
@@ -18,24 +17,38 @@ class HomogeneousMedium final : public Medium {
     _scale = cfg.ReadOrDefault("scale", Float(1));
   }
 
-  std::tuple<bool, Float, Float> IntersectAABB(const Ray& ray) const override {
-    return std::make_tuple(true, Float(0), std::numeric_limits<Float>::infinity());
+  Spectrum Tr(const Ray& ray, Sampler& sampler) const override {
+    Spectrum sigmaT(_sigmaT * _scale);
+    Spectrum tr = ExpSpectrum(Spectrum(-sigmaT * (ray.MaxT - ray.MinT)));
+    return tr;
   }
 
-  Spectrum EvalSigmaT(const MediumInteraction& mi) const {
-    Spectrum sigmat(_sigmaT * _scale);
-    return sigmat;
-  }
-
-  Spectrum GetMajorant(const MediumInteraction& mi) const override {
-    return EvalSigmaT(mi);
-  }
-
-  std::tuple<Spectrum, Spectrum, Spectrum> GetScattingCoeff(const MediumInteraction& mi) const override {
-    Spectrum sigmat = EvalSigmaT(mi);
-    Spectrum sigmas(sigmat.cwiseProduct(_albedo));
-    Spectrum sigman(Float(0));
-    return std::make_tuple(sigmas, sigman, sigmat);
+  std::pair<MediumInteraction, Spectrum> Sample(const Ray& ray, Sampler& sampler) const override {
+    Int32 channel = std::min((Int32)(sampler.Next1D() * Spectrum::ComponentCount), (Int32)Spectrum::ComponentCount - 1);
+    Spectrum sigmaT(_sigmaT * _scale);
+    Float samplingDensity = sigmaT[channel];
+    Float sampledDist = -std::log(1 - sampler.Next1D()) / samplingDensity;
+    Float rayDist = ray.MaxT - ray.MinT;
+    MediumInteraction mi{};
+    Spectrum result;
+    if (sampledDist < rayDist) {
+      Float t = ray.MinT + sampledDist;
+      Spectrum tr = ExpSpectrum(Spectrum(-sigmaT * t));
+      Float pdf = sigmaT.cwiseProduct(tr).sum() * (Float(1) / Spectrum::ComponentCount);
+      mi.T = t;
+      mi.P = ray(t);
+      mi.N = ray.D;
+      mi.Wi = -ray.D;
+      mi.Shading = Frame(mi.N);
+      mi.Medium = (Medium*)this;
+      result = Spectrum(tr.cwiseProduct(sigmaT.cwiseProduct(_albedo)) / pdf);
+    } else {
+      Float t = rayDist;
+      Spectrum tr = ExpSpectrum(Spectrum(-sigmaT * t));
+      Float pdf = tr.sum() * (Float(1) / Spectrum::ComponentCount);
+      result = Spectrum(tr / pdf);
+    }
+    return std::make_pair(mi, result);
   }
 
  private:
