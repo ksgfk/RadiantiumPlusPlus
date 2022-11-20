@@ -70,13 +70,15 @@ struct SurfaceInteraction : public Interaction {
 
   Bsdf* BSDF();
   Bsdf* BSDF(const RayDifferential& ray);
-  const Medium* GetMedium(const Ray& ray) const;
+  Medium* GetMedium(const Ray& ray) const;
 };
 
 struct MediumInteraction : public Interaction {
   Medium* Medium = nullptr;
   Frame Shading;
   Vector3 Wi;
+  Float MinT;
+  Spectrum SigmaS, SigmaN, SigmaT, CombinedExtinction;
 
   Vector3 ToWorld(const Vector3& v) const;
   Vector3 ToLocal(const Vector3& v) const;

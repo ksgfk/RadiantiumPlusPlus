@@ -109,7 +109,7 @@ Bsdf* SurfaceInteraction::BSDF(const RayDifferential& ray) {
   return Shape->GetBsdf();
 }
 
-const Medium* SurfaceInteraction::GetMedium(const Ray& ray) const {
+Medium* SurfaceInteraction::GetMedium(const Ray& ray) const {
   return ray.D.dot(N) > 0 ? Shape->GetOutsideMedium() : Shape->GetInsideMedium();
 }
 
