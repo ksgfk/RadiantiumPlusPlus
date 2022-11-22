@@ -32,8 +32,8 @@ class VolPath final : public SampleRenderer {
     Float prevPdf = 1;                         //上一个着色点采样的下一条路径的概率密度
     UInt32 channel = SampleChannel(*sampler);  //我们随机使用一条颜色通道来评估介质
     BsdfContext ctx{};
+    SurfaceInteraction si{};
     for (;; depth++) {
-      //轮盘赌, 终止随机游走
       if (depth >= _rrDepth) {
         Float maxThroughput = throughput.MaxComponent();
         Float rr = std::min(maxThroughput * Math::Sqr(eta), Float(0.95));
@@ -45,64 +45,72 @@ class VolPath final : public SampleRenderer {
       if (_maxDepth >= 0 && depth + 1 >= _maxDepth) {
         break;
       }
-      //本轮采样需要用到的临时变量
-      SurfaceInteraction si{};
-      MediumInteraction mei{};
-      //采样辐射传输方程(Radiative Transfer Equation)
       bool isSampleMedium = medium != nullptr;
+      bool isSampleSurface = !isSampleMedium;
+      bool isNullScatter = false, isMediumScatter = false, isMediumEscaped = false;
+      bool isSpectral = isSampleMedium;
+      bool notSpectral = false;
+      if (isSampleMedium) {
+        isSpectral &= medium->HasSpectralExtinction();
+        notSpectral = !isSpectral && isSampleMedium;
+      }
+      MediumInteraction mei{};
       if (isSampleMedium) {
         mei = medium->SampleInteraction(ray, sampler->Next1D(), channel);
-        if (medium->IsHomogeneous() && mei.IsValid()) {  //为均匀介质优化碰撞检测
+        if (medium->IsHomogeneous() && mei.IsValid()) {
           ray.MaxT = mei.T;
         }
         scene.RayIntersect(ray, si);
-        if (si.T < mei.T) {  //如果在更近的地方撞到了任何物体, 拒绝掉这次采样
+        if (si.T < mei.T) {
           mei.T = std::numeric_limits<Float>::infinity();
         }
-        isSampleMedium = mei.IsValid();
-        //将透射率应用到路径上
-        auto [tr, pdf] = medium->EvalTrAndPdf(mei, si);
-        Float freeFlightPdf = pdf[channel];
-        throughput = freeFlightPdf <= 0 ? Spectrum(0) : Spectrum(throughput.cwiseProduct(tr) / freeFlightPdf);
-#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
-        if (throughput.HasNaN()) {
-          Logger::Get()->warn("1 tr: {} freeFlightPdf: {}", tr, freeFlightPdf);
+        if (isSpectral) {
+          auto [tr, freeFlightPdf] = medium->EvalTrAndPdf(mei, si);
+          Float pdf = freeFlightPdf[channel];
+          throughput = pdf <= 0 ? Spectrum(0) : Spectrum(throughput.cwiseProduct(tr) / pdf);
         }
-#endif
+        isMediumEscaped = isSampleMedium && !mei.IsValid();
+        isSampleMedium &= mei.IsValid();
+        bool null_scatter = sampler->Next1D() > mei.SigmaT[channel] / mei.CombinedExtinction[channel];
+        isNullScatter |= null_scatter && isSampleMedium;
+        isMediumScatter |= !isNullScatter && isSampleMedium;
+        if (isSpectral && isNullScatter) {
+          throughput = Spectrum(throughput.cwiseProduct(mei.SigmaN) * mei.CombinedExtinction[channel] / mei.SigmaN[channel]);
+        }
+        if (isMediumScatter) {
+          prevIts = mei;
+        }
       }
-      if (isSampleMedium) {  //本次采样在介质里
-        // TODO: 目前只实现了均匀介质, 所以不存在null scatter
-        throughput = Spectrum(throughput.cwiseProduct(mei.SigmaS) * mei.CombinedExtinction[channel] / mei.SigmaT[channel]);
+      if (isNullScatter) {
+        ray.O = mei.P;
+        si.T = si.T - mei.T;
+      }
+      if (isMediumScatter) {
+        if (isSpectral) {
+          throughput = Spectrum(throughput.cwiseProduct(mei.SigmaS) * mei.CombinedExtinction[channel] / mei.SigmaT[channel]);
+        }
+        if (notSpectral) {
+          throughput = Spectrum(throughput.cwiseProduct(mei.SigmaS).cwiseProduct(mei.SigmaT.cwiseInverse()));
+        }
         const PhaseFunction& phase = medium->GetPhaseFunction();
-        //接下来进行光源重要性采样
         auto [li, dsr] = SampleLight(scene, *sampler, medium, channel, mei);
         if (dsr.Pdf > 0) {
           Float phaseVal = phase.Eval(mei, dsr.Dir);
           Float weight = dsr.IsDelta ? 1 : MisWeight(dsr.Pdf, phaseVal);
           Spectrum lo(throughput.cwiseProduct(li) * weight * phaseVal / dsr.Pdf);
-#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
-          if (lo.HasNaN()) {
-            Logger::Get()->warn("2 li: {} weight: {} phase: {} dsr.Pdf: {}", li, weight, phaseVal, dsr.Pdf);
-          }
-#endif
           result += lo;
         }
-        //采样下一个游走方向
         auto [wo, phasePdf] = phase.Sample(mei, sampler->Next2D());
-        //保存下一次散射需要的值
         ray = mei.SpawnRay(wo);
         isSpecularPath = false;
-        prevIts = mei;
         prevPdf = phasePdf;
-      } else {  //本次采样在表面上
-        if (!si.IsValid()) {
-          scene.RayIntersect(ray, si);
-        }
+      }
+      isSampleSurface |= isMediumEscaped;
+      if (isSampleSurface) {
+        scene.RayIntersect(ray, si);
         std::optional<Light*> hitLight = scene.GetLight(si);
-        //直接光照, 随机游走的路径直连光源
         if (hitLight) {
           Float weight;
-          // delta路径不启用光源的权重
           if (isSpecularPath) {
             weight = 1;
           } else {
@@ -112,11 +120,6 @@ class VolPath final : public SampleRenderer {
           Spectrum li = (*hitLight)->Eval(si);
           Spectrum lo(throughput.cwiseProduct(li) * weight);
           result += lo;
-#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
-          if (lo.HasNaN()) {
-            Logger::Get()->warn("3 weight: {} li: {}", weight, li);
-          }
-#endif
         }
         if (!si.IsValid()) {
           break;
@@ -140,11 +143,6 @@ class VolPath final : public SampleRenderer {
             Float weight = dsr.IsDelta ? 1 : MisWeight(dsr.Pdf, bsdfPdf);
             Spectrum lo(throughput.cwiseProduct(f).cwiseProduct(li) * weight / dsr.Pdf);
             result += lo;
-#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
-            if (lo.HasNaN()) {
-              Logger::Get()->warn("4 weight: {} pdf: {} li: {}", weight, dsr.Pdf, li);
-            }
-#endif
           }
         }
         auto [bsr, f] = bsdf->Sample(ctx, si, sampler->Next1D(), sampler->Next2D());
@@ -153,17 +151,15 @@ class VolPath final : public SampleRenderer {
         } else {
           throughput = Spectrum(throughput.cwiseProduct(f) / bsr.Pdf);
           eta *= bsr.Eta;
-#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
-          if (throughput.HasNaN()) {
-            Logger::Get()->warn("5 f: {} pdf: {} bsdf: {}", f, bsr.Pdf, bsdf->Flags());
-          }
-#endif
         }
         ray = si.SpawnRay(si.ToWorld(bsr.Wo));
         prevPdf = bsr.Pdf;
         prevIts = si;
         isSpecularPath = bsr.HasType(BsdfType::Delta);
         medium = si.GetMedium(ray);
+      }
+      if (!(isSampleSurface | isSampleMedium)) {
+        break;
       }
     }
     return result;
