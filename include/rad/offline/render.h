@@ -13,3 +13,4 @@
 #include "render/scene.h"
 #include "render/shape.h"
 #include "render/texture.h"
+#include "render/volume.h"

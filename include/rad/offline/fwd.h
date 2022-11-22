@@ -17,10 +17,13 @@ class Scene;
 class Asset;
 class ModelAsset;
 class ImageAsset;
+class VolumeAsset;
 
 class TextureBase;
 template <typename T>
 class Texture;
+
+class Volume;
 
 class Factory;
 class BuildContext;

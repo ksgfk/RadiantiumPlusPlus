@@ -61,6 +61,18 @@ Vector3 Transform::ApplyNormalToWorld(const Vector3& v) const {
   return Eigen::Transform<Float, 3, Eigen::Affine>(ToLocal).linear().transpose() * v;
 }
 
+BoundingBox3 Transform::ApplyBoxToWorld(const BoundingBox3& box) const {
+  BoundingBox3 result(ApplyAffineToWorld(box.min()));
+  result.extend(ApplyAffineToWorld(Vector3(box.max().x(), box.min().y(), box.min().z())));
+  result.extend(ApplyAffineToWorld(Vector3(box.min().x(), box.max().y(), box.min().z())));
+  result.extend(ApplyAffineToWorld(Vector3(box.min().x(), box.min().y(), box.max().z())));
+  result.extend(ApplyAffineToWorld(Vector3(box.min().x(), box.max().y(), box.max().z())));
+  result.extend(ApplyAffineToWorld(Vector3(box.max().x(), box.max().y(), box.min().z())));
+  result.extend(ApplyAffineToWorld(Vector3(box.max().x(), box.min().y(), box.max().z())));
+  result.extend(ApplyAffineToWorld(box.max()));
+  return result;
+}
+
 Vector3 Transform::ApplyAffineToLocal(const Vector3& v) const {
   Vector4 result = ToLocal * Vector4(v[0], v[1], v[2], 1.0f);
   return result.head<3>() / result.w();
@@ -68,6 +80,18 @@ Vector3 Transform::ApplyAffineToLocal(const Vector3& v) const {
 
 Vector3 Transform::ApplyLinearToLocal(const Vector3& v) const {
   return Eigen::Transform<Float, 3, Eigen::Affine>(ToLocal).linear() * v;
+}
+
+BoundingBox3 Transform::ApplyBoxToLocal(const BoundingBox3& box) const {
+  BoundingBox3 result(ApplyAffineToLocal(box.min()));
+  result.extend(ApplyAffineToLocal(Vector3(box.max().x(), box.min().y(), box.min().z())));
+  result.extend(ApplyAffineToLocal(Vector3(box.min().x(), box.max().y(), box.min().z())));
+  result.extend(ApplyAffineToLocal(Vector3(box.min().x(), box.min().y(), box.max().z())));
+  result.extend(ApplyAffineToLocal(Vector3(box.min().x(), box.max().y(), box.max().z())));
+  result.extend(ApplyAffineToLocal(Vector3(box.max().x(), box.max().y(), box.min().z())));
+  result.extend(ApplyAffineToLocal(Vector3(box.max().x(), box.min().y(), box.max().z())));
+  result.extend(ApplyAffineToLocal(box.max()));
+  return result;
 }
 
 }  // namespace Rad

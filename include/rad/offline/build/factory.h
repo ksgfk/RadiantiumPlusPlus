@@ -101,6 +101,10 @@
   RAD_FACTORY_BASE_DECLARATION(Asset, type, name); \
   RAD_FACTORY_FUNC_DEFINITION(Asset, type)
 
+#define RAD_FACTORY_VOLUME_DECLARATION(type, name)  \
+  RAD_FACTORY_BASE_DECLARATION(Volume, type, name); \
+  RAD_FACTORY_FUNC_DEFINITION(Volume, type)
+
 namespace Rad {
 
 class Factory {
@@ -131,5 +135,6 @@ class TextureBaseFactory : public Factory {
   virtual Unique<TextureGray> CreateR(BuildContext* ctx, const ConfigNode& cfg) const = 0;
 };
 RAD_FACTORY(Asset);
+RAD_FACTORY(Volume);
 
 }  // namespace Rad

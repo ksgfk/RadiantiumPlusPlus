@@ -49,6 +49,7 @@ class BuildContext {
 
   ImageAsset* GetImage(const std::string& name) const;
   ModelAsset* GetModel(const std::string& name) const;
+  VolumeAsset* GetVolume(const std::string& name) const;
 
   const Matrix4& GetShapeMatrix() const;
   std::vector<Unique<Shape>>&& GetShapes();

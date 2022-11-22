@@ -71,6 +71,14 @@ class BuildContextImpl {
     return static_cast<ModelAsset*>(asset);
   }
 
+  VolumeAsset* GetVolume(const std::string& name) const {
+    Asset* asset = FindAsset(name);
+    if (asset->GetType() != AssetType::Volume) {
+      throw RadArgumentException("资源不是 Volume: {}", name);
+    }
+    return static_cast<VolumeAsset*>(asset);
+  }
+
   const Matrix4& GetShapeMatrix() const {
     return _shapeToWorld;
   }
@@ -415,6 +423,10 @@ ImageAsset* BuildContext::GetImage(const std::string& name) const {
 
 ModelAsset* BuildContext::GetModel(const std::string& name) const {
   return _impl->GetModel(name);
+}
+
+VolumeAsset* BuildContext::GetVolume(const std::string& name) const {
+  return _impl->GetVolume(name);
 }
 
 const Matrix4& BuildContext::GetShapeMatrix() const {

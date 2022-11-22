@@ -50,7 +50,6 @@ add_library(rad.offline STATIC
     src/offline/asset/image_default.cpp
     src/offline/asset/image_exr.cpp
     src/offline/asset/static_grid.cpp
-    src/offline/asset/volume.cpp
     src/offline/asset/volume_vdb.cpp
     src/offline/build/config_node.cpp
     src/offline/build/build_context.cpp
@@ -84,7 +83,9 @@ add_library(rad.offline STATIC
     src/offline/texture/bitmap.cpp
     src/offline/texture/chessboard.cpp
     src/offline/medium/homogeneous.cpp
-    src/offline/phase_function/isotropic.cpp)
+    src/offline/phase_function/isotropic.cpp
+    src/offline/volume/volume.cpp
+    src/offline/volume/grid.cpp)
 
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT32)

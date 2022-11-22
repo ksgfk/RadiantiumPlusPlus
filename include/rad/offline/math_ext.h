@@ -52,7 +52,11 @@ inline double Fmadd(double a, double b, double c) { return std::fma(a, b, c); }
  * @brief a * b + c
  */
 inline Vector3 Fmadd(const Vector3& a, const Vector3& b, const Vector3& c) {
-  return a.cwiseProduct(b) + c;
+  // return a.cwiseProduct(b) + c;
+  return Vector3(
+      Fmadd(a.x(), b.x(), c.x()),
+      Fmadd(a.y(), b.y(), c.y()),
+      Fmadd(a.z(), b.z(), c.z()));
 }
 /**
  * @brief 二次根的倒数

@@ -30,6 +30,7 @@ struct Transform {
    * @brief 变换法线到世界空间
    */
   Vector3 ApplyNormalToWorld(const Vector3& v) const;
+  BoundingBox3 ApplyBoxToWorld(const BoundingBox3& box) const;
   /**
    * @brief 仿射变换到本地空间
    */
@@ -38,6 +39,7 @@ struct Transform {
    * @brief 线性变换到本地空间
    */
   Vector3 ApplyLinearToLocal(const Vector3& v) const;
+  BoundingBox3 ApplyBoxToLocal(const BoundingBox3& box) const;
 
   /*字段*/
   Matrix4 ToWorld;

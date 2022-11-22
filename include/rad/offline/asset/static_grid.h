@@ -12,8 +12,8 @@ class StaticGrid {
       UInt32 channel,
       const BoundingBox3& box);
 
-  Float32* GetData() { return _data.data(); }
-  const Float32* GetData() const { return _data.data(); }
+  std::vector<Float32>& GetData() { return _data; }
+  const std::vector<Float32>& GetData() const { return _data; }
   const Eigen::Vector3i& GetSize() const { return _size; }
   const UInt32 GetChannelCount() const { return _channel; }
   const BoundingBox3& GetBoundingBox() const { return _box; }

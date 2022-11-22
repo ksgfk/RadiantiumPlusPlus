@@ -17,7 +17,8 @@ class Volume {
  protected:
   virtual Spectrum EvalImpl(const Interaction& it) const = 0;
 
- private:
+  void UpdateBoundingBox();
+
   bool _isConstVolume;
   Spectrum _constValue;
   Transform _toWorld;
