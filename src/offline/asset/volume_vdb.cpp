@@ -22,7 +22,7 @@ class VolumeOpenVdb final : public VolumeAsset {
 
   AssetLoadResult Load(const LocationResolver& resolver) override {
     auto stream = resolver.GetStream(_location, std::ios::binary);
-    AssetLoadResult result;
+    AssetLoadResult result{};
     try {
       openvdb::io::Stream vdbStream(*stream);
       auto grids = vdbStream.getGrids();
@@ -32,71 +32,15 @@ class VolumeOpenVdb final : public VolumeAsset {
           const auto& metadata = metaIt->second;
           _logger->debug("metadata name: {}, value: {} ", metaIt->first, metadata->str());
         }
-        auto bboxDim = grid->evalActiveVoxelDim();
-        auto bbox = grid->evalActiveVoxelBoundingBox();
-        auto wsMin = grid->indexToWorld(bbox.min());
-        auto wsMax = grid->indexToWorld(bbox.max() - openvdb::Vec3R(1, 1, 1));
         if (grid->isType<openvdb::FloatGrid>()) {
-          Eigen::Vector3i size(bboxDim.x(), bboxDim.y(), bboxDim.z());
-          Unique<Float32[]> data = std::make_unique<Float32[]>((size_t)size.prod());
-          auto floatGrid = openvdb::gridPtrCast<openvdb::FloatGrid>(grid);
-          openvdb::tools::GridSampler<openvdb::FloatGrid, openvdb::tools::BoxSampler> sampler(*floatGrid);
-          Float32* p = data.get();
-          for (int k = bbox.min().z(); k < bbox.max().z(); ++k) {
-            for (int j = bbox.min().y(); j < bbox.max().y(); ++j) {
-              for (int i = bbox.min().x(); i < bbox.max().x(); ++i) {
-                float value = sampler.isSample(openvdb::Vec3R(i, j, k));
-                *p = value;
-                p++;
-              }
-            }
-          }
-          BoundingBox3 bound(
-              Vector3(Float(wsMin.x()), Float(wsMin.y()), Float(wsMin.z())),
-              Vector3(Float(wsMax.x()), Float(wsMax.y()), Float(wsMax.z())));
-          Share<StaticGrid> radGrid = std::make_shared<StaticGrid>(
-              std::move(data),
-              size,
-              1,
-              bound);
-          _grids.emplace_back(GridEntry{std::move(radGrid), grid->getName()});
+          _grids.emplace_back(GetGridEntry<openvdb::FloatGrid, 1>(grid));
         } else if (grid->isType<openvdb::Vec3fGrid>()) {
-          Eigen::Vector3i size(bboxDim.x(), bboxDim.y(), bboxDim.z());
-          auto vec3fGrid = openvdb::gridPtrCast<openvdb::Vec3fGrid>(grid);
-          openvdb::tools::GridSampler<openvdb::Vec3fGrid, openvdb::tools::BoxSampler> sampler(*vec3fGrid);
-          std::vector<openvdb::Vec3f> data;
-          data.reserve(size.prod());
-          for (int k = bbox.min().z(); k < bbox.max().z(); ++k) {
-            for (int j = bbox.min().y(); j < bbox.max().y(); ++j) {
-              for (int i = bbox.min().x(); i < bbox.max().x(); ++i) {
-                openvdb::Vec3f value = sampler.isSample(openvdb::Vec3R(i, j, k));
-                data.emplace_back(value);
-              }
-            }
-          }
-          BoundingBox3 bound(
-              Vector3(Float(wsMin.x()), Float(wsMin.y()), Float(wsMin.z())),
-              Vector3(Float(wsMax.x()), Float(wsMax.y()), Float(wsMax.z())));
-          Unique<Float32[]> realData = std::make_unique<Float32[]>(data.size() * 3);
-          Float32* ptr = realData.get();
-          for (const auto& d : data) {
-            *ptr = d.x();
-            ptr++;
-            *ptr = d.y();
-            ptr++;
-            *ptr = d.z();
-            ptr++;
-          }
-          Share<StaticGrid> radGrid = std::make_shared<StaticGrid>(
-              std::move(realData),
-              size,
-              1,
-              bound);
-          _grids.emplace_back(GridEntry{std::move(radGrid), grid->getName()});
+          _grids.emplace_back(GetGridEntry<openvdb::Vec3fGrid, 3>(grid));
         } else {
           throw RadInvalidOperationException("目前只支持读取float和vec3f的grid");
         }
       }
+      result.IsSuccess = true;
     } catch (const std::exception& e) {
       result.IsSuccess = false;
       result.FailResult = e.what();
@@ -125,6 +69,38 @@ class VolumeOpenVdb final : public VolumeAsset {
     Share<StaticGrid> Data;
     std::string Name;
   };
+
+  template <class VdbGridType, int ChannelCount>
+  static GridEntry GetGridEntry(const openvdb::GridBase::Ptr& grid) {
+    auto bboxDim = grid->evalActiveVoxelDim();
+    auto bbox = grid->evalActiveVoxelBoundingBox();
+    auto wsMin = grid->indexToWorld(bbox.min());
+    auto wsMax = grid->indexToWorld(bbox.max() - openvdb::Vec3R(1, 1, 1));
+    Eigen::Vector3i size(bboxDim.x() - 1, bboxDim.y() - 1, bboxDim.z() - 1);
+    auto gridType = openvdb::gridPtrCast<VdbGridType>(grid);
+    openvdb::tools::GridSampler<VdbGridType, openvdb::tools::BoxSampler> sampler(*gridType);
+    std::vector<Float32> data;
+    data.reserve(size.prod() * ChannelCount);
+    for (int k = bbox.min().z(); k < bbox.max().z(); k++) {
+      for (int j = bbox.min().y(); j < bbox.max().y(); j++) {
+        for (int i = bbox.min().x(); i < bbox.max().x(); i++) {
+          auto value = sampler.isSample(openvdb::Vec3R(i, j, k));
+          if constexpr (ChannelCount == 1) {
+            data.emplace_back(value);
+          } else {
+            for (int l = 0; l < ChannelCount; l++) {
+              data.emplace_back(value(l));
+            }
+          }
+        }
+      }
+    }
+    BoundingBox3 bound(
+        Vector3(Float(wsMin.x()), Float(wsMin.y()), Float(wsMin.z())),
+        Vector3(Float(wsMax.x()), Float(wsMax.y()), Float(wsMax.z())));
+    Share<StaticGrid> radGrid = std::make_shared<StaticGrid>(std::move(data), size, ChannelCount, bound);
+    return GridEntry{std::move(radGrid), grid->getName()};
+  }
 
   Share<spdlog::logger> _logger;
   std::vector<GridEntry> _grids;
