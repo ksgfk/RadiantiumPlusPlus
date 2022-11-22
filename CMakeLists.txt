@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(radiantium VERSION 0.1.0)
 
+if(WIN32)
+set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "" FORCE) # win下目前只能用动态库, vcpkg里无法为openvdb构建静态库...
+endif()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -19,8 +23,9 @@ find_package(embree 3 CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenEXR CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
+find_package(OpenVDB CONFIG REQUIRED)
 
-add_library(rad.offline
+add_library(rad.offline STATIC
     src/offline/types.cpp
     src/offline/logger.cpp
     src/offline/color.cpp
@@ -36,6 +41,7 @@ add_library(rad.offline
     src/offline/memory.cpp
     src/offline/medium.cpp
     src/offline/bounding_sphere.cpp
+    src/offline/api.cpp
     src/offline/utility/image.cpp
     src/offline/utility/stop_watch.cpp
     src/offline/asset/triangle_model.cpp
@@ -43,6 +49,9 @@ add_library(rad.offline
     src/offline/asset/model_obj.cpp
     src/offline/asset/image_default.cpp
     src/offline/asset/image_exr.cpp
+    src/offline/asset/static_grid.cpp
+    src/offline/asset/volume.cpp
+    src/offline/asset/volume_vdb.cpp
     src/offline/build/config_node.cpp
     src/offline/build/build_context.cpp
     src/offline/shape/mesh.cpp
@@ -96,13 +105,14 @@ target_compile_options(rad.offline PUBLIC /utf-8
                                           /arch:AVX2)
 endif()
 target_include_directories(rad.offline PUBLIC include)
-target_include_directories(rad.offline PRIVATE ${STB_INCLUDE_DIRS})
-target_link_libraries(rad.offline PRIVATE TBB::tbb)
-target_link_libraries(rad.offline PRIVATE nlohmann_json::nlohmann_json)
+target_include_directories(rad.offline PUBLIC ${STB_INCLUDE_DIRS})
+target_link_libraries(rad.offline PUBLIC TBB::tbb)
+target_link_libraries(rad.offline PUBLIC nlohmann_json::nlohmann_json)
 target_link_libraries(rad.offline PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
-target_link_libraries(rad.offline PRIVATE embree)
-target_link_libraries(rad.offline PRIVATE Eigen3::Eigen)
-target_link_libraries(rad.offline PRIVATE OpenEXR::OpenEXR)
+target_link_libraries(rad.offline PUBLIC embree)
+target_link_libraries(rad.offline PUBLIC Eigen3::Eigen)
+target_link_libraries(rad.offline PUBLIC OpenEXR::OpenEXR)
+target_link_libraries(rad.offline PUBLIC OpenVDB::openvdb)
 
 add_executable(rad.offline.cli
     src/offline_cli/main.cpp)

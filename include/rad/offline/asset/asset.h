@@ -5,6 +5,7 @@
 #include "../utility/location_resolver.h"
 #include "triangle_model.h"
 #include "block_based_image.h"
+#include "static_grid.h"
 
 #include <string>
 
@@ -12,7 +13,8 @@ namespace Rad {
 
 enum class AssetType {
   Model,
-  Image
+  Image,
+  Volume
 };
 
 struct AssetLoadResult {
@@ -69,6 +71,15 @@ class ImageAsset : public Asset {
 
   virtual Share<BlockBasedImage<Color>> ToImageRgb() const = 0;
   virtual Share<BlockBasedImage<Float32>> ToImageGray() const = 0;
+};
+
+class VolumeAsset : public Asset {
+ public:
+  VolumeAsset(BuildContext* ctx, const ConfigNode& cfg) : Asset(ctx, cfg, AssetType::Volume) {}
+  virtual ~VolumeAsset() noexcept = default;
+
+  virtual Share<StaticGrid> GetGrid() const = 0;
+  virtual Share<StaticGrid> GetGrid(const std::string& name) const = 0;
 };
 
 }  // namespace Rad

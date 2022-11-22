@@ -1,3 +1,4 @@
+#include <rad/offline/api.h>
 #include <rad/offline/common.h>
 #include <rad/offline/build.h>
 #include <rad/offline/render.h>
@@ -33,7 +34,7 @@ std::pair<Unique<Renderer>, Unique<LocationResolver>> Build(int argc, char** arg
 }
 
 int main(int argc, char** argv) {
-  Logger::Init();
+  RadInit();
   try {
     auto [renderer, resolver] = Build(argc, argv);
     Logger::Get()->info("start rendering...");
@@ -46,6 +47,6 @@ int main(int argc, char** argv) {
   } catch (...) {
     Logger::Get()->error("unknown exception");
   }
-  Logger::Shutdown();
+  RadShutdown();
   return 0;
 }
