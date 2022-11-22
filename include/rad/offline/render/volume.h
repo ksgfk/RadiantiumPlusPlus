@@ -8,14 +8,16 @@ namespace Rad {
 class Volume {
  public:
   Volume() : _isConstVolume(false) {}
-  Volume(const Spectrum& spectrum) : _isConstVolume(true), _constValue(spectrum) {}
+  inline Volume(const Spectrum& spectrum)
+      : _isConstVolume(true), _constValue(spectrum), _maxValue(spectrum.MaxComponent()) {}
   virtual ~Volume() noexcept = default;
 
   Spectrum Eval(const Interaction& it) const;
   const BoundingBox3& GetBoundingBox() const { return _box; }
+  const Float GetMaxValue() const { return _maxValue; }
 
  protected:
-  virtual Spectrum EvalImpl(const Interaction& it) const = 0;
+  virtual Spectrum EvalImpl(const Interaction& it) const;
 
   void UpdateBoundingBox();
 
@@ -23,6 +25,7 @@ class Volume {
   Spectrum _constValue;
   Transform _toWorld;
   BoundingBox3 _box;
+  Float _maxValue;
 };
 
 }  // namespace Rad

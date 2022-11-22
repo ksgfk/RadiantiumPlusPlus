@@ -17,6 +17,7 @@ class StaticGrid {
   const Eigen::Vector3i& GetSize() const { return _size; }
   const UInt32 GetChannelCount() const { return _channel; }
   const BoundingBox3& GetBoundingBox() const { return _box; }
+  const Float32 GetMaxValue() const { return _max; }
 
  private:
   std::vector<Float32> _data;

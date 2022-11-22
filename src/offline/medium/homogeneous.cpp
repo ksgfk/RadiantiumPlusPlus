@@ -11,9 +11,8 @@ class HomogeneousMedium final : public Medium {
  public:
   HomogeneousMedium(BuildContext* ctx, const ConfigNode& cfg) : Medium(ctx, cfg) {
     Vector3 sigmaT = cfg.ReadOrDefault("sigma_t", Vector3(1, 1, 1));
-    Vector3 albedo = cfg.ReadOrDefault("albedo", Vector3(Vector3::Constant(Float(0.75))));
     _sigmaT = Spectrum(sigmaT);
-    _albedo = Spectrum(albedo);
+    _albedo = cfg.ReadVolume(*ctx, "albedo", Spectrum(Float(0.75)));
     _scale = cfg.ReadOrDefault("scale", Float(1));
     _isHomogeneous = true;
     _hasSpectralExtinction = true;
@@ -24,24 +23,24 @@ class HomogeneousMedium final : public Medium {
   }
 
   Spectrum GetMajorant(const MediumInteraction& mi) const override {
-    return eval_sigmat(mi);
+    return EvalSigmaT(mi);
   }
 
   std::tuple<Spectrum, Spectrum, Spectrum> GetScatteringCoefficients(const MediumInteraction& mi) const override {
-    Spectrum sigmat = eval_sigmat(mi);
-    Spectrum sigmas(sigmat.cwiseProduct(_albedo));
+    Spectrum sigmat = EvalSigmaT(mi);
+    Spectrum sigmas(sigmat.cwiseProduct(_albedo->Eval(mi)));
     Spectrum sigman(0);
     return {sigmas, sigman, sigmat};
   }
 
-  Spectrum eval_sigmat(const MediumInteraction& mi) const {
+  Spectrum EvalSigmaT(const MediumInteraction& mi) const {
     auto sigmat = _sigmaT * _scale;
     return Spectrum(sigmat);
   }
 
  private:
   Spectrum _sigmaT;
-  Spectrum _albedo;
+  Unique<Volume> _albedo;
   Float _scale;
 };
 

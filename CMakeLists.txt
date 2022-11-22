@@ -83,6 +83,7 @@ add_library(rad.offline STATIC
     src/offline/texture/bitmap.cpp
     src/offline/texture/chessboard.cpp
     src/offline/medium/homogeneous.cpp
+    src/offline/medium/heterogeneous.cpp
     src/offline/phase_function/isotropic.cpp
     src/offline/volume/volume.cpp
     src/offline/volume/grid.cpp)

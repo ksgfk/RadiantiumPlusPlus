@@ -12,7 +12,7 @@ enum class VolumeWrapMode {
   Clamp
 };
 
-class Grid : public Volume {
+class Grid final : public Volume {
  public:
   Grid(BuildContext* ctx, const ConfigNode& cfg) : Volume() {
     std::string assetName = cfg.Read<std::string>("asset_name");
@@ -32,6 +32,7 @@ class Grid : public Volume {
     }
     _toWorld = Transform(toWorld);
     UpdateBoundingBox();
+    _maxValue = _grid->GetMaxValue();
     std::string wrapStr = cfg.ReadOrDefault("wrap", std::string("clamp"));
     if (wrapStr == "clamp") {
       _wrap = WrapMode::Clamp;

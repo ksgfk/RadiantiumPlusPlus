@@ -1,5 +1,7 @@
 #include <rad/offline/build/config_node.h>
 
+#include <rad/offline/render/volume.h>
+
 #include <fstream>
 #include <array>
 
@@ -53,6 +55,28 @@ Matrix4 ConfigNode::AsTransform() const {
   } else {
     throw RadInvalidOperationException("transform node must be mat4 or object");
   }
+}
+
+Unique<Volume> ConfigNode::ReadVolume(
+    BuildContext& ctx,
+    const std::string& name,
+    const Spectrum& defVal) const {
+  if (data == nullptr) {
+    return std::make_unique<Volume>(defVal);
+  }
+  auto iter = data->find(name);
+  if (iter == data->end()) {
+    return std::make_unique<Volume>(defVal);
+  }
+  ConfigNode volNode(&iter.value());
+  if (volNode.data->is_number() || volNode.data->is_array()) {
+    Vector3 value = volNode.As<Vector3>();
+    return std::make_unique<Volume>(Spectrum(value));
+  }
+  std::string type = volNode.Read<std::string>("type");
+  VolumeFactory* factory = ctx.GetFactory<VolumeFactory>(type);
+  Unique<Volume> volInstance = factory->Create(&ctx, volNode);
+  return volInstance;
 }
 
 }  // namespace Rad

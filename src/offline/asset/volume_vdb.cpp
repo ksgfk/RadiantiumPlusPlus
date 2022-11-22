@@ -108,4 +108,4 @@ class VolumeOpenVdb final : public VolumeAsset {
 
 }  // namespace Rad
 
-RAD_FACTORY_ASSET_DECLARATION(VolumeOpenVdb, "volume_vdb");
+RAD_FACTORY_ASSET_DECLARATION(VolumeOpenVdb, "volume_data_vdb");

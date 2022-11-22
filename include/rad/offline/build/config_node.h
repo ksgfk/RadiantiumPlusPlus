@@ -265,6 +265,7 @@ struct ConfigNode {
     }
     return nullptr;
   }
+  Unique<Volume> ReadVolume(BuildContext& ctx, const std::string& name, const Spectrum& defVal) const;
 
   const nlohmann::json* data = nullptr;
 };
