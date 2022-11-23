@@ -5,7 +5,7 @@
 #include <rad/offline/render.h>
 #include <rad/offline/asset.h>
 
-//#define RAD_IS_CHECK_VOL_PATH_NAN
+// #define RAD_IS_CHECK_VOL_PATH_NAN
 
 using namespace Rad::Math;
 
@@ -65,7 +65,13 @@ class VolPath final : public SampleRenderer {
         if (isSpectral) {
           auto [tr, freeFlightPdf] = medium->EvalTrAndPdf(mei, si);
           Float pdf = freeFlightPdf[channel];
-          throughput = pdf <= 0 ? Spectrum(0) : Spectrum(throughput.cwiseProduct(tr) / pdf);
+          Spectrum after(throughput.cwiseProduct(tr) / pdf);
+          throughput = pdf <= 0 ? Spectrum(0) : after;
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+          if (throughput.HasNaN() || throughput.HasInfinity()) {
+            _logger->warn("1 {} {} {} {} {}", tr, freeFlightPdf, mei.T, si.T, mei.MinT);
+          }
+#endif
         }
         isMediumEscaped = isSampleMedium && !mei.IsValid();
         isSampleMedium &= mei.IsValid();
@@ -74,6 +80,11 @@ class VolPath final : public SampleRenderer {
         isMediumScatter |= !isNullScatter && isSampleMedium;
         if (isSpectral && isNullScatter) {
           throughput = Spectrum(throughput.cwiseProduct(mei.SigmaN) * mei.CombinedExtinction[channel] / mei.SigmaN[channel]);
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+          if (throughput.HasNaN() || throughput.HasInfinity()) {
+            _logger->warn("2 {} {}", mei.SigmaN, mei.CombinedExtinction);
+          }
+#endif
         }
         if (isMediumScatter) {
           prevIts = mei;
@@ -86,9 +97,19 @@ class VolPath final : public SampleRenderer {
       if (isMediumScatter) {
         if (isSpectral) {
           throughput = Spectrum(throughput.cwiseProduct(mei.SigmaS) * mei.CombinedExtinction[channel] / mei.SigmaT[channel]);
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+          if (throughput.HasNaN() || throughput.HasInfinity()) {
+            _logger->warn("3 {} {} {}", mei.SigmaS, mei.CombinedExtinction, mei.SigmaT);
+          }
+#endif
         }
         if (notSpectral) {
           throughput = Spectrum(throughput.cwiseProduct(mei.SigmaS).cwiseProduct(mei.SigmaT.cwiseInverse()));
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+          if (throughput.HasNaN() || throughput.HasInfinity()) {
+            _logger->warn("4 {} {} {}", mei.SigmaS, mei.SigmaT);
+          }
+#endif
         }
         const PhaseFunction& phase = medium->GetPhaseFunction();
         auto [li, dsr] = SampleLight(scene, *sampler, medium, channel, mei);
@@ -96,6 +117,11 @@ class VolPath final : public SampleRenderer {
           Float phaseVal = phase.Eval(mei, dsr.Dir);
           Float weight = dsr.IsDelta ? 1 : MisWeight(dsr.Pdf, phaseVal);
           Spectrum lo(throughput.cwiseProduct(li) * weight * phaseVal / dsr.Pdf);
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+          if (lo.HasNaN() || lo.HasInfinity()) {
+            _logger->warn("5 {} {} {} {}", li, weight, phaseVal, dsr.Pdf);
+          }
+#endif
           result += lo;
         }
         auto [wo, phasePdf] = phase.Sample(mei, sampler->Next2D());
@@ -117,6 +143,11 @@ class VolPath final : public SampleRenderer {
           }
           Spectrum li = (*hitLight)->Eval(si);
           Spectrum lo(throughput.cwiseProduct(li) * weight);
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+          if (lo.HasNaN() || lo.HasInfinity()) {
+            _logger->warn("6 {} {}", li, weight);
+          }
+#endif
           result += lo;
         }
         if (!si.IsValid()) {
@@ -140,6 +171,11 @@ class VolPath final : public SampleRenderer {
             Float bsdfPdf = bsdf->Pdf(ctx, si, wo);
             Float weight = dsr.IsDelta ? 1 : MisWeight(dsr.Pdf, bsdfPdf);
             Spectrum lo(throughput.cwiseProduct(f).cwiseProduct(li) * weight / dsr.Pdf);
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+            if (lo.HasNaN() || lo.HasInfinity()) {
+              _logger->warn("7 {} {} {} {} {}", throughput, f, li, weight, dsr.Pdf);
+            }
+#endif
             result += lo;
           }
         }
@@ -148,6 +184,11 @@ class VolPath final : public SampleRenderer {
           break;
         } else {
           throughput = Spectrum(throughput.cwiseProduct(f) / bsr.Pdf);
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+          if (throughput.HasNaN() || throughput.HasInfinity()) {
+            _logger->warn("8 {} {}", f, bsr.Pdf);
+          }
+#endif
           eta *= bsr.Eta;
         }
         ray = si.SpawnRay(si.ToWorld(bsr.Wo));
@@ -213,10 +254,18 @@ class VolPath final : public SampleRenderer {
         bool notSpectral = !isSpectral && activeMedium;
         if (isSpectral) {  //具有光谱变化的介质叠加贡献
           Float t = std::min(remainingDist, std::min(mei.T, si.T)) - mei.MinT;
-          Spectrum tr = ExpSpectrum(Spectrum(mei.CombinedExtinction * -t));
-          Spectrum freeFlightPdf = (si.T < mei.T || mei.T > remainingDist) ? tr : Spectrum(tr.cwiseProduct(mei.CombinedExtinction));
-          Float trPdf = freeFlightPdf[channel];
-          resultTr = trPdf > 0 ? Spectrum(tr / trPdf) : 0;
+          if (t >= 0) {
+            Spectrum tr = ExpSpectrum(Spectrum(mei.CombinedExtinction * -t));
+            Spectrum freeFlightPdf = (si.T < mei.T || mei.T > remainingDist) ? tr : Spectrum(tr.cwiseProduct(mei.CombinedExtinction));
+            Float trPdf = freeFlightPdf[channel];
+            Spectrum mTr = trPdf > 0 ? Spectrum(tr / trPdf) : 0;
+            resultTr = Spectrum(resultTr.cwiseProduct(mTr));
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+            if (mTr.HasNaN() || mTr.HasInfinity()) {
+              _logger->warn("9 {} {}", tr, freeFlightPdf);
+            }
+#endif
+          }
         }
         if (activeMedium && (mei.T > remainingDist) && mei.IsValid()) {  //采样有效, 但是超出最大范围了
           totalDist = dsr.Dist;
@@ -236,9 +285,19 @@ class VolPath final : public SampleRenderer {
           si.T = si.T - mei.T;
           if (isSpectral) {
             resultTr = Spectrum(resultTr.cwiseProduct(mei.SigmaN));
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+            if (resultTr.HasNaN() || resultTr.HasInfinity()) {
+              _logger->warn("10 {}", mei.SigmaN);
+            }
+#endif
           }
           if (notSpectral) {
             resultTr = Spectrum(resultTr.cwiseProduct(mei.SigmaN).cwiseProduct(mei.CombinedExtinction.cwiseInverse()));
+#if defined(RAD_IS_CHECK_VOL_PATH_NAN)
+            if (resultTr.HasNaN() || resultTr.HasInfinity()) {
+              _logger->warn("11 {} {}", mei.SigmaN, mei.CombinedExtinction);
+            }
+#endif
           }
         }
       }

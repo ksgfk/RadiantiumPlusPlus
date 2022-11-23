@@ -13,18 +13,13 @@ class Volume {
   virtual ~Volume() noexcept = default;
 
   Spectrum Eval(const Interaction& it) const;
-  const BoundingBox3& GetBoundingBox() const { return _box; }
   const Float GetMaxValue() const { return _maxValue; }
 
  protected:
   virtual Spectrum EvalImpl(const Interaction& it) const;
 
-  void UpdateBoundingBox();
-
   bool _isConstVolume;
   Spectrum _constValue;
-  Transform _toWorld;
-  BoundingBox3 _box;
   Float _maxValue;
 };
 

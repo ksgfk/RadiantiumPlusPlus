@@ -51,6 +51,7 @@ add_library(rad.offline STATIC
     src/offline/asset/image_exr.cpp
     src/offline/asset/static_grid.cpp
     src/offline/asset/volume_vdb.cpp
+    src/offline/asset/volume_mitsuba_vol.cpp
     src/offline/build/config_node.cpp
     src/offline/build/build_context.cpp
     src/offline/shape/mesh.cpp

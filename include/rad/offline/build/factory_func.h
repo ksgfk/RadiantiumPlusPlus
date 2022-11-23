@@ -30,6 +30,7 @@ RAD_FACTORY_FUNC_DECLARATION(Asset, ModelObj);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ImageDefault);
 RAD_FACTORY_FUNC_DECLARATION(Asset, ImageExr);
 RAD_FACTORY_FUNC_DECLARATION(Asset, VolumeOpenVdb);
+RAD_FACTORY_FUNC_DECLARATION(Asset, VolumeMitsubaVol);
 RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Bitmap);
 RAD_FACTORY_TEXTURE_FUNC_DECLARATION(Chessboard);
 RAD_FACTORY_FUNC_DECLARATION(Light, DiffuseArea);
@@ -72,6 +73,7 @@ inline std::vector<std::function<Unique<Factory>(void)>> GetFactoryCreateFuncs()
       RAD_GET_FACTORY_FUNC(Asset, ImageDefault),
       RAD_GET_FACTORY_FUNC(Asset, ImageExr),
       RAD_GET_FACTORY_FUNC(Asset, VolumeOpenVdb),
+      RAD_GET_FACTORY_FUNC(Asset, VolumeMitsubaVol),
       RAD_GET_FACTORY_TEXTURE_FUNC(Bitmap),
       RAD_GET_FACTORY_TEXTURE_FUNC(Chessboard),
       RAD_GET_FACTORY_FUNC(Light, DiffuseArea),

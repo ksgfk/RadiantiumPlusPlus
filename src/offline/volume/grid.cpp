@@ -23,15 +23,6 @@ class Grid final : public Volume {
     } else {
       _grid = asset->GetGrid();
     }
-    ConfigNode toWorldNode;
-    Matrix4 toWorld;
-    if (cfg.TryRead("to_world", toWorldNode)) {
-      toWorld = toWorldNode.AsTransform();
-    } else {
-      toWorld = Matrix4::Identity();
-    }
-    _toWorld = Transform(toWorld);
-    UpdateBoundingBox();
     _maxValue = _grid->GetMaxValue();
     std::string wrapStr = cfg.ReadOrDefault("wrap", std::string("clamp"));
     if (wrapStr == "clamp") {
@@ -47,7 +38,7 @@ class Grid final : public Volume {
 
  protected:
   Spectrum EvalImpl(const Interaction& it) const override {
-    Vector3 p = _toWorld.ApplyAffineToLocal(it.P);
+    Vector3 p = it.P;
     Vector3 wrapP(Wrap(p.x(), _wrap), Wrap(p.y(), _wrap), Wrap(p.z(), _wrap));
     Vector3 fp = wrapP.cwiseProduct((_grid->GetSize().cast<Float>() - Vector3::Constant(1)));
     Eigen::Vector3i ip = fp.cast<int>();
@@ -93,6 +84,9 @@ class Grid final : public Volume {
     const auto& data = _grid->GetData();
     const auto& size = _grid->GetSize();
     const Int32 channel = _grid->GetChannelCount();
+    // if (u < 0 || u >= size.x() || v < 0 || v >= size.x() || w < 0 || w >= size.x()) {
+    //   throw RadInvalidOperationException("越界了");
+    // }
     size_t start = (((size_t)w * (size_t)size.y() + (size_t)v) * (size_t)size.x() + (size_t)u) * (size_t)channel;
     Spectrum spec;
     if (channel == 1) {

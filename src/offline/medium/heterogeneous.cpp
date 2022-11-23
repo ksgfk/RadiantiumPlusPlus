@@ -12,16 +12,26 @@ namespace Rad {
 class HeterogeneousMedium final : public Medium {
  public:
   HeterogeneousMedium(BuildContext* ctx, const ConfigNode& cfg) : Medium(ctx, cfg) {
+    Eigen::Translation<Float, 3> t(Vector3::Constant(Float(-0.5)));
+    Eigen::DiagonalMatrix<Float, 3> s(Vector3::Constant(Float(2)));
+    Eigen::Transform<Float, 3, Eigen::Affine> affine = t * s;
+
     _sigmaT = cfg.ReadVolume(*ctx, "sigma_t", Spectrum(Float(1)));
     _albedo = cfg.ReadVolume(*ctx, "albedo", Spectrum(Float(0.75)));
     _scale = cfg.ReadOrDefault("scale", Float(1));
+    const Matrix4& entityToWorld = ctx->GetShapeMatrix();
+    Matrix4 toWorld = entityToWorld * affine.matrix();
+    _toWorld = Transform(toWorld);
+
+    BoundingBox3 box(Vector3::Constant(0), Vector3::Constant(1));
+    _bbox = _toWorld.ApplyBoxToWorld(box);
     _maxDensity = _sigmaT->GetMaxValue() * _scale;
     _isHomogeneous = false;
     _hasSpectralExtinction = true;
   }
 
   std::tuple<bool, Float, Float> IntersectAABB(const Ray& ray) const override {
-    return BoundingBox3RayIntersect(_sigmaT->GetBoundingBox(), ray);
+    return BoundingBox3RayIntersect(_bbox, ray);
   }
 
   Spectrum GetMajorant(const MediumInteraction& mi) const override {
@@ -30,15 +40,25 @@ class HeterogeneousMedium final : public Medium {
 
   std::tuple<Spectrum, Spectrum, Spectrum> GetScatteringCoefficients(const MediumInteraction& mi) const override {
     Spectrum sigmat = EvalSigmaT(mi);
-    Spectrum sigmas(sigmat.cwiseProduct(_albedo->Eval(mi)));
+    Spectrum albedo = EvalAlbedo(mi);
+    Spectrum sigmas(sigmat.cwiseProduct(albedo));
     Spectrum sigman(Spectrum::Constant(_maxDensity) - sigmat);
     return {sigmas, sigman, sigmat};
   }
 
   Spectrum EvalSigmaT(const MediumInteraction& mi) const {
-    Spectrum e = _sigmaT->Eval(mi);
+    Interaction its{};
+    its.P = _toWorld.ApplyAffineToLocal(mi.P);
+    Spectrum e = _sigmaT->Eval(its);
     Spectrum sigmat(e * _scale);
     return sigmat;
+  }
+
+  Spectrum EvalAlbedo(const MediumInteraction& mi) const {
+    Interaction its{};
+    its.P = _toWorld.ApplyAffineToLocal(mi.P);
+    Spectrum albedo = _albedo->Eval(its);
+    return albedo;
   }
 
  private:
@@ -61,6 +81,8 @@ class HeterogeneousMedium final : public Medium {
   Unique<Volume> _albedo;
   Float _scale;
   Float _maxDensity;
+  Transform _toWorld;
+  BoundingBox3 _bbox;
 };
 
 }  // namespace Rad

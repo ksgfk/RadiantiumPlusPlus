@@ -163,8 +163,15 @@ static void EmbreeRectangleOccluded(const RTCOccludedFunctionNArguments* args) {
 class Rectangle final : public Shape {
  public:
   Rectangle(BuildContext* ctx, const ConfigNode& cfg) {
+    bool isFlipNormal = cfg.ReadOrDefault("is_flip_normal", false);
     const Matrix4& toWorld = ctx->GetShapeMatrix();
-    _toWorld = Transform(toWorld);
+    if (isFlipNormal) {
+      Eigen::DiagonalMatrix<Float, 3> s(Vector3(1, 1, -1));
+      Eigen::Transform<Float, 3, Eigen::Affine> affine(s);
+      _toWorld = Transform(toWorld * affine.matrix());
+    } else {
+      _toWorld = Transform(toWorld);
+    }
     Vector3 dpdu = _toWorld.ApplyLinearToWorld(Vector3(2, 0, 0));
     Vector3 dpdv = _toWorld.ApplyLinearToWorld(Vector3(0, 2, 0));
     Vector3 normal = _toWorld.ApplyNormalToWorld(Vector3(0, 0, 1)).normalized();

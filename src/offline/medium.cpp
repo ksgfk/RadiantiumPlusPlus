@@ -19,9 +19,9 @@ MediumInteraction Medium::SampleInteraction(const Ray& ray, Float sample, UInt32
   MediumInteraction mei{};
   mei.Wi = -ray.D;
   mei.Shading = Frame(mei.Wi);
-  auto [aabb_its, mint, maxt] = IntersectAABB(ray);
-  aabb_its &= (std::isfinite(mint) || std::isfinite(maxt));
-  bool active = aabb_its;
+  auto [aabbIts, mint, maxt] = IntersectAABB(ray);
+  aabbIts &= (std::isfinite(mint) || std::isfinite(maxt));
+  bool active = aabbIts;
   if (!active) {
     mint = 0;
     maxt = std::numeric_limits<Float>::infinity();
@@ -43,8 +43,17 @@ MediumInteraction Medium::SampleInteraction(const Ray& ray, Float sample, UInt32
 
 std::pair<Spectrum, Spectrum> Medium::EvalTrAndPdf(const MediumInteraction& mi, const SurfaceInteraction& si) const {
   Float t = std::min(mi.T, si.T) - mi.MinT;
+  if (t <= 0) {
+    return std::make_pair(Spectrum(1), Spectrum(1));
+  }
   Spectrum tr = ExpSpectrum(Spectrum(mi.CombinedExtinction * -t));
   Spectrum pdf = si.T < mi.T ? tr : Spectrum(tr.cwiseProduct(mi.CombinedExtinction));
+  // if (tr.HasNaN() || tr.HasInfinity() || pdf.HasNaN() || pdf.HasInfinity() || tr.isZero(0.0001f)) {
+  //   Logger::Get()->warn("emmmmm {} {} {}", t, tr, pdf);
+  // }
+  if (tr.cwiseEqual(pdf).all()) {
+    return {Spectrum(1), Spectrum(1)};
+  }
   return {tr, pdf};
 }
 
