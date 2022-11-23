@@ -14,7 +14,7 @@ class HeterogeneousMedium final : public Medium {
   HeterogeneousMedium(BuildContext* ctx, const ConfigNode& cfg) : Medium(ctx, cfg) {
     Eigen::Translation<Float, 3> t(Vector3::Constant(Float(-0.5)));
     Eigen::DiagonalMatrix<Float, 3> s(Vector3::Constant(Float(2)));
-    Eigen::Transform<Float, 3, Eigen::Affine> affine = t * s;
+    Eigen::Transform<Float, 3, Eigen::Affine> affine = s * t;
 
     _sigmaT = cfg.ReadVolume(*ctx, "sigma_t", Spectrum(Float(1)));
     _albedo = cfg.ReadVolume(*ctx, "albedo", Spectrum(Float(0.75)));

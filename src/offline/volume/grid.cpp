@@ -39,7 +39,11 @@ class Grid final : public Volume {
  protected:
   Spectrum EvalImpl(const Interaction& it) const override {
     Vector3 p = it.P;
-    Vector3 wrapP(Wrap(p.x(), _wrap), Wrap(p.y(), _wrap), Wrap(p.z(), _wrap));
+    if (p.x() < 0 || p.x() > 1 || p.y() < 0 || p.y() > 1 || p.z() < 0 || p.z() > 1) {
+      return Spectrum(0);
+    }
+    // Vector3 wrapP(Wrap(p.x(), _wrap), Wrap(p.y(), _wrap), Wrap(p.z(), _wrap));
+    Vector3 wrapP = p;
     Vector3 fp = wrapP.cwiseProduct((_grid->GetSize().cast<Float>() - Vector3::Constant(1)));
     Eigen::Vector3i ip = fp.cast<int>();
     Int32 dpu = (fp.x() > ip.x() + Float(0.5)) ? 1 : -1;
