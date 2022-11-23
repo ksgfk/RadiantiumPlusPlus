@@ -13,8 +13,6 @@ namespace Rad {
 
 class VolPath final : public SampleRenderer {
  public:
-  using WeightMatrix = Eigen::Matrix<Float, Spectrum::ComponentCount, Spectrum::ComponentCount, Eigen::ColMajor>;
-
   VolPath(BuildContext* ctx, const ConfigNode& cfg) : SampleRenderer(ctx, cfg) {
     _maxDepth = cfg.ReadOrDefault("max_depth", -1);
     _rrDepth = cfg.ReadOrDefault("rr_depth", 5);
@@ -71,8 +69,8 @@ class VolPath final : public SampleRenderer {
         }
         isMediumEscaped = isSampleMedium && !mei.IsValid();
         isSampleMedium &= mei.IsValid();
-        bool null_scatter = sampler->Next1D() > mei.SigmaT[channel] / mei.CombinedExtinction[channel];
-        isNullScatter |= null_scatter && isSampleMedium;
+        bool nullScatter = sampler->Next1D() > mei.SigmaT[channel] / mei.CombinedExtinction[channel];
+        isNullScatter |= nullScatter && isSampleMedium;
         isMediumScatter |= !isNullScatter && isSampleMedium;
         if (isSpectral && isNullScatter) {
           throughput = Spectrum(throughput.cwiseProduct(mei.SigmaN) * mei.CombinedExtinction[channel] / mei.SigmaN[channel]);
@@ -263,8 +261,8 @@ class VolPath final : public SampleRenderer {
       ray.MaxT = remainingDist;
       needsIntersection |= activeSurface;
       active &= (activeMedium || activeSurface) && !resultTr.IsBlack();
-      bool has_medium_trans = activeSurface && si.Shape->HasMedia();
-      if (has_medium_trans) {
+      bool hasMedium = activeSurface && si.Shape->HasMedia();
+      if (hasMedium) {
         medium = si.GetMedium(ray);
       }
     }
