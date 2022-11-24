@@ -26,6 +26,8 @@ RadiantiumPlusPlus是一个非常简单的光线追踪渲染器, 只是基于兴
 
 ![](gallery/staircase.png)
 
+![](gallery/mitsuba_banner6.png)
+
 ## License
 
 MIT
