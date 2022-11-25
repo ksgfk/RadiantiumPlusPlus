@@ -26,7 +26,7 @@ struct WavefrontObjObject {
 /**
  * @brief .obj 格式模型解析器
  */
-class WavefrontObjReader {
+class RAD_EXPORT_API WavefrontObjReader {
  public:
   WavefrontObjReader(Unique<std::istream> stream);
   WavefrontObjReader(const std::filesystem::path& file);

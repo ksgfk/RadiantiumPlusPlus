@@ -7,7 +7,7 @@
 #include <string>
 
 #define RAD_FACTORY(type)                                                            \
-  class type##Factory : public Factory {                                             \
+  class RAD_EXPORT_API type##Factory : public Factory {                              \
    public:                                                                           \
     type##Factory(const std::string& name) : Factory(name) {}                        \
     virtual ~type##Factory() noexcept = default;                                     \
@@ -107,7 +107,7 @@
 
 namespace Rad {
 
-class Factory {
+class RAD_EXPORT_API Factory {
  public:
   Factory(const std::string& name) : _name(name) {}
   virtual ~Factory() noexcept = default;

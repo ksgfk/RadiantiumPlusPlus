@@ -100,7 +100,7 @@ struct BsdfSampleResult {
 /**
  * @brief Bidirectional Scattering Distribution Function
  */
-class Bsdf {
+class RAD_EXPORT_API Bsdf {
  public:
   virtual ~Bsdf() noexcept = default;
   /**

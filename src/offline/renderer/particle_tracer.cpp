@@ -8,6 +8,7 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 #include <tbb/global_control.h>
+#include <tbb/enumerable_thread_specific.h>
 
 using namespace Rad::Math;
 
@@ -54,11 +55,12 @@ class ParticleTracer final : public Renderer {
     UInt64 grainSize = std::max((UInt64)actualThreadCount / (4 * _allTask), UInt64(1));
     tbb::blocked_range<UInt32> block(0, spp, grainSize);
     std::mutex mutex;
+    tbb::enumerable_thread_specific<MatrixX<Spectrum>> tlsData(frameBuffer.rows(), frameBuffer.cols());
     _sw.Start();
     tbb::parallel_for(
         block, [&](const tbb::blocked_range<UInt32>& r) {
-          thread_local MatrixX<Spectrum> tempFb(frameBuffer.rows(), frameBuffer.cols());
-          thread_local UInt64 completeCount = 0;
+          MatrixX<Spectrum>& tempFb = tlsData.local();
+          UInt64 completeCount = 0;
           tempFb.setZero();
           completeCount = 0;
           Unique<Sampler> localSampler = sampler.Clone(sampler.GetSeed() + r.begin());

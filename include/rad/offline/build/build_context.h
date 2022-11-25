@@ -17,7 +17,7 @@ class RadLoadAssetFailException : public RadException {
   RadLoadAssetFailException(const char* fmt, const Args&... args) : RadException(fmt, args...) {}
 };
 
-class BuildContext {
+class RAD_EXPORT_API BuildContext {
  public:
   explicit BuildContext(
       const std::filesystem::path& workDir,

@@ -4,7 +4,7 @@
 
 namespace Rad {
 
-class TriangleModel {
+class RAD_EXPORT_API TriangleModel {
  public:
   TriangleModel(const Eigen::Vector3f* pos,
                 UInt32 vertexCount,

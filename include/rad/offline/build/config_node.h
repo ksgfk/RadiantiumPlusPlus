@@ -94,7 +94,7 @@ struct NodeType<Matrix4> : ObjectDataType {};
  * @brief 本质上是 nlohmann::json 的 view, 需要确保 json 生命周期比view长
  *
  */
-struct ConfigNode {
+struct RAD_EXPORT_API ConfigNode {
   ConfigNode() = default;
   inline ConfigNode(const nlohmann::json* d) : data(d) {}
 

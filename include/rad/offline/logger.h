@@ -1,10 +1,11 @@
 #pragma once
 
+#include "api.h"
 #include "types.h"
 
 namespace Rad {
 
-class Logger {
+class RAD_EXPORT_API Logger {
  public:
   static void Init();
   static void Shutdown();

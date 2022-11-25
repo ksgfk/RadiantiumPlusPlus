@@ -5,7 +5,7 @@
 
 namespace Rad {
 
-class PhaseFunction {
+class RAD_EXPORT_API PhaseFunction {
  public:
   virtual ~PhaseFunction() noexcept = default;
 

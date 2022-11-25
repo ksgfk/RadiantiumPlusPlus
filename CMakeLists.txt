@@ -15,6 +15,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 
 option(RAD_FLOAT_32_WEIGHT  "use float32 as Float?" ON)
+option(RAD_BUILD_EDITOR "if build RAD editor?" ON)
+set(RAD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 find_package(TBB CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -25,7 +27,11 @@ find_package(OpenEXR CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_package(OpenVDB CONFIG REQUIRED)
 
-add_library(rad.offline STATIC
+if(RAD_BUILD_EDITOR)
+  add_subdirectory(src/offline_editor)
+endif()
+
+add_library(rad.offline SHARED
     src/offline/types.cpp
     src/offline/logger.cpp
     src/offline/color.cpp
@@ -89,7 +95,7 @@ add_library(rad.offline STATIC
     src/offline/phase_function/isotropic.cpp
     src/offline/volume/volume.cpp
     src/offline/volume/grid.cpp)
-
+target_compile_definitions(rad.offline PRIVATE RAD_BUILD_SHARED)
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT32)
   message(STATUS "RAD use float32")
@@ -106,11 +112,10 @@ endif()
 if(MSVC)
   target_compile_options(rad.offline PUBLIC /utf-8 /fp:fast /arch:AVX2)
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(rad.offline PUBLIC /Ob2 /Oi /Ot /GF /Gy)
-    target_link_options(rad.offline PUBLIC /LTCG /OPT:REF,ICF)
+    target_compile_options(rad.offline PUBLIC /Ob2 /Oi /Ot /GF /Gy /GL)
   endif()
 endif()
-target_include_directories(rad.offline PUBLIC include)
+target_include_directories(rad.offline PUBLIC ${RAD_INCLUDE_DIR})
 target_include_directories(rad.offline PUBLIC ${STB_INCLUDE_DIRS})
 target_link_libraries(rad.offline PUBLIC TBB::tbb)
 target_link_libraries(rad.offline PUBLIC nlohmann_json::nlohmann_json)
@@ -119,7 +124,28 @@ target_link_libraries(rad.offline PUBLIC embree)
 target_link_libraries(rad.offline PUBLIC Eigen3::Eigen)
 target_link_libraries(rad.offline PUBLIC OpenEXR::OpenEXR)
 target_link_libraries(rad.offline PUBLIC OpenVDB::openvdb)
+set_target_properties(rad.offline PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
+target_link_options(rad.offline PUBLIC /LTCG /OPT:REF,ICF)
 
 add_executable(rad.offline.cli
     src/offline_cli/main.cpp)
 target_link_libraries(rad.offline.cli rad.offline)
+target_link_options(rad.offline.cli PUBLIC /LTCG /OPT:REF,ICF)
+
+# emm, 要编译两次, 第一次生成pgd文件, 然后再配置一次cmake, 接着再build一次才能真正启动PGO
+# 而且速度也没啥变化...毕竟耗时大头是求交
+# if(CMAKE_BUILD_TYPE STREQUAL "Release")
+#   set(PGO_FILE_NAME "rad.offline.cli.pgd")
+#   set(PGO_FILE_PATH "${EXECUTABLE_OUTPUT_PATH}/${PGO_FILE_NAME}")
+#   message(STATUS "RAD pgo file path: ${PGO_FILE_PATH}")
+#   if(EXISTS "${PGO_FILE_PATH}")
+#     message(STATUS "RAD find pgo file")
+#     target_link_options(rad.offline PUBLIC /LTCG /USEPROFILE /OPT:REF,ICF)
+#   else()
+#     message(STATUS "RAD cannot find pgo file")
+#     target_link_options(rad.offline PUBLIC /LTCG /GENPROFILE /OPT:REF,ICF)
+#   endif()
+# endif()

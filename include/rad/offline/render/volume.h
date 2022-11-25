@@ -5,7 +5,7 @@
 
 namespace Rad {
 
-class Volume {
+class RAD_EXPORT_API Volume {
  public:
   Volume() : _isConstVolume(false) {}
   inline Volume(const Spectrum& spectrum)

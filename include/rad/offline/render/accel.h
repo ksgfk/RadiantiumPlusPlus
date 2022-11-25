@@ -8,7 +8,7 @@ namespace Rad {
 /**
  * @brief 求交加速结构的抽象
  */
-class Accel {
+class RAD_EXPORT_API Accel {
  public:
   virtual ~Accel() noexcept = default;
 

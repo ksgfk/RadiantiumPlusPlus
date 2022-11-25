@@ -7,7 +7,7 @@
 
 namespace Rad {
 
-class TextureBase {
+class RAD_EXPORT_API TextureBase {
  public:
   virtual ~TextureBase() noexcept = default;
 

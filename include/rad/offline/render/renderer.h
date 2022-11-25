@@ -14,7 +14,7 @@ namespace Rad {
  * @brief 渲染器抽象
  *
  */
-class Renderer {
+class RAD_EXPORT_API Renderer {
  public:
   Renderer(BuildContext* ctx, const ConfigNode& cfg);
   virtual ~Renderer() noexcept = default;
@@ -41,7 +41,7 @@ class Renderer {
   bool _isStop = false;
 };
 
-class SampleRenderer : public Renderer {
+class RAD_EXPORT_API SampleRenderer : public Renderer {
  public:
   SampleRenderer(BuildContext* ctx, const ConfigNode& cfg);
   ~SampleRenderer() noexcept override;

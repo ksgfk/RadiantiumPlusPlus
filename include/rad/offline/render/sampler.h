@@ -10,7 +10,7 @@ namespace Rad {
  * 首先需要调用SetSeed来初始化采样器
  * 然后就可以获取样本了, 当每一轮采样完成后需要调用 Advance() 函数
  */
-class Sampler {
+class RAD_EXPORT_API Sampler {
  public:
   inline Sampler(BuildContext* ctx, const ConfigNode& cfg) {
     _sampleCount = cfg.ReadOrDefault("sample_count", 16);

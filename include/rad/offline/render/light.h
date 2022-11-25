@@ -33,7 +33,7 @@ constexpr auto HasFlag(T flags, LightType f) {
   return (flags & (UInt32)f) != 0u;
 }
 
-class Light {
+class RAD_EXPORT_API Light {
  public:
   virtual ~Light() noexcept = default;
 

@@ -8,6 +8,7 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 #include <tbb/global_control.h>
+#include <tbb/enumerable_thread_specific.h>
 
 #include <random>
 
@@ -227,6 +228,14 @@ class BDPT final : public Renderer {
     resolver.SaveOpenExr(_scene->GetCamera().GetFrameBuffer());
   }
 
+  struct BdptTlsData {
+    BdptTlsData(MatrixX<Spectrum>::Index x, MatrixX<Spectrum>::Index y) : TempFb(x, y) {}
+
+    std::vector<PathVertex> LightPath{};
+    std::vector<PathVertex> CameraPath{};
+    MatrixX<Spectrum> TempFb;
+  };
+
   void Render() {
     Scene& scene = *_scene;
     Camera& camera = scene.GetCamera();
@@ -241,14 +250,16 @@ class BDPT final : public Renderer {
         0, camera.Resolution().x(),
         0, camera.Resolution().y());
     std::mutex mutex;
+    tbb::enumerable_thread_specific<BdptTlsData> tlsData(frameBuffer.rows(), frameBuffer.cols());
     _sw.Start();
     tbb::parallel_for(
         block, [&](const tbb::blocked_range2d<UInt32>& r) {
+          auto& tls = tlsData.local();
           UInt32 seed = r.rows().begin() * camera.Resolution().x() + r.cols().begin();
-          thread_local auto rng = std::mt19937(seed);
-          thread_local std::vector<PathVertex> lightPath;
-          thread_local std::vector<PathVertex> cameraPath;
-          thread_local MatrixX<Spectrum> tempFb(frameBuffer.rows(), frameBuffer.cols());
+          std::mt19937 rng(seed);
+          std::vector<PathVertex>& lightPath = tls.LightPath;
+          std::vector<PathVertex>& cameraPath = tls.CameraPath;
+          MatrixX<Spectrum>& tempFb = tls.TempFb;
           std::uniform_real_distribution<Float> dist;
           Unique<Sampler> localSampler = sampler.Clone(sampler.GetSeed() + seed);
           tempFb.setZero();

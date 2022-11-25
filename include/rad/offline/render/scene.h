@@ -12,7 +12,7 @@ namespace Rad {
  * @brief 场景负责管理渲染时需要用到的所有对象实例的生命周期, 包括
  * Shape, Accel, Light, Camera
  */
-class Scene {
+class RAD_EXPORT_API Scene {
  public:
   Scene(
       Unique<Accel> accel,

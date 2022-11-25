@@ -58,9 +58,8 @@ void SampleRenderer::Start() {
     tbb::parallel_for(
         block, [&](const tbb::blocked_range2d<UInt32>& r) {
           UInt32 seed = r.rows().begin() * camera.Resolution().x() + r.cols().begin();
-          thread_local auto rng = std::mt19937(seed);
-          thread_local UInt64 completeCount = 0;
-          completeCount = 0;
+          std::mt19937 rng(seed);
+          UInt64 completeCount = 0;
           std::uniform_real_distribution<Float> dist;
           Unique<Sampler> localSampler = sampler.Clone(sampler.GetSeed() + seed);
           for (UInt32 y = r.cols().begin(); y != r.cols().end(); y++) {

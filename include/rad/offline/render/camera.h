@@ -9,7 +9,7 @@ namespace Rad {
 /**
  * @brief 相机里有frame buffer (胶卷), 采样器 (Sampler)
  */
-class Camera {
+class RAD_EXPORT_API Camera {
  public:
   virtual ~Camera() noexcept = default;
 

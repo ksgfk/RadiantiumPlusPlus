@@ -15,7 +15,7 @@ namespace Rad {
  *    这类材质会反射绝大部分光线, 也有一小部分光线会被表面吸收, 这里也忽略这种现象
  * 事实上它们都可以由菲涅尔方程导出, 但由于电介质只有实数部分, 因此分离出来可以简化计算
  */
-class Fresnel {
+class RAD_EXPORT_API Fresnel {
  public:
   /**
    * @brief 反射, 假设法线是(0, 0, 1)

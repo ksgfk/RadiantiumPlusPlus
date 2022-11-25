@@ -7,7 +7,7 @@
 
 namespace Rad {
 
-class Shape {
+class RAD_EXPORT_API Shape {
  public:
   virtual ~Shape() noexcept = default;
 
@@ -122,7 +122,7 @@ class Shape {
  * E1 = P2 - P0
  * 解方程可以用高斯消元法和克莱姆法则
  */
-class MeshBase : public Shape {
+class RAD_EXPORT_API MeshBase : public Shape {
  public:
   MeshBase(BuildContext* ctx, const ConfigNode& cfg);
   virtual ~MeshBase() noexcept override = default;

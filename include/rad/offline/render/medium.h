@@ -8,7 +8,7 @@
 
 namespace Rad {
 
-class Medium {
+class RAD_EXPORT_API Medium {
  public:
   Medium(BuildContext* ctx, const ConfigNode& cfg);
   virtual ~Medium() noexcept = default;

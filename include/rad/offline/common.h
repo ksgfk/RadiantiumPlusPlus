@@ -1,5 +1,6 @@
 #pragma once
 
+#include "api.h"
 #include "fwd.h"
 #include "types.h"
 #include "logger.h"

@@ -9,7 +9,7 @@ namespace Rad {
  * @brief 计时器
  *
  */
-class Stopwatch {
+class RAD_EXPORT_API Stopwatch {
  public:
   /**
    * @brief 从开始到结束经过了多少毫秒, 如果计时器没结束则返回开始到现在经过了多少毫秒
