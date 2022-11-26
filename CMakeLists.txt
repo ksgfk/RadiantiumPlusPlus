@@ -31,9 +31,14 @@ if(RAD_BUILD_EDITOR)
   add_subdirectory(src/offline_editor)
 endif()
 
+add_library(rad.core STATIC
+    src/core/logger.cpp)
+target_include_directories(rad.core PUBLIC ${RAD_INCLUDE_DIR})
+target_link_libraries(rad.core PUBLIC Eigen3::Eigen)
+target_link_libraries(rad.core PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
+
 add_library(rad.offline SHARED
     src/offline/types.cpp
-    src/offline/logger.cpp
     src/offline/color.cpp
     src/offline/transform.cpp
     src/offline/frame.cpp
@@ -112,28 +117,31 @@ endif()
 if(MSVC)
   target_compile_options(rad.offline PUBLIC /utf-8 /fp:fast /arch:AVX2)
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(rad.offline PUBLIC /Ob2 /Oi /Ot /GF /Gy /GL)
+    target_compile_options(rad.offline PUBLIC /Ob2 /Oi /Ot /GF /Gy /GL) 
+    target_link_options(rad.offline PUBLIC /LTCG /OPT:REF,ICF)
   endif()
 endif()
 target_include_directories(rad.offline PUBLIC ${RAD_INCLUDE_DIR})
 target_include_directories(rad.offline PUBLIC ${STB_INCLUDE_DIRS})
+target_link_libraries(rad.offline PUBLIC rad.core)
 target_link_libraries(rad.offline PUBLIC TBB::tbb)
 target_link_libraries(rad.offline PUBLIC nlohmann_json::nlohmann_json)
-target_link_libraries(rad.offline PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
 target_link_libraries(rad.offline PUBLIC embree)
-target_link_libraries(rad.offline PUBLIC Eigen3::Eigen)
 target_link_libraries(rad.offline PUBLIC OpenEXR::OpenEXR)
 target_link_libraries(rad.offline PUBLIC OpenVDB::openvdb)
 set_target_properties(rad.offline PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
-target_link_options(rad.offline PUBLIC /LTCG /OPT:REF,ICF)
 
 add_executable(rad.offline.cli
     src/offline_cli/main.cpp)
 target_link_libraries(rad.offline.cli rad.offline)
-target_link_options(rad.offline.cli PUBLIC /LTCG /OPT:REF,ICF)
+if(MSVC)
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_link_options(rad.offline.cli PUBLIC /LTCG /OPT:REF,ICF)
+  endif()
+endif()
 
 # emm, 要编译两次, 第一次生成pgd文件, 然后再配置一次cmake, 接着再build一次才能真正启动PGO
 # 而且速度也没啥变化...毕竟耗时大头是求交

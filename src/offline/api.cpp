@@ -1,6 +1,6 @@
 #include <rad/offline/api.h>
 
-#include <rad/offline/logger.h>
+#include <rad/core/logger.h>
 
 #include <openvdb/openvdb.h>
 

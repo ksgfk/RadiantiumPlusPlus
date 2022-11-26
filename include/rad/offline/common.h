@@ -3,7 +3,7 @@
 #include "api.h"
 #include "fwd.h"
 #include "types.h"
-#include "logger.h"
+#include <rad/core/logger.h>
 #include "math_ext.h"
 #include "spectrum.h"
 #include "color.h"
