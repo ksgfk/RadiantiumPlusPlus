@@ -4,21 +4,6 @@
 
 #include <rad/core/types.h>
 
-#if defined(__APPLE__)
-#define RAD_PLATFORM_MACOS
-#elif defined(__linux__)
-#define RAD_PLATFORM_LINUX
-#elif defined(_WIN32) || defined(_WIN64)
-#define RAD_PLATFORM_WINDOWS
-#endif
-
-#if defined(_MSC_VER)
-#define WIN32_LEAN_AND_MEAN
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#endif
-
 namespace Rad {
 
 struct RgbSpectrum;
