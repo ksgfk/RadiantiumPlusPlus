@@ -4,7 +4,7 @@
 
 #include <functional>
 
-namespace Rad::Editor {
+namespace Rad {
 
 template <class T>
 class MultiDelegate {
@@ -60,4 +60,4 @@ class Window {
   bool _isClosing{};
 };
 
-}  // namespace Rad::Editor
+}  // namespace Rad

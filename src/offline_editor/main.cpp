@@ -1,9 +1,9 @@
-#include <rad/editor/window.h>
+#include <rad/realtime/window.h>
 #include <rad/core/logger.h>
-#include <rad/editor/dx12/render_context_dx12.h>
+#include <rad/realtime/dx12/render_context_dx12.h>
 
 using namespace Rad;
-using namespace Rad::Editor;
+using namespace Rad::DX12;
 
 int main() {
   WindowOptions opts{Vector2i(1280, 720), "芜湖，起飞"};

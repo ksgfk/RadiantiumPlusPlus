@@ -28,6 +28,7 @@ find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_package(OpenVDB CONFIG REQUIRED)
 
 if(RAD_BUILD_EDITOR)
+  add_subdirectory(src/realtime)
   add_subdirectory(src/offline_editor)
 endif()
 

@@ -2,13 +2,13 @@
 
 #include <rad/core/types.h>
 
-namespace Rad::Editor {
+namespace Rad {
 
 enum class PixelFormat {
   RGBA32
 };
 
-enum class DepthStencilFormat{
+enum class DepthStencilFormat {
   R24G8
 };
 
@@ -33,4 +33,4 @@ class RenderContext {
   virtual void Draw() = 0;
 };
 
-}  // namespace Rad::Editor
+}  // namespace Rad

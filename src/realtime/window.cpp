@@ -1,4 +1,4 @@
-#include <rad/editor/window.h>
+#include <rad/realtime/window.h>
 
 #include <rad/core/logger.h>
 
@@ -11,7 +11,7 @@
 #include <windows.h>
 #endif
 
-namespace Rad::Editor {
+namespace Rad {
 
 #if defined(RAD_PLATFORM_WINDOWS)
 
@@ -149,4 +149,4 @@ Unique<Window> Window::Create(const WindowOptions& opts) {
 #endif
 }
 
-}  // namespace Rad::Editor
+}  // namespace Rad

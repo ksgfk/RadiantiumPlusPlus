@@ -1,6 +1,6 @@
-#include <rad/editor/dx12/render_context_dx12.h>
+#include <rad/realtime/dx12/render_context_dx12.h>
 
-namespace Rad::Editor {
+namespace Rad::DX12 {
 
 static void GetHardwareAdapter(
     IDXGIFactory1* pFactory,
@@ -158,6 +158,8 @@ DXGI_FORMAT RenderContextDX12::ConvertFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::RGBA32:
       return DXGI_FORMAT_R8G8B8A8_UNORM;
+    default:
+      return DXGI_FORMAT_UNKNOWN;
   }
 }
 
@@ -165,6 +167,8 @@ DXGI_FORMAT ConvertFormat(DepthStencilFormat format) {
   switch (format) {
     case DepthStencilFormat::R24G8:
       return DXGI_FORMAT_R24G8_TYPELESS;
+    default:
+      return DXGI_FORMAT_UNKNOWN;
   }
 }
 
@@ -224,4 +228,4 @@ void RenderContextDX12::Draw() {
   }
 }
 
-}  // namespace Rad::Editor
+}  // namespace Rad
