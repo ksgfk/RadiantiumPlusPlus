@@ -1,5 +1,6 @@
 #include <rad/editor/window.h>
 #include <rad/core/logger.h>
+#include <rad/editor/dx12/render_context_dx12.h>
 
 using namespace Rad;
 using namespace Rad::Editor;
@@ -11,8 +12,17 @@ int main() {
   w->AddResizeListener([](auto& win, const auto& i) {
     Logger::Get()->info("{}", i);
   });
+  RenderContextOptions rco{};
+  rco.EnableDebug = true;
+  rco.SwapChainRTCount = 2;
+  rco.SwapChainRTFormat = PixelFormat::RGBA32;
+  rco.SwapChainRTSize = opts.Size;
+  rco.SwapChainMultiSample = 1;
+  // rco.SwapChainDSFormat = DepthStencilFormat::R24G8;
+  Unique<RenderContext> rc = std::make_unique<RenderContextDX12>(*w, rco);
   while (!w->ShouldClose()) {
     w->PollEvent();
+    rc->Draw();
   }
   return 0;
 }

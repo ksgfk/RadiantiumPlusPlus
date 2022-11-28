@@ -5,11 +5,15 @@
 #include <utility>
 
 #if defined(RAD_PLATFORM_WINDOWS)
+#if !defined(UNICODE)
 #define UNICODE
+#endif
 #include <windows.h>
 #endif
 
 namespace Rad::Editor {
+
+#if defined(RAD_PLATFORM_WINDOWS)
 
 constexpr wchar_t WIN32WINDOWCLASSNAME[] = L"rad_win32_default_class";
 static LRESULT CALLBACK Win32WindowMessageCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -135,8 +139,14 @@ static LRESULT CALLBACK Win32WindowMessageCallback(HWND hwnd, UINT msg, WPARAM w
   return win.ProcessMessage(hwnd, msg, wParam, lParam);
 }
 
+#endif
+
 Unique<Window> Window::Create(const WindowOptions& opts) {
+#if defined(RAD_PLATFORM_WINDOWS)
   return std::make_unique<Win32Window>(opts);
+#else
+  throw RadNotImplementedException("不支持的平台, 无法创建窗口");
+#endif
 }
 
 }  // namespace Rad::Editor
