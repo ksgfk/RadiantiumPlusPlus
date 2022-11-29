@@ -7,9 +7,9 @@ namespace Rad::DX12 {
 class Resource {
  public:
   Resource(Device* device) : _device(device) {}
-  Resource(Resource&&) = default;
+  Resource(Resource&&) noexcept = default;
   Resource(Resource const&) = delete;
-  virtual ~Resource() = default;
+  virtual ~Resource() noexcept = default;
 
   Device* GetDevice() const { return _device; }
   virtual ID3D12Resource* GetResource() const { return nullptr; }

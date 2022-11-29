@@ -9,6 +9,10 @@ set(RAD_EDITOR_SOURCE_FILES
 if(WIN32)
 list(APPEND RAD_EDITOR_SOURCE_FILES
     dx12/device.cpp
+    dx12/upload_buffer.cpp
+    dx12/readback_buffer.cpp
+    dx12/default_buffer.cpp
+    dx12/texture.cpp
     dx12/render_context_dx12.cpp)
 endif()
 
