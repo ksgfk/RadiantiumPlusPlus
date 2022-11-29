@@ -40,7 +40,7 @@ class Texture final : public Resource {
       Device* device,
       IDXGISwapChain3* swapchain,
       UINT frame);
-  ~Texture() noexcept;
+  ~Texture() noexcept override;
 
   ID3D12Resource* GetResource() const override { return _resource.Get(); }
   D3D12_RESOURCE_STATES GetInitState() const override { return _initState; }

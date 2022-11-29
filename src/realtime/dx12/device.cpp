@@ -18,7 +18,7 @@ Device::Device(bool enableDebug, bool findHP, bool useWrap) {
         adapterIndex,
         findHP == true ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_UNSPECIFIED,
         IID_PPV_ARGS(&_adapter));
-    if (!hr1) {
+    if (!SUCCEEDED(hr1)) {
       break;
     }
     if (!useWrap) {
@@ -39,6 +39,12 @@ Device::Device(bool enableDebug, bool findHP, bool useWrap) {
   } else {
     throw RadDX12Exception("无法找到适合的adapter");
   }
+}
+
+DXGI_ADAPTER_DESC1 Device::GetAdapterDesc() const {
+  DXGI_ADAPTER_DESC1 desc;
+  _adapter->GetDesc1(&desc);
+  return desc;
 }
 
 }  // namespace Rad::DX12

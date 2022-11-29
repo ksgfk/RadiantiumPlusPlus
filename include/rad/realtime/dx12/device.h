@@ -12,6 +12,7 @@ class Device {
   IDXGIAdapter1* GetAdapter() const { return _adapter.Get(); }
   ID3D12Device5* GetDevice() const { return _dxDevice.Get(); }
   IDXGIFactory6* GetDXGIFactory() const { return _dxgiFactory.Get(); }
+  DXGI_ADAPTER_DESC1 GetAdapterDesc() const;
 
  private:
   ComPtr<IDXGIAdapter1> _adapter;

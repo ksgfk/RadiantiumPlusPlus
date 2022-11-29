@@ -90,7 +90,7 @@ Texture::Texture(
   ThrowIfFailed(swapchain->GetBuffer(frame, IID_PPV_ARGS(&_resource)));
 }
 
-Texture::~Texture() {}
+Texture::~Texture() noexcept = default;
 
 D3D12_SHADER_RESOURCE_VIEW_DESC Texture::GetColorSrvDesc(UINT mipOffset) const {
   D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;

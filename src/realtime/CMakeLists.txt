@@ -13,6 +13,7 @@ list(APPEND RAD_EDITOR_SOURCE_FILES
     dx12/readback_buffer.cpp
     dx12/default_buffer.cpp
     dx12/texture.cpp
+    dx12/frame_resource.cpp
     dx12/render_context_dx12.cpp)
 endif()
 

@@ -163,7 +163,7 @@ DXGI_FORMAT RenderContextDX12::ConvertFormat(PixelFormat format) {
   }
 }
 
-DXGI_FORMAT ConvertFormat(DepthStencilFormat format) {
+DXGI_FORMAT RenderContextDX12::ConvertFormat(DepthStencilFormat format) {
   switch (format) {
     case DepthStencilFormat::R24G8:
       return DXGI_FORMAT_R24G8_TYPELESS;
@@ -228,4 +228,155 @@ void RenderContextDX12::Draw() {
   }
 }
 
-}  // namespace Rad
+RenderContextDX12_2::RenderContextDX12_2(const Window& window, const RenderContextOptions& opts) {
+  _logger = Logger::GetCategory("DX12");
+  _hwnd = (HWND)window.GetHandler();
+  _opts = opts;
+  //创建device
+  _device = std::make_unique<Device>(opts.EnableDebug, true, false);
+  {
+    auto adapterDesc = _device->GetAdapterDesc();
+    auto videoMem = adapterDesc.DedicatedVideoMemory >> 20;
+    char tmp[128];
+    WideCharToMultiByte(CP_UTF8, 0, adapterDesc.Description, -1, tmp, 128, nullptr, nullptr);
+    _logger->info("GPU: {} ({} MB)", tmp, videoMem);
+  }
+  //创建direct command queue
+  D3D12_COMMAND_QUEUE_DESC queueDesc{};
+  queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+  queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+  ThrowIfFailed(_device->GetDevice()->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&_commandQueue)));
+  //创建swap chain
+  DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+  swapChainDesc.BufferCount = opts.SwapChainRTCount;
+  swapChainDesc.Width = (UINT)opts.SwapChainRTSize.x();
+  swapChainDesc.Height = (UINT)opts.SwapChainRTSize.y();
+  swapChainDesc.Format = ConvertFormat(opts.SwapChainRTFormat);
+  swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+  swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+  swapChainDesc.SampleDesc.Count = opts.SwapChainMultiSample;
+  ComPtr<IDXGISwapChain1> swapChain;
+  ThrowIfFailed(_device->GetDXGIFactory()->CreateSwapChainForHwnd(
+      _commandQueue.Get(),
+      (HWND)window.GetHandler(),
+      &swapChainDesc,
+      nullptr,
+      nullptr,
+      &swapChain));
+  ThrowIfFailed(swapChain.As(&_swapChain));
+  _backBufferIndex = _swapChain->GetCurrentBackBufferIndex();
+  //创建swap chain附带纹理的desc heap
+  {
+    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
+    rtvHeapDesc.NumDescriptors = swapChainDesc.BufferCount;
+    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    ThrowIfFailed(_device->GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&_rtvHeap)));
+    _rtvDescriptorSize = _device->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
+    dsvHeapDesc.NumDescriptors = swapChainDesc.BufferCount;
+    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    ThrowIfFailed(_device->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&_dsvHeap)));
+    _dsvDescriptorSize = _device->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+  }
+  //创建帧资源
+  {
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(_dsvHeap->GetCPUDescriptorHandleForHeapStart());
+    //为每一帧创建RTV和DSV
+    _renderTargets.reserve(swapChainDesc.BufferCount);
+    _depthTargets.reserve(swapChainDesc.BufferCount);
+    for (UINT32 n = 0; n < swapChainDesc.BufferCount; n++) {
+      _renderTargets.emplace_back(std::make_unique<Texture>(_device.get(), _swapChain.Get(), n));
+      _depthTargets.emplace_back(std::make_unique<Texture>(
+          _device.get(),
+          (UINT)opts.SwapChainRTSize.x(),
+          (UINT)opts.SwapChainRTSize.y(),
+          ConvertFormat(opts.SwapChainDSFormat),
+          TextureDimension::Tex2D,
+          1,
+          1,
+          Texture::TextureUsage::DepthStencil,
+          D3D12_RESOURCE_STATE_DEPTH_READ));
+      _device->GetDevice()->CreateRenderTargetView(_renderTargets[n]->GetResource(), nullptr, rtvHandle);
+      _device->GetDevice()->CreateDepthStencilView(_depthTargets[n]->GetResource(), nullptr, dsvHandle);
+      rtvHandle.Offset(1, _rtvDescriptorSize);
+      dsvHandle.Offset(1, _dsvDescriptorSize);
+    }
+    //为每一帧创建资源
+    _frameResources.reserve(swapChainDesc.BufferCount);
+    for (UINT32 n = 0; n < swapChainDesc.BufferCount; n++) {
+      _frameResources.emplace_back(std::make_unique<FrameResource>(_device.get()));
+    }
+  }
+  //创建fence
+  {
+    ThrowIfFailed(_device->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&_fence)));
+    _fenceValue = 0;
+  }
+}
+
+void RenderContextDX12_2::SyncCommandQueue() {
+  _fenceValue++;
+  _commandQueue->Signal(_fence.Get(), _fenceValue);
+  if (_fence->GetCompletedValue() < _fenceValue) {
+    LPCWSTR falseValue = 0;
+    HANDLE eventHandle = CreateEventEx(nullptr, falseValue, false, EVENT_ALL_ACCESS);
+    ThrowIfFailed(_fence->SetEventOnCompletion(_fenceValue, eventHandle));
+    WaitForSingleObject(eventHandle, INFINITE);
+    CloseHandle(eventHandle);
+  }
+}
+
+void RenderContextDX12_2::Resize(const Vector2i& newSize) {
+  SyncCommandQueue();
+  _swapChain->ResizeBuffers(
+      _opts.SwapChainRTCount,
+      (UINT)newSize.x(), (UINT)newSize.y(),
+      ConvertFormat(_opts.SwapChainRTFormat),
+      DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+  _backBufferIndex = 0;
+  CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+  CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(_dsvHeap->GetCPUDescriptorHandleForHeapStart());
+  _renderTargets.clear();
+  _depthTargets.clear();
+  for (UINT32 n = 0; n < _opts.SwapChainRTCount; n++) {
+    _renderTargets.emplace_back(std::make_unique<Texture>(_device.get(), _swapChain.Get(), n));
+    _depthTargets.emplace_back(std::make_unique<Texture>(
+        _device.get(),
+        (UINT)newSize.x(),
+        (UINT)newSize.y(),
+        ConvertFormat(_opts.SwapChainDSFormat),
+        TextureDimension::Tex2D,
+        1,
+        1,
+        Texture::TextureUsage::DepthStencil,
+        D3D12_RESOURCE_STATE_DEPTH_READ));
+    _device->GetDevice()->CreateRenderTargetView(_renderTargets[n]->GetResource(), nullptr, rtvHandle);
+    _device->GetDevice()->CreateDepthStencilView(_depthTargets[n]->GetResource(), nullptr, dsvHandle);
+    rtvHandle.Offset(1, _rtvDescriptorSize);
+    dsvHandle.Offset(1, _dsvDescriptorSize);
+  }
+}
+
+DXGI_FORMAT RenderContextDX12_2::ConvertFormat(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::RGBA32:
+      return DXGI_FORMAT_R8G8B8A8_UNORM;
+    default:
+      return DXGI_FORMAT_UNKNOWN;
+  }
+}
+
+DXGI_FORMAT RenderContextDX12_2::ConvertFormat(DepthStencilFormat format) {
+  switch (format) {
+    case DepthStencilFormat::R24G8:
+      return DXGI_FORMAT_R24G8_TYPELESS;
+    default:
+      return DXGI_FORMAT_UNKNOWN;
+  }
+}
+
+}  // namespace Rad::DX12

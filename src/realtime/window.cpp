@@ -110,10 +110,42 @@ class Win32Window : public Window {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
         Vector2i newSize(width, height);
-        if (width != _size.x() || height != _size.y()) {
-          _resizeCallbacks.Invoke(*this, newSize);
+        switch (wParam) {
+          case SIZE_MINIMIZED: {
+            _isMinimized = true;
+            _isMaximized = false;
+          }
+          case SIZE_MAXIMIZED: {
+            _isMinimized = false;
+            _isMaximized = true;
+            _resizeCallbacks.Invoke(*this, newSize);
+          }
+          case SIZE_RESTORED: {
+            if (!_isMinimized && !_isMaximized && !_isResizing) {
+              _resizeCallbacks.Invoke(*this, newSize);
+            }
+            if (_isMinimized) {
+              _isMinimized = false;
+            }
+            if (_isMaximized) {
+              _isMaximized = false;
+            }
+          }
         }
         _size = newSize;
+        return 0;
+      }
+      case WM_ENTERSIZEMOVE: {
+        _isResizing = true;
+        _startMoveSize = _size;
+        return 0;
+      }
+      case WM_EXITSIZEMOVE: {
+        _isResizing = false;
+        if (_startMoveSize.cwiseNotEqual(_size).any()) {
+          _resizeCallbacks.Invoke(*this, _size);
+        }
+        return 0;
       }
       default:
         return ::DefWindowProc(hwnd, msg, wParam, lParam);
@@ -131,12 +163,19 @@ class Win32Window : public Window {
  private:
   Share<spdlog::logger> _logger;
   HWND _hwnd;
+  bool _isMinimized{false};
+  bool _isMaximized{false};
+  bool _isResizing{false};
+  Vector2i _startMoveSize;
   MultiDelegate<void(Window&, const Vector2i&)> _resizeCallbacks;
 };
 
 static LRESULT CALLBACK Win32WindowMessageCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  Win32Window& win = *reinterpret_cast<Win32Window*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
-  return win.ProcessMessage(hwnd, msg, wParam, lParam);
+  Win32Window* win = reinterpret_cast<Win32Window*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
+  if (win == nullptr) {
+    return ::DefWindowProc(hwnd, msg, wParam, lParam);
+  }
+  return win->ProcessMessage(hwnd, msg, wParam, lParam);
 }
 
 #endif
