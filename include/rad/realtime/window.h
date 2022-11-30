@@ -30,9 +30,15 @@ class MultiDelegate {
   std::vector<std::function<T>> _delegates;
 };
 
+enum class GraphicsAPI {
+  OpenGL,
+  D3D12
+};
+
 struct WindowOptions {
   Vector2i Size;
   std::string Title;
+  GraphicsAPI Api;
 };
 
 class Window {
@@ -46,18 +52,20 @@ class Window {
 
   virtual void Show() = 0;
   virtual void PollEvent() = 0;
+  virtual bool ShouldClose() const = 0;
+  virtual void Destroy() = 0;
 
-  bool ShouldClose() const { return _isClosing; }
   const Vector2i GetSize() const { return _size; }
   virtual void* GetHandler() const = 0;
 
   virtual void AddResizeListener(const std::function<void(Window&, const Vector2i&)>& callback) = 0;
 
+  static void Init();
   static Unique<Window> Create(const WindowOptions& opts);
+  static void Shutdown();
 
  protected:
   Vector2i _size{};
-  bool _isClosing{};
 };
 
 }  // namespace Rad

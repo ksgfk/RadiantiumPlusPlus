@@ -14,7 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 
-option(RAD_FLOAT_32_WEIGHT  "use float32 as Float?" ON)
+option(RAD_FLOAT_32_WEIGHT  "RAD-Offline use float32 as Float?" ON)
 option(RAD_BUILD_EDITOR "if build RAD editor?" ON)
 set(RAD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -37,6 +37,9 @@ add_library(rad.core STATIC
 target_include_directories(rad.core PUBLIC ${RAD_INCLUDE_DIR})
 target_link_libraries(rad.core PUBLIC Eigen3::Eigen)
 target_link_libraries(rad.core PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+target_compile_definitions(rad.core PUBLIC RAD_DEFINE_DEBUG)
+endif()
 
 add_library(rad.offline SHARED
     src/offline/types.cpp
@@ -104,16 +107,15 @@ add_library(rad.offline SHARED
 target_compile_definitions(rad.offline PRIVATE RAD_BUILD_SHARED)
 if(RAD_FLOAT_32_WEIGHT)
   target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT32)
-  message(STATUS "RAD use float32")
+  message(STATUS "RAD-Offline use float32")
 else()
   target_compile_definitions(rad.offline PRIVATE RAD_USE_FLOAT64)
-  message(STATUS "RAD use float64")
+  message(STATUS "RAD-Offline use float64")
 endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  message(STATUS "RAD in Release mode")
+  message(STATUS "RAD-Offline in Release mode")
 else()
-  target_compile_definitions(rad.offline PRIVATE RAD_DEFINE_DEBUG)
-  message(STATUS "RAD in Debug mode")
+  message(STATUS "RAD-Offline in Debug mode")
 endif()
 if(MSVC)
   target_compile_options(rad.offline PUBLIC /utf-8 /fp:fast /arch:AVX2)

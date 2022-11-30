@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core/types.h"
+#include <rad/core/types.h>
 
 #if !defined(UNICODE)
 #define UNICODE

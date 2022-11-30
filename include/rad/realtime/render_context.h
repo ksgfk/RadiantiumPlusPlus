@@ -30,8 +30,6 @@ class RenderContext {
   RenderContext& operator=(const RenderContext&) = delete;
   RenderContext& operator=(RenderContext&&) noexcept = default;
   virtual ~RenderContext() noexcept = default;
-
-  virtual void Draw() = 0;
 };
 
 }  // namespace Rad

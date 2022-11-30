@@ -3,6 +3,7 @@
 #include <rad/core/logger.h>
 
 #include <utility>
+#include <unordered_map>
 
 #if defined(RAD_PLATFORM_WINDOWS)
 #if !defined(UNICODE)
@@ -11,10 +12,13 @@
 #include <windows.h>
 #endif
 
+#if defined(RAD_REALTIME_BUILD_OPENGL)
+#include <GLFW/glfw3.h>
+#endif
+
 namespace Rad {
 
-#if defined(RAD_PLATFORM_WINDOWS)
-
+#if defined(RAD_REALTIME_BUILD_D3D12)
 constexpr wchar_t WIN32WINDOWCLASSNAME[] = L"rad_win32_default_class";
 static LRESULT CALLBACK Win32WindowMessageCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -100,6 +104,10 @@ class Win32Window : public Window {
     }
   }
 
+  bool ShouldClose() const override {
+    return _isClosing;
+  }
+
   LRESULT ProcessMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
       case WM_CLOSE: {
@@ -160,12 +168,20 @@ class Win32Window : public Window {
     return _hwnd;
   }
 
+  void Destroy() override {
+    if (_hwnd != nullptr) {
+      DestroyWindow(_hwnd);
+    }
+    _hwnd = nullptr;
+  }
+
  private:
   Share<spdlog::logger> _logger;
   HWND _hwnd;
   bool _isMinimized{false};
   bool _isMaximized{false};
   bool _isResizing{false};
+  bool _isClosing{false};
   Vector2i _startMoveSize;
   MultiDelegate<void(Window&, const Vector2i&)> _resizeCallbacks;
 };
@@ -177,15 +193,118 @@ static LRESULT CALLBACK Win32WindowMessageCallback(HWND hwnd, UINT msg, WPARAM w
   }
   return win->ProcessMessage(hwnd, msg, wParam, lParam);
 }
-
 #endif
+
+#if defined(RAD_REALTIME_BUILD_OPENGL)
+class RadGlfwWindow;
+static std::unordered_map<GLFWwindow*, RadGlfwWindow*> RADGLFWINSMAP;
+static void OnGlfwResizeCallback(GLFWwindow* win, int x, int y);
+class RadGlfwWindow : public Window {
+ public:
+  RadGlfwWindow(const WindowOptions& opts) {
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+#if defined(RAD_DEFINE_DEBUG)
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#else
+    glfwWindowHint(GLFW_CONTEXT_NO_ERROR, GLFW_TRUE);
+#endif
+    _glfw = glfwCreateWindow(opts.Size.x(), opts.Size.y(), opts.Title.c_str(), nullptr, nullptr);
+    if (_glfw == nullptr) {
+      throw RadNotSupportedException("无法创建glfw窗口");
+    }
+    glfwMakeContextCurrent(_glfw);
+    glfwSetFramebufferSizeCallback(_glfw, OnGlfwResizeCallback);
+    auto [_, isIn] = RADGLFWINSMAP.try_emplace(_glfw, this);
+    if (!isIn) {
+      throw RadNotSupportedException("重复的窗口");
+    }
+  }
+  ~RadGlfwWindow() noexcept override {
+    if (_glfw != nullptr) {
+      glfwDestroyWindow(_glfw);
+      RADGLFWINSMAP.erase(_glfw);
+      _glfw = nullptr;
+    }
+  }
+
+  void Show() override {
+    glfwShowWindow(_glfw);
+    glfwMakeContextCurrent(_glfw);
+  }
+
+  void PollEvent() override {
+    glfwPollEvents();
+  }
+
+  bool ShouldClose() const override { return glfwWindowShouldClose(_glfw); }
+
+  void AddResizeListener(const std::function<void(Window&, const Vector2i&)>& callback) override {
+    _resizeCallbacks.Add(callback);
+  }
+  void OnResize(const Vector2i& newSize) {
+    _resizeCallbacks.Invoke(*this, newSize);
+  }
+
+  void* GetHandler() const override { return _glfw; }
+
+  void Destroy() override {
+    if (_glfw != nullptr) {
+      glfwDestroyWindow(_glfw);
+      RADGLFWINSMAP.erase(_glfw);
+      _glfw = nullptr;
+    }
+  }
+
+ private:
+  GLFWwindow* _glfw;
+  MultiDelegate<void(Window&, const Vector2i&)> _resizeCallbacks;
+};
+static void OnGlfwResizeCallback(GLFWwindow* win, int x, int y) {
+  Vector2i size(x, y);
+  RadGlfwWindow* radWin = RADGLFWINSMAP[win];
+  radWin->OnResize(size);
+}
+#endif
+
+void Window::Init() {
+#if defined(RAD_REALTIME_BUILD_OPENGL)
+  glfwSetErrorCallback([](int error, const char* descr) {
+    auto logger = Logger::GetCategory("glfw");
+    logger->error("err code:{} , {}", error, descr);
+  });
+  if (!glfwInit()) {
+    throw RadNotSupportedException("glfw初始化失败");
+  }
+#endif
+}
 
 Unique<Window> Window::Create(const WindowOptions& opts) {
-#if defined(RAD_PLATFORM_WINDOWS)
-  return std::make_unique<Win32Window>(opts);
+  switch (opts.Api) {
+    case GraphicsAPI::OpenGL: {
+#if defined(RAD_REALTIME_BUILD_OPENGL)
+      return std::make_unique<RadGlfwWindow>(opts);
 #else
-  throw RadNotImplementedException("不支持的平台, 无法创建窗口");
+      throw RadNotImplementedException("不支持ogl, 无法创建窗口");
 #endif
+    }
+    case GraphicsAPI::D3D12: {
+#if defined(RAD_REALTIME_BUILD_D3D12)
+      return std::make_unique<Win32Window>(opts);
+#else
+      throw RadNotImplementedException("不支持D3D12, 无法创建窗口");
+#endif
+    }
+    default:
+      throw RadNotImplementedException("无法创建窗口");
+  }
+}
+
+void Window::Shutdown() {
+  for (auto&& i : RADGLFWINSMAP) {
+    glfwDestroyWindow(i.first);
+  }
+  glfwTerminate();
 }
 
 }  // namespace Rad
