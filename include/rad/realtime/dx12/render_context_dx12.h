@@ -8,6 +8,7 @@
 #include "device.h"
 #include "texture.h"
 #include "frame_resource.h"
+#include "resource_state.h"
 
 #include <vector>
 
@@ -18,8 +19,10 @@ class RenderContextDX12 {
   RenderContextDX12(const Window& window, const RenderContextOptions& opts);
 
   void SyncCommandQueue();
-  void Resize(const Vector2i&);
+  void Resize(const Vector2i& newSize);
   void Render();
+
+  const Vector2i GetRTSize() const { return _opts.SwapChainRTSize; }
 
   static DXGI_FORMAT ConvertFormat(PixelFormat format);
   static DXGI_FORMAT ConvertFormat(DepthStencilFormat format);

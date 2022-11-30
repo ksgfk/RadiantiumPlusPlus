@@ -14,6 +14,7 @@ list(APPEND RAD_EDITOR_SOURCE_FILES
     dx12/default_buffer.cpp
     dx12/texture.cpp
     dx12/frame_resource.cpp
+    dx12/resource_state.cpp
     dx12/render_context_dx12.cpp)
 endif()
 

@@ -175,6 +175,7 @@ void RenderContextDX12::Resize(const Vector2i& newSize) {
   for (UINT32 n = 0; n < _opts.SwapChainRTCount; n++) {
     _frameResources.emplace_back(std::make_unique<FrameResource>(_device.get()));
   }
+  _opts.SwapChainRTSize = newSize;
 }
 
 void RenderContextDX12::Render() {
@@ -198,16 +199,10 @@ void RenderContextDX12::PopulateCommandList(FrameResource& frame, UINT index) {
   auto scoped = frame.Command();
   auto cmdList = scoped.GetCommandList();
 
-  auto toRt = CD3DX12_RESOURCE_BARRIER::Transition(
-      _renderTargets[index]->GetResource(),
-      _renderTargets[index]->GetInitState(),
-      D3D12_RESOURCE_STATE_RENDER_TARGET);
-  cmdList->ResourceBarrier(1, &toRt);
-  auto toDS = CD3DX12_RESOURCE_BARRIER::Transition(
-      _depthTargets[index]->GetResource(),
-      _depthTargets[index]->GetInitState(),
-      D3D12_RESOURCE_STATE_DEPTH_WRITE);
-  cmdList->ResourceBarrier(1, &toDS);
+  ResourceState state{};
+  state.CollectState(_renderTargets[index].get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+  state.CollectState(_depthTargets[index].get(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+  state.UpdateState(cmdList);
 
   CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(_rtvHeap->GetCPUDescriptorHandleForHeapStart(), index, _rtvDescriptorSize);
   CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(_dsvHeap->GetCPUDescriptorHandleForHeapStart(), index, _dsvDescriptorSize);
@@ -218,16 +213,7 @@ void RenderContextDX12::PopulateCommandList(FrameResource& frame, UINT index) {
   cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
   cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, Texture::CLEAR_DEPTH, Texture::CLEAR_STENCIL, 0, nullptr);
 
-  auto rtBack = CD3DX12_RESOURCE_BARRIER::Transition(
-      _renderTargets[index]->GetResource(),
-      D3D12_RESOURCE_STATE_RENDER_TARGET,
-      _renderTargets[index]->GetInitState());
-  cmdList->ResourceBarrier(1, &rtBack);
-  auto dsBack = CD3DX12_RESOURCE_BARRIER::Transition(
-      _depthTargets[index]->GetResource(),
-      D3D12_RESOURCE_STATE_DEPTH_WRITE,
-      _depthTargets[index]->GetInitState());
-  cmdList->ResourceBarrier(1, &dsBack);
+  state.RestoreState(cmdList);
 }
 
 DXGI_FORMAT RenderContextDX12::ConvertFormat(PixelFormat format) {
