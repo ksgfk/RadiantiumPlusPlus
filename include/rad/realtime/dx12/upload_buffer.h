@@ -4,7 +4,7 @@
 
 namespace Rad::DX12 {
 
-class UploadBuffer : public Buffer {
+class UploadBuffer final : public Buffer {
  public:
   UploadBuffer(Device* device, UINT64 byteSize);
   UploadBuffer(UploadBuffer&&) = default;

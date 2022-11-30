@@ -4,7 +4,7 @@
 
 namespace Rad::DX12 {
 
-class DefaultBuffer : public Buffer {
+class DefaultBuffer final : public Buffer {
  public:
   DefaultBuffer(
       Device* device,

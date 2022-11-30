@@ -9,7 +9,8 @@ enum class PixelFormat {
 };
 
 enum class DepthStencilFormat {
-  R24G8
+  R24G8,
+  Depth32Float
 };
 
 struct RenderContextOptions {

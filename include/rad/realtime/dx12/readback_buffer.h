@@ -4,7 +4,7 @@
 
 namespace Rad::DX12 {
 
-class ReadbackBuffer : public Buffer {
+class ReadbackBuffer final : public Buffer {
  public:
   ReadbackBuffer(Device* device, UINT64 byteSize);
   ReadbackBuffer(ReadbackBuffer&&) = default;

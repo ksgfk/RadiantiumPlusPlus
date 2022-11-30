@@ -39,6 +39,17 @@ Device::Device(bool enableDebug, bool findHP, bool useWrap) {
   } else {
     throw RadDX12Exception("无法找到适合的adapter");
   }
+  ComPtr<ID3D12InfoQueue> infoQueue;
+  if (SUCCEEDED(_dxDevice.As(&infoQueue))) {
+    D3D12_MESSAGE_ID hide[] = {
+        D3D12_MESSAGE_ID_EXECUTECOMMANDLISTS_WRONGSWAPCHAINBUFFERREFERENCE,
+        D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
+    };
+    D3D12_INFO_QUEUE_FILTER filter{};
+    filter.DenyList.NumIDs = static_cast<UINT>(std::size(hide));
+    filter.DenyList.pIDList = hide;
+    infoQueue->AddStorageFilterEntries(&filter);
+  }
 }
 
 DXGI_ADAPTER_DESC1 Device::GetAdapterDesc() const {
