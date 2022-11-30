@@ -3,5 +3,5 @@
 
 # 排除glad生成文件...
 ext/glad/include/KHR/khrplatform.h linguist-vendored
-ext/glad/include/glad/glad.h linguist-vendored
-ext/glad/src/glad.c linguist-vendored
+ext/glad/include/glad/gl.h linguist-vendored
+ext/glad/src/gl.c linguist-vendored
