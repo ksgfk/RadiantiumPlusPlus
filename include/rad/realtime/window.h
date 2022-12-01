@@ -59,6 +59,7 @@ class Window {
   virtual void* GetHandler() const = 0;
 
   virtual void AddResizeListener(const std::function<void(Window&, const Vector2i&)>& callback) = 0;
+  virtual void AddScrollListener(const std::function<void(Window&, const Vector2f&)>& callback) = 0;
 
   static void Init();
   static Unique<Window> Create(const WindowOptions& opts);

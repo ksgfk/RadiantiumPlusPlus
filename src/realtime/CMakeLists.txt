@@ -18,7 +18,8 @@ message(STATUS "RAD-Realtime build OpenGL")
 endif()
 
 set(RAD_REALTIME_SOURCE_FILES
-    window.cpp)
+    window.cpp
+    input.cpp)
 if(RAD_REALTIME_USE_D3D12)
 list(APPEND RAD_REALTIME_SOURCE_FILES
     dx12/device.cpp

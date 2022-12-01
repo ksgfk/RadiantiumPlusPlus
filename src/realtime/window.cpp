@@ -199,6 +199,7 @@ static LRESULT CALLBACK Win32WindowMessageCallback(HWND hwnd, UINT msg, WPARAM w
 class RadGlfwWindow;
 static std::unordered_map<GLFWwindow*, RadGlfwWindow*> RADGLFWINSMAP;
 static void OnGlfwResizeCallback(GLFWwindow* win, int x, int y);
+static void OnGlfwScrollCallback(GLFWwindow* win, double x, double y);
 class RadGlfwWindow : public Window {
  public:
   RadGlfwWindow(const WindowOptions& opts) {
@@ -215,6 +216,7 @@ class RadGlfwWindow : public Window {
     }
     glfwMakeContextCurrent(_glfw);
     glfwSetFramebufferSizeCallback(_glfw, OnGlfwResizeCallback);
+    glfwSetScrollCallback(_glfw, OnGlfwScrollCallback);
     auto [_, isIn] = RADGLFWINSMAP.try_emplace(_glfw, this);
     if (!isIn) {
       throw RadNotSupportedException("重复的窗口");
@@ -245,6 +247,12 @@ class RadGlfwWindow : public Window {
   void OnResize(const Vector2i& newSize) {
     _resizeCallbacks.Invoke(*this, newSize);
   }
+  void AddScrollListener(const std::function<void(Window&, const Vector2f&)>& callback) override {
+    _scrollCallbacks.Add(callback);
+  }
+  void OnScroll(const Vector2f& scroll) {
+    _scrollCallbacks.Invoke(*this, scroll);
+  }
 
   void* GetHandler() const override { return _glfw; }
 
@@ -259,11 +267,17 @@ class RadGlfwWindow : public Window {
  private:
   GLFWwindow* _glfw;
   MultiDelegate<void(Window&, const Vector2i&)> _resizeCallbacks;
+  MultiDelegate<void(Window&, const Vector2f&)> _scrollCallbacks;
 };
 static void OnGlfwResizeCallback(GLFWwindow* win, int x, int y) {
   Vector2i size(x, y);
   RadGlfwWindow* radWin = RADGLFWINSMAP[win];
   radWin->OnResize(size);
+}
+void OnGlfwScrollCallback(GLFWwindow* win, double x, double y) {
+  Vector2f size((float)x, (float)y);
+  RadGlfwWindow* radWin = RADGLFWINSMAP[win];
+  radWin->OnScroll(size);
 }
 #endif
 
