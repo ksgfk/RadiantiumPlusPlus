@@ -35,7 +35,9 @@ if(RAD_REALTIME_USE_OPENGL)
 list(APPEND RAD_REALTIME_SOURCE_FILES
     "../../ext/glad/src/gl.c"
     opengl/utility.cpp
-    opengl/render_context_ogl.cpp)
+    opengl/render_context_ogl.cpp
+    opengl/buffer.cpp
+    opengl/shader.cpp)
 endif()
 
 add_library(rad.realtime STATIC ${RAD_REALTIME_SOURCE_FILES})

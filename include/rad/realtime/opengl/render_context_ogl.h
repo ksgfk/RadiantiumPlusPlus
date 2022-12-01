@@ -19,7 +19,7 @@ class RenderContextOpenGL : public RenderContext {
 
  private:
   Share<spdlog::logger> _logger;
-  Unique<GladGLContext> _ctx;
+  Unique<GLContext> _ctx;
 };
 
 }  // namespace Rad::OpenGL

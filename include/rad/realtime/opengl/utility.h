@@ -15,6 +15,8 @@
 
 namespace Rad::OpenGL {
 
+using GLContext = GladGLContext;
+
 class RadOpenGLException : public RadException {
  public:
   template <typename... Args>
@@ -22,7 +24,7 @@ class RadOpenGLException : public RadException {
 };
 
 void UtilCheckGLError(
-    const GladGLContext* ctx,
+    const GLContext* ctx,
     const char* callFuncName,
     const char* fileName, int line);
 

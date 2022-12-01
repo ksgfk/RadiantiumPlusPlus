@@ -5,7 +5,7 @@
 namespace Rad::OpenGL {
 
 void UtilCheckGLError(
-    const GladGLContext* ctx,
+    const GLContext* ctx,
     const char* callFuncName,
     const char* fileName, int line) {
   GLenum err = ctx->GetError();

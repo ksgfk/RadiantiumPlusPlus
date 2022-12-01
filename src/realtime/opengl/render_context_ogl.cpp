@@ -27,11 +27,11 @@ RenderContextOpenGL::RenderContextOpenGL(
     const Window& window,
     const RenderContextOptions& opts) {
   _logger = Logger::GetCategory("OpenGL");
-  _ctx = std::make_unique<GladGLContext>();
+  _ctx = std::make_unique<GLContext>();
   int version = gladLoadGLContext(_ctx.get(), glfwGetProcAddress);
   _logger->info("Load OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 #if defined(RAD_DEFINE_DEBUG)
-  GladGLContext* gl = _ctx.get();
+  GLContext* gl = _ctx.get();
   RAD_CHECK_GL(gl, Enable(GL_DEBUG_OUTPUT));
   RAD_CHECK_GL(gl, DebugMessageCallback(DebugCallbackOGL, nullptr));
 #endif
