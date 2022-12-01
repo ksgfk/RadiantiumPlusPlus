@@ -78,8 +78,9 @@ void DebugCallbackOGL(
   auto logger = Logger::GetCategory("OpenGL");
   switch (severity) {
     case GL_DEBUG_SEVERITY_NOTIFICATION:
-      logger->info("id:{}, {}, {}", id, typeStr, message);
-      break;
+      return;
+      // logger->debug("id:{}, {}, {}", id, typeStr, message);
+      // break;
     case GL_DEBUG_SEVERITY_LOW:
       logger->warn("id:{}, {}, {}", id, typeStr, message);
       break;

@@ -17,9 +17,19 @@ find_package(glfw3 CONFIG REQUIRED)
 message(STATUS "RAD-Realtime build OpenGL")
 endif()
 
+set(RAD_IMGUI_PATH "../../ext/imgui")
+set(RAD_IMGUI_SOURCE_FILES
+    ${RAD_IMGUI_PATH}/src/imgui_demo.cpp
+    ${RAD_IMGUI_PATH}/src/imgui_draw.cpp
+    ${RAD_IMGUI_PATH}/src/imgui_tables.cpp
+    ${RAD_IMGUI_PATH}/src/imgui_widgets.cpp
+    ${RAD_IMGUI_PATH}/src/imgui.cpp)
+
 set(RAD_REALTIME_SOURCE_FILES
     window.cpp
-    input.cpp)
+    input.cpp
+    model.cpp)
+list(APPEND RAD_REALTIME_SOURCE_FILES ${RAD_IMGUI_SOURCE_FILES})
 if(RAD_REALTIME_USE_D3D12)
 list(APPEND RAD_REALTIME_SOURCE_FILES
     dx12/device.cpp
@@ -34,6 +44,8 @@ endif()
 if(RAD_REALTIME_USE_OPENGL)
 list(APPEND RAD_REALTIME_SOURCE_FILES
     "../../ext/glad/src/gl.c"
+    ${RAD_IMGUI_PATH}/src/imgui_impl_glfw.cpp
+    ${RAD_IMGUI_PATH}/src/imgui_impl_opengl3.cpp
     opengl/utility.cpp
     opengl/render_context_ogl.cpp
     opengl/buffer.cpp
@@ -56,3 +68,4 @@ target_compile_definitions(rad.realtime PRIVATE RAD_REALTIME_BUILD_OPENGL)
 target_link_libraries(rad.realtime PRIVATE glfw)
 target_include_directories(rad.realtime PUBLIC "../../ext/glad/include")
 endif()
+target_include_directories(rad.realtime PUBLIC ${RAD_IMGUI_PATH}/include)

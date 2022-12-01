@@ -222,6 +222,7 @@ class RadGlfwWindow : public Window {
     if (!isIn) {
       throw RadNotSupportedException("重复的窗口");
     }
+    glfwGetFramebufferSize(_glfw, &_size.x(), &_size.y());
   }
   ~RadGlfwWindow() noexcept override {
     if (_glfw != nullptr) {
@@ -246,6 +247,7 @@ class RadGlfwWindow : public Window {
     _resizeCallbacks.Add(callback);
   }
   void OnResize(const Vector2i& newSize) {
+    _size = newSize;
     _resizeCallbacks.Invoke(*this, newSize);
   }
   void AddScrollListener(const std::function<void(Window&, const Vector2f&)>& callback) override {

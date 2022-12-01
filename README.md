@@ -18,6 +18,15 @@ RadiantiumPlusPlus是一个非常简单的光线追踪渲染器, 只是基于兴
 * stb_image 2021-09-10
 * OpenVDB 10.0.0
 
+如果构建编辑器需要
+
+* directx-headers 1.606.4 (可选)
+* glfw 3.3.8 (可选)
+* glad (可选)
+* imgui 1.89.1 (可选)
+
+glad和imgui已经包含在ext文件夹内，无需自行安装
+
 ## Gallery
 
 ![](gallery/path_many_ball.png)

@@ -5,3 +5,6 @@
 ext/glad/include/KHR/khrplatform.h linguist-vendored
 ext/glad/include/glad/gl.h linguist-vendored
 ext/glad/src/gl.c linguist-vendored
+
+ext/imgui/src/*.cpp linguist-vendored
+ext/imgui/include/*.h linguist-vendored
