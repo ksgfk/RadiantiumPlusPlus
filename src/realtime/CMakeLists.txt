@@ -37,7 +37,8 @@ list(APPEND RAD_REALTIME_SOURCE_FILES
     opengl/utility.cpp
     opengl/render_context_ogl.cpp
     opengl/buffer.cpp
-    opengl/shader.cpp)
+    opengl/shader.cpp
+    opengl/vertex_array.cpp)
 endif()
 
 add_library(rad.realtime STATIC ${RAD_REALTIME_SOURCE_FILES})

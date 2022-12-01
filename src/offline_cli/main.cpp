@@ -23,6 +23,9 @@ std::pair<Unique<Renderer>, Unique<LocationResolver>> Build(int argc, char** arg
   nlohmann::json cfg;
   {
     std::ifstream cfgStream(p);
+    if (!cfgStream.is_open()) {
+      throw RadArgumentException("无法打开文件: {}", scenePath);
+    }
     cfg = nlohmann::json::parse(cfgStream);
   }
   ConfigNode cfgNode(&cfg);
