@@ -1,31 +1,18 @@
-#include <rad/realtime/window.h>
-#include <rad/realtime/input.h>
 #include <rad/core/logger.h>
+#include <rad/offline/api.h>
 
-#include <rad/realtime/opengl/render_context_ogl.h>
+#include "editor_application.h"
 
-using namespace Rad;
-
-int main() {
-  Window::Init();
-  WindowOptions opts{Vector2i(1280, 720), "芜湖，起飞"};
-  Unique<Window> w = Window::Create(opts);
-  Input input{};
-  w->AddScrollListener([&](auto& w, const auto& s) { input.OnScroll(s); });
-  w->Show();
-  RenderContextOptions rco{};
-  OpenGL::RenderContextOpenGL ogl(*w, rco);
-  while (!w->ShouldClose()) {
-    w->PollEvent();
-    input.Update(*w);
-    if (input.GetKeyDown(Rad::KeyCode::A)) {
-      Logger::Get()->info("yes");
-    }
-    if (input.GetKeyUp(Rad::KeyCode::A)) {
-      Logger::Get()->info("oh~");
-    }
+int main(int argc, char** argv) {
+  RadInit();
+  try {
+    Rad::Editor::EditorApplication editor(argc, argv);
+    editor.Run();
+  } catch (const std::exception& e) {
+    Rad::Logger::Get()->error("unhandled exception: {}", e.what());
+  } catch (...) {
+    Rad::Logger::Get()->error("unknown exception");
   }
-  w->Destroy();
-  Window::Shutdown();
+  RadShutdown();
   return 0;
 }

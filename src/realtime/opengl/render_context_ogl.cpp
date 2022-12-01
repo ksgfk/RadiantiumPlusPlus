@@ -30,17 +30,18 @@ RenderContextOpenGL::RenderContextOpenGL(
   _ctx = std::make_unique<GLContext>();
   int version = gladLoadGLContext(_ctx.get(), glfwGetProcAddress);
   _logger->info("Load OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
-#if defined(RAD_DEFINE_DEBUG)
   GLContext* gl = _ctx.get();
-  RAD_CHECK_GL(gl, Enable(GL_DEBUG_OUTPUT));
-  RAD_CHECK_GL(gl, DebugMessageCallback(DebugCallbackOGL, nullptr));
-#endif
+  if (opts.EnableDebug) {
+    RAD_CHECK_GL(gl, Enable(GL_DEBUG_OUTPUT));
+    RAD_CHECK_GL(gl, DebugMessageCallback(DebugCallbackOGL, nullptr));
+  }
   auto driverInfo = RAD_CHECK_GL(gl, GetString(GL_VERSION));
   std::string driver((char*)driverInfo);  //直接强转byte，快进到编码问题（
   auto deviceName = RAD_CHECK_GL(gl, GetString(GL_RENDERER));
   std::string device((char*)deviceName);
   _logger->info("Device: {}", device);
   _logger->info("Driver: {}", driver);
+  _glfw = reinterpret_cast<GLFWwindow*>(window.GetHandler());
 }
 
 void DebugCallbackOGL(
@@ -78,15 +79,24 @@ void DebugCallbackOGL(
   switch (severity) {
     case GL_DEBUG_SEVERITY_NOTIFICATION:
       logger->info("id:{}, {}, {}", id, typeStr, message);
+      break;
     case GL_DEBUG_SEVERITY_LOW:
       logger->warn("id:{}, {}, {}", id, typeStr, message);
+      break;
     case GL_DEBUG_SEVERITY_MEDIUM:
       logger->error("id:{}, {}, {}", id, typeStr, message);
+      break;
     case GL_DEBUG_SEVERITY_HIGH:
       logger->critical("id:{}, {}, {}", id, typeStr, message);
+      break;
     default:
       logger->info("id:{}, {}, {}", id, typeStr, message);
+      break;
   }
+}
+
+void RenderContextOpenGL::SwapBuffers() const {
+  glfwSwapBuffers(_glfw);
 }
 
 }  // namespace Rad::OpenGL

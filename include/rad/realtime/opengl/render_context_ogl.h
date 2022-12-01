@@ -17,9 +17,13 @@ class RenderContextOpenGL : public RenderContext {
   RenderContextOpenGL& operator=(RenderContextOpenGL&&) noexcept = default;
   ~RenderContextOpenGL() noexcept override = default;
 
+  const GLContext* GetGL() const { return _ctx.get(); }
+  void SwapBuffers() const;
+
  private:
   Share<spdlog::logger> _logger;
   Unique<GLContext> _ctx;
+  GLFWwindow* _glfw;
 };
 
 }  // namespace Rad::OpenGL
