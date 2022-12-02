@@ -9,6 +9,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <imfilebrowser.h>
 
 #include <unordered_map>
 
@@ -35,6 +36,10 @@ class OfflineData {
 };
 
 class SceneObject {
+ public:
+  void OnGui() {
+  }
+
  public:
   std::string Name;
   Transform Trans;
@@ -95,11 +100,15 @@ class EditorApplicationImpl {
       IMGUI_CHECKVERSION();
       ImGui::CreateContext();
       ImGuiIO& io = ImGui::GetIO();
-      io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+      io.Fonts->AddFontFromFileTTF("fonts/SourceHanSerifCN-Medium.ttf", 21, nullptr, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+      io.Fonts->Build();
       ImGui::StyleColorsLight();
+      ImGui::GetStyle().ScaleAllSizes(1.25f);
       ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)_window->GetHandler(), true);
       ImGui_ImplOpenGL3_Init("#version 450 core");
     }
+    _isWelcomePanel = true;
+    _fileDialog.SetTitle("选择文件");
   }
   ~EditorApplicationImpl() {
     _input = nullptr;
@@ -121,8 +130,7 @@ class EditorApplicationImpl {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        // TODO: 这里放GUI逻辑
-        ImGui::ShowDemoWindow();
+        OnGui();
         ImGui::Render();
         const auto& size = _window->GetSize();
         _renderCtx->GetGL()->Viewport(0, 0, size.x(), size.y());
@@ -133,11 +141,38 @@ class EditorApplicationImpl {
     }
   }
 
+  void OnGui() {
+    ImGui::ShowDemoWindow();
+    if (ImGui::BeginMainMenuBar()) {
+      if (ImGui::BeginMenu("文件")) {
+        if (ImGui::MenuItem("从文件打开工作区")) {
+          _fileDialog.Open();
+          if (_fileDialog.HasSelected()) {
+            _fileDialog.ClearSelected();
+          }
+        }
+        ImGui::EndMenu();
+      }
+      ImGui::EndMainMenuBar();
+    }
+    _fileDialog.Display();
+
+    if (_isWelcomePanel) {
+      ImGuiWindowFlags flags = 0;
+      if (ImGui::Begin("主页", nullptr, flags)) {
+        ImGui::End();
+      }
+    } else {
+    }
+  }
+
  private:
   Unique<Window> _window;
   Unique<Input> _input;
   Unique<RenderContextOpenGL> _renderCtx;
   Unique<AssetCenter> _asset;
+  ImGui::FileBrowser _fileDialog;
+  bool _isWelcomePanel;
 };
 
 EditorApplication::EditorApplication(int argc, char** argv) {

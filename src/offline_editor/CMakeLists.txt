@@ -10,3 +10,5 @@ if(MSVC)
     target_link_options(rad.offline.editor PUBLIC /LTCG /OPT:REF,ICF)
   endif()
 endif()
+add_custom_command(TARGET rad.offline.editor POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/fonts ${EXECUTABLE_OUTPUT_PATH}/fonts)
