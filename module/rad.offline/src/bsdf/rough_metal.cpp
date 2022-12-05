@@ -69,11 +69,11 @@ class RoughMetal final : public Bsdf {
     bsr.Pdf /= 4 * bsr.Wo.dot(m);
     Float D = dist.D(m);
     Float G = dist.G(si.Wi, bsr.Wo, m);
-    Spectrum eta(_eta->Eval(si));
-    Spectrum k(_k->Eval(si));
-    Spectrum F(Fresnel::Conductor(si.Wi.dot(m), eta, k));
+    Spectrum eta = Color24fToSpectrum(_eta->Eval(si));
+    Spectrum k = Color24fToSpectrum(_k->Eval(si));
+    Spectrum F = Fresnel::Conductor(si.Wi.dot(m), eta, k);
     auto brdf = (F * D * G) / (4 * Frame::CosTheta(si.Wi) * Frame::CosTheta(bsr.Wo));
-    Spectrum r(_reflectance->Eval(si));
+    Spectrum r = Color24fToSpectrum(_reflectance->Eval(si));
     auto result = r.cwiseProduct(brdf) * Frame::CosTheta(bsr.Wo);
     return {bsr, Spectrum(result)};
   }
@@ -110,7 +110,9 @@ class RoughMetal final : public Bsdf {
       return Spectrum(0);
     }
     Vector3 wh = (wo + si.Wi).normalized();
-    Spectrum eta = Spectrum(_eta->Eval(si)), k = Spectrum(_k->Eval(si)), r = Spectrum(_reflectance->Eval(si));
+    Spectrum eta = Color24fToSpectrum(_eta->Eval(si)),
+             k = Color24fToSpectrum(_k->Eval(si)),
+             r = Color24fToSpectrum(_reflectance->Eval(si));
     Vector3 F = Fresnel::Conductor(si.Wi.dot(wh), eta, k);
     Float D = dist.D(wh);
     Float G = dist.G(si.Wi, wo, wh);

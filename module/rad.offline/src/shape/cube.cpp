@@ -110,8 +110,8 @@ class Cube final : public MeshBase {
     _uv = Share<Eigen::Vector2f[]>(new Eigen::Vector2f[_vertexCount]);
     _indices = Share<UInt32[]>(new UInt32[_indexCount]);
     for (UInt32 i = 0; i < _vertexCount; i++) {
-      _position[i] = _toWorld.ApplyAffineToWorld(vertices[i]).cast<Float32>();
-      _normal[i] = _toWorld.ApplyNormalToWorld(normals[i]).cast<Float32>();
+      _position[i] = _toWorld.ApplyAffineToWorld(vertices[i].cast<Float>()).cast<Float32>();
+      _normal[i] = _toWorld.ApplyNormalToWorld(normals[i].cast<Float>()).cast<Float32>();
       _uv[i] = _uv[i];
     }
     for (UInt32 i = 0; i < _triangleCount; i++) {

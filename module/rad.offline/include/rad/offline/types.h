@@ -28,49 +28,6 @@ using BoundingBox3 = Eigen::AlignedBox<Float, 3>;
 
 }  // namespace Rad
 
-// 照着抄的 https://fmt.dev/latest/api.html#format-api
-#if defined(RAD_USE_FLOAT64)
-template <>
-struct spdlog::fmt_lib::formatter<Rad::Vector2> {
-  template <typename FormatContext>
-  auto format(const Rad::Vector2& v, FormatContext& ctx) const -> decltype(ctx.out()) {
-    return spdlog::fmt_lib::format_to(ctx.out(), "<{}, {}>", v[0], v[1]);
-  }
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    auto it = ctx.begin(), end = ctx.end();
-    if (it != end && *it != '}') throw format_error("invalid format");
-    return it;
-  }
-};
-template <>
-struct spdlog::fmt_lib::formatter<Rad::Vector3> {
-  template <typename FormatContext>
-  auto format(const Rad::Vector3& v, FormatContext& ctx) const -> decltype(ctx.out()) {
-    return spdlog::fmt_lib::format_to(ctx.out(), "<{}, {}, {}>", v[0], v[1], v[2]);
-  }
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    auto it = ctx.begin(), end = ctx.end();
-    if (it != end && *it != '}') throw format_error("invalid format");
-    return it;
-  }
-};
-template <>
-struct spdlog::fmt_lib::formatter<Rad::Vector4> {
-  template <typename FormatContext>
-  auto format(const Rad::Vector4& v, FormatContext& ctx) const -> decltype(ctx.out()) {
-    return spdlog::fmt_lib::format_to(ctx.out(), "<{}, {}, {}, {}>", v[0], v[1], v[2], v[3]);
-  }
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    auto it = ctx.begin(), end = ctx.end();
-    if (it != end && *it != '}') throw format_error("invalid format");
-    return it;
-  }
-};
-template <>
-struct spdlog::fmt_lib::formatter<Rad::Matrix3> : spdlog::fmt_lib::ostream_formatter {};
-template <>
-struct spdlog::fmt_lib::formatter<Rad::Matrix4> : spdlog::fmt_lib::ostream_formatter {};
-#endif
 std::ostream& operator<<(std::ostream& os, enum RTCError err);
 template <>
 struct spdlog::fmt_lib::formatter<enum RTCError> : spdlog::fmt_lib::ostream_formatter {};

@@ -40,10 +40,10 @@ class PerfectMirror final : public Bsdf {
     bsr.Eta = 1;
     bsr.TypeMask = _flags;
     bsr.Pdf = 1;
-    Spectrum r(_reflectance->Eval(si));
-    Spectrum eta(_eta->Eval(si));
-    Spectrum k(_k->Eval(si));
-    Spectrum F(Fresnel::Conductor(Frame::CosTheta(si.Wi), eta, k));
+    Spectrum r = Color24fToSpectrum(_reflectance->Eval(si));
+    Spectrum eta = Color24fToSpectrum(_eta->Eval(si));
+    Spectrum k = Color24fToSpectrum(_k->Eval(si));
+    Spectrum F = Fresnel::Conductor(Frame::CosTheta(si.Wi), eta, k);
     auto result = r.cwiseProduct(F);
     return {bsr, Spectrum(result)};
   }

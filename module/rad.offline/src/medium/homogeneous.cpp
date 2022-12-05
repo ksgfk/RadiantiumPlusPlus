@@ -12,8 +12,8 @@ namespace Rad {
 class HomogeneousMedium final : public Medium {
  public:
   HomogeneousMedium(BuildContext* ctx, const Matrix4& toWorld, const ConfigNode& cfg) : Medium(ctx, cfg) {
-    Vector3 sigmaT = cfg.ReadOrDefault("sigma_t", Vector3(1, 1, 1));
-    _sigmaT = Spectrum(sigmaT);
+    Color24f sigmaT = cfg.ReadOrDefault("sigma_t", Color24f(1, 1, 1));
+    _sigmaT = Color24fToSpectrum(sigmaT);
     _albedo = ConfigNodeReadVolume(ctx, cfg, "albedo", Spectrum(Float(0.75)));
     _scale = cfg.ReadOrDefault("scale", Float(1));
     _isHomogeneous = true;

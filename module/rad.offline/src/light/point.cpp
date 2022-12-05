@@ -21,8 +21,8 @@ class Point final : public Light {
     Transform transform(toWorld);
     Vector3 position = cfg.ReadOrDefault("position", Vector3(0, 0, 0));
     _worldPos = transform.ApplyAffineToWorld(position);
-    Vector3 intensity = cfg.ReadOrDefault("intensity", Vector3(1, 1, 1));
-    _intensity = Spectrum(intensity);
+    Color24f intensity = cfg.ReadOrDefault("intensity", Color24f(1, 1, 1));
+    _intensity = Color24fToSpectrum(intensity);
   }
   ~Point() noexcept override = default;
 

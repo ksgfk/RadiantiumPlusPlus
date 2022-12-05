@@ -9,15 +9,14 @@ namespace Rad {
 /**
  * @brief RGB颜色
  */
-struct RgbSpectrum : Vector3 {
+struct RgbSpectrum : public Vector3 {
   using Scalar = Vector3::Scalar;
   static constexpr UInt32 ComponentCount = Vector3::SizeAtCompileTime;
 
   RgbSpectrum() noexcept : Vector3(0, 0, 0) {}
   RgbSpectrum(Float value) noexcept : Vector3(value, value, value) {}
   RgbSpectrum(Float r, Float g, Float b) noexcept : Vector3(r, g, b) {}
-  // RgbSpectrum(const Vector3& v) noexcept : Vector3(v) {}
-  explicit RgbSpectrum(const Color24f& v) noexcept : Vector3(v.cast<Float>()) {}
+  RgbSpectrum(const Vector3& v) noexcept : Vector3(v) {}
   template <typename Derived>
   RgbSpectrum(const Eigen::ArrayBase<Derived>& p) noexcept : Vector3(p) {}
   template <typename Derived>
@@ -77,6 +76,10 @@ inline RgbSpectrum LerpSpectrum(const RgbSpectrum& a, const RgbSpectrum& b, cons
 
 inline RgbSpectrum ExpSpectrum(const RgbSpectrum& v) {
   return RgbSpectrum(std::exp(v.x()), std::exp(v.y()), std::exp(v.z()));
+}
+
+inline RgbSpectrum Color24fToSpectrum(const Color24f& color) {
+  return RgbSpectrum(color.cast<Float>());
 }
 
 }  // namespace Rad

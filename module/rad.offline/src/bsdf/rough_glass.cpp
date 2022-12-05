@@ -23,8 +23,8 @@ class RoughGlass final : public Bsdf {
     _flags = BsdfType::Glossy | BsdfType::Reflection | BsdfType::Transmission;
     _reflectance = ConfigNodeReadTexture(ctx, cfg, "reflectance", Color24f(1));
     _transmittance = ConfigNodeReadTexture(ctx, cfg, "transmittance", Color24f(1));
-    Float intIor = cfg.ReadOrDefault("int_ior", 1.5046f);    //内部折射率
-    Float extIor = cfg.ReadOrDefault("ext_ior", 1.000277f);  //外部折射率
+    Float intIor = cfg.ReadOrDefault("int_ior", Float(1.5046));    //内部折射率
+    Float extIor = cfg.ReadOrDefault("ext_ior", Float(1.000277));  //外部折射率
     _eta = intIor / extIor;
     _invEta = extIor / intIor;
     std::string distribution = cfg.ReadOrDefault("distribution", std::string("ggx"));
@@ -136,7 +136,7 @@ class RoughGlass final : public Bsdf {
     Spectrum result(0);
     if (hasReflection && reflect) {
       Float brdf = std::abs(F * D * G / (cosThetaI * 4));
-      Spectrum r(_reflectance->Eval(si));
+      Spectrum r = Color24fToSpectrum(_reflectance->Eval(si));
       result = Spectrum(r * brdf);
     }
     if (hasTransmission && !reflect) {
@@ -145,7 +145,7 @@ class RoughGlass final : public Bsdf {
       Float odm = wo.dot(m);
       Float btdf = std::abs((scale * (1 - F) * D * G * eta * eta * idm * odm) /
                             (cosThetaI * Sqr(idm + eta * odm)));
-      Spectrum t(_transmittance->Eval(si));
+      Spectrum t = Color24fToSpectrum(_transmittance->Eval(si));
       result = Spectrum(t * btdf);
     }
     return result;

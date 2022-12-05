@@ -135,8 +135,8 @@ class RoughPlastic final : public Bsdf {
     if (cosThetaI <= 0 || cosThetaO <= 0) {
       return Spectrum(0);
     }
-    Spectrum spec(_specular->Eval(si));
-    Spectrum diff(_diffuse->Eval(si));
+    Spectrum spec = Color24fToSpectrum(_specular->Eval(si));
+    Spectrum diff = Color24fToSpectrum(_diffuse->Eval(si));
     Spectrum specular(0);
     Vector3 wh = (wo + si.Wi).normalized();
     Float F = std::get<0>(Fresnel::Dielectric(si.Wi.dot(wh), _eta));

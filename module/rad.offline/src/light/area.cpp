@@ -44,7 +44,7 @@ class DiffuseArea final : public Light {
 
   Spectrum Eval(const SurfaceInteraction& si) const override {
     Color24f radiance = si.ToWorld(si.Wi).dot(si.N) >= 0 ? _radiance->Eval(si) : Color24f(0);
-    return Spectrum(radiance);
+    return Color24fToSpectrum(radiance);
   }
 
   std::pair<DirectionSampleResult, Spectrum> SampleDirection(
@@ -71,7 +71,7 @@ class DiffuseArea final : public Light {
                      ? _radiance->Eval(surface)
                      : Color24f(0);
     }
-    return std::make_pair(dsr, Spectrum(radiance));
+    return std::make_pair(dsr, Color24fToSpectrum(radiance));
   }
 
   Float PdfDirection(const Interaction& ref, const DirectionSampleResult& dsr) const override {

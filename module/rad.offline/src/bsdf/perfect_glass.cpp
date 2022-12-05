@@ -20,8 +20,8 @@ class PerfectGlass final : public Bsdf {
     _flags = BsdfType::Delta | BsdfType::Reflection | BsdfType::Transmission;
     _reflectance = ConfigNodeReadTexture(ctx, cfg, "reflectance", Color24f(1));
     _transmittance = ConfigNodeReadTexture(ctx, cfg, "transmittance", Color24f(1));
-    Float intIor = cfg.ReadOrDefault("int_ior", 1.5046f);    //内部折射率
-    Float extIor = cfg.ReadOrDefault("ext_ior", 1.000277f);  //外部折射率
+    Float intIor = cfg.ReadOrDefault("int_ior", Float(1.5046));    //内部折射率
+    Float extIor = cfg.ReadOrDefault("ext_ior", Float(1.000277));  //外部折射率
     _eta = intIor / extIor;
   }
   ~PerfectGlass() noexcept override = default;
@@ -49,7 +49,7 @@ class PerfectGlass final : public Bsdf {
       bsr.Eta = 1;
       bsr.Pdf = ri;
       bsr.TypeMask = BsdfType::Delta | BsdfType::Reflection;
-      Spectrum r(_reflectance->Eval(si));
+      Spectrum r = Color24fToSpectrum(_reflectance->Eval(si));
       f = Spectrum(r * ri);
     } else {
       if (!hasTransmission) {
@@ -59,7 +59,7 @@ class PerfectGlass final : public Bsdf {
       bsr.Eta = etaIT;
       bsr.Pdf = ti;
       bsr.TypeMask = BsdfType::Delta | BsdfType::Transmission;
-      Spectrum t(_transmittance->Eval(si));
+      Spectrum t = Color24fToSpectrum(_transmittance->Eval(si));
       f = Spectrum(t * ti);
       Float factor = (context.Mode == TransportMode::Radiance) ? etaTI : Float(1);
       f *= Math::Sqr(factor);

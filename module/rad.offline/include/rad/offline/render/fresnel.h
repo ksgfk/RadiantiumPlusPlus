@@ -62,7 +62,7 @@ class RAD_EXPORT_API Fresnel {
   /**
    * @brief 导体菲涅尔
    */
-  static Vector3 Conductor(Float cosThetaI, const Vector3& eta, const Vector3& k);
+  static Spectrum Conductor(Float cosThetaI, const Spectrum& eta, const Spectrum& k);
   /**
    * @brief 计算电介质在表面的漫反射比例
    */

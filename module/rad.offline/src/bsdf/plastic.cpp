@@ -71,7 +71,7 @@ class Plastic final : public Bsdf {
       bsr.Wo = Fresnel::Reflect(si.Wi);
       bsr.Pdf = probSpec;
       bsr.TypeMask = BsdfType::Reflection | BsdfType::Delta;
-      Spectrum spec(_specular->Eval(si));
+      Spectrum spec = Color24fToSpectrum(_specular->Eval(si));
       f = Spectrum(spec * fi);
     } else {
       bsr.Wo = Warp::SquareToCosineHemisphere(dirXi);
@@ -79,7 +79,7 @@ class Plastic final : public Bsdf {
       bsr.TypeMask = BsdfType::Reflection | BsdfType::Diffuse;
       Float cosThetaO = Frame::CosTheta(bsr.Wo);
       Float fo = std::get<0>(Fresnel::Dielectric(cosThetaO, Float(_eta)));
-      Spectrum diff(_diffuse->Eval(si));
+      Spectrum diff = Color24fToSpectrum(_diffuse->Eval(si));
       auto num = diff * (1 / Math::PI) * _invEta2 * (1 - fi) * (1 - fo) * cosThetaO;
       if (_noLinear) {
         f = Spectrum(num.cwiseProduct((Spectrum::Constant(1) - (diff * _fdrInt)).cwiseInverse()));
@@ -104,7 +104,7 @@ class Plastic final : public Bsdf {
     }
     Float fi = std::get<0>(Fresnel::Dielectric(cosThetaI, _eta));
     Float fo = std::get<0>(Fresnel::Dielectric(cosThetaO, Float(_eta)));
-    Spectrum diff(_diffuse->Eval(si));
+    Spectrum diff = Color24fToSpectrum(_diffuse->Eval(si));
     auto num = diff * (1 / Math::PI) * _invEta2 * (1 - fi) * (1 - fo) * cosThetaO;
     Spectrum f;
     if (_noLinear) {

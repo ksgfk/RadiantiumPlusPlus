@@ -20,8 +20,8 @@ class Projection final : public Light {
     _flag = (UInt32)LightType::DeltaPosition;
     _toWorld = Transform(toWorld);
     _irradiance = ConfigNodeReadTexture(ctx, cfg, "irradiance", Color24f(1));
-    Vector3 irScale = cfg.ReadOrDefault("scale", Vector3(1, 1, 1));
-    _scale = Spectrum(irScale);
+    Color24f irScale = cfg.ReadOrDefault("scale", Color24f(1, 1, 1));
+    _scale = Color24fToSpectrum(irScale);
     Float fov = cfg.ReadOrDefault("fov", Float(90));
     Float aspect = _irradiance->Width() / (Float)_irradiance->Height();
     Float far = 10000;
@@ -70,7 +70,7 @@ class Projection final : public Light {
     Float squaredNorm = dsr.Dir.squaredNorm();
     dsr.Dist = std::sqrt(squaredNorm);
     dsr.Dir *= Math::Rcp(dsr.Dist);
-    Spectrum irradiance(_irradiance->Eval(SurfaceInteraction(dsr)));
+    Spectrum irradiance = Color24fToSpectrum(_irradiance->Eval(SurfaceInteraction(dsr)));
     Spectrum result = Spectrum(irradiance.cwiseProduct(_scale) * Math::PI / (Math::Sqr(local.z()) * (-dsr.Dir).dot(dsr.N)));
     return std::make_pair(dsr, result);
   }
@@ -100,7 +100,7 @@ class Projection final : public Light {
     Ray ray{_toWorld.TranslationToWorld(), _toWorld.ApplyLinearToWorld(nearDir), 0, std::numeric_limits<Float>::max()};
     SurfaceInteraction si{};
     si.UV = uv;
-    auto li = _irradiance->Eval(si) * Math::PI * _cameraArea;
+    auto li = Color24fToSpectrum(_irradiance->Eval(si)) * Math::PI * _cameraArea;
     return std::make_pair(ray, Spectrum(li));
   }
 
@@ -114,7 +114,7 @@ class Projection final : public Light {
     Ray ray{_toWorld.TranslationToWorld(), _toWorld.ApplyLinearToWorld(nearDir), 0, std::numeric_limits<Float>::max()};
     SurfaceInteraction si{};
     si.UV = uv;
-    auto le = _irradiance->Eval(si);
+    auto le = Color24fToSpectrum(_irradiance->Eval(si));
     Float pdfDir = 1 / (_cameraArea * Math::PI);
     return std::make_tuple(ray, Spectrum(le), psr, pdfPos, pdfDir);
   }

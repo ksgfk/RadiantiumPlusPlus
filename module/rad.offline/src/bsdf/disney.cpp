@@ -251,7 +251,7 @@ class Disney final : public Bsdf {
     Float metallic = _hasMetallic ? _metallic->Eval(si) : Float(0);
     Float clearcoat = _hasClearcoat ? _clearcoat->Eval(si) : Float(0);
     Float sheen = _hasSheen ? _sheen->Eval(si) : Float(0);
-    Spectrum baseColor(_baseColor->Eval(si));
+    Spectrum baseColor = Color24fToSpectrum(_baseColor->Eval(si));
     // BRDF与BSDF主要lobe的权重
     Float brdf = (Float(1) - metallic) * (Float(1) - specTrans);
     Float bsdf = (Float(1) - metallic) * specTrans;

@@ -59,7 +59,7 @@ class Skybox final : public Light {
     SurfaceInteraction tsi = si;
     tsi.UV = uv;
     Color24f color = _map->Eval(tsi);
-    return Spectrum(color);
+    return Color24fToSpectrum(color);
   }
 
   std::pair<DirectionSampleResult, Spectrum> SampleDirection(
@@ -103,7 +103,7 @@ class Skybox final : public Light {
       evalRadiance.UV = uv;
       radiance = _map->Eval(evalRadiance);
     }
-    return std::make_pair(dsr, Spectrum(radiance));
+    return std::make_pair(dsr, Color24fToSpectrum(radiance));
   }
 
   Float PdfDirection(const Interaction& ref, const DirectionSampleResult& dsr) const override {
@@ -163,7 +163,7 @@ class Skybox final : public Light {
     Ray ray{origin, worldD, 0, std::numeric_limits<Float>::max()};
     SurfaceInteraction q{};
     q.UV = uv;
-    auto li = _map->Eval(q) * PI * Sqr(_worldSphere.Radius) / pdfDir;
+    auto li = Color24fToSpectrum(_map->Eval(q)) * PI * Sqr(_worldSphere.Radius) / pdfDir;
     return std::make_pair(ray, Spectrum(li));
   }
 
@@ -192,7 +192,7 @@ class Skybox final : public Light {
     Ray ray{origin, worldD, 0, std::numeric_limits<Float>::max()};
     SurfaceInteraction q{};
     q.UV = uv;
-    Spectrum li(_map->Eval(q));
+    Spectrum li = Color24fToSpectrum(_map->Eval(q));
     Float pdfPos = 1 / (PI * Sqr(_worldSphere.Radius));
     PositionSampleResult psr{};
     psr.P = ray.O;

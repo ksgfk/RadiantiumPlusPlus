@@ -59,7 +59,7 @@ class Diffuse final : public Bsdf {
     bsr.Pdf = Warp::SquareToCosineHemispherePdf(bsr.Wo);
     bsr.Eta = Float(1);
     bsr.TypeMask = _flags;
-    Spectrum reflectance = Spectrum(_reflectance->Eval(si));
+    Spectrum reflectance = Color24fToSpectrum(_reflectance->Eval(si));
     Float cosThetaO = Frame::CosTheta(bsr.Wo);
     auto f = reflectance * (1 / Math::PI) * cosThetaO;
     return std::make_pair(bsr, Spectrum(f));
@@ -77,7 +77,7 @@ class Diffuse final : public Bsdf {
     if (cosThetaI <= 0 || cosThetaO <= 0) {
       return Spectrum(0);
     }
-    Spectrum reflectance = Spectrum(_reflectance->Eval(si));
+    Spectrum reflectance = Color24fToSpectrum(_reflectance->Eval(si));
     auto f = reflectance * (1 / Math::PI) * cosThetaO;
     return Spectrum(f);
   }

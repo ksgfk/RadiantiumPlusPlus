@@ -100,6 +100,16 @@ class RAD_EXPORT_API ConfigNode {
       return JsonToMatrix<Matrix3f>(*_data);
     } else if constexpr (std::is_same_v<T, Matrix4f>) {
       return JsonToMatrix<Matrix4f>(*_data);
+    } else if constexpr (std::is_same_v<T, Vector2d>) {
+      return JsonToVector<Vector2d>(*_data);
+    } else if constexpr (std::is_same_v<T, Vector3d>) {
+      return JsonToVector<Vector3d>(*_data);
+    } else if constexpr (std::is_same_v<T, Vector4d>) {
+      return JsonToVector<Vector4d>(*_data);
+    } else if constexpr (std::is_same_v<T, Matrix3d>) {
+      return JsonToMatrix<Matrix3d>(*_data);
+    } else if constexpr (std::is_same_v<T, Matrix4d>) {
+      return JsonToMatrix<Matrix4d>(*_data);
     } else if constexpr (std::is_same_v<T, ConfigNode>) {
       if (!_data->is_object() && !_data->is_array()) throw RadArgumentException("node type is not {}", "object or array");
       return *this;

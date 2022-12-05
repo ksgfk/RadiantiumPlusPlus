@@ -36,6 +36,14 @@ using Matrix4f = Eigen::Matrix4<Float32>;
 using BoundingBox2f = Eigen::AlignedBox<Float32, 2>;
 using BoundingBox3f = Eigen::AlignedBox<Float32, 3>;
 
+using Vector2d = Eigen::Vector2<Float64>;
+using Vector3d = Eigen::Vector3<Float64>;
+using Vector4d = Eigen::Vector4<Float64>;
+using Matrix3d = Eigen::Matrix3<Float64>;
+using Matrix4d = Eigen::Matrix4<Float64>;
+using BoundingBox2d = Eigen::AlignedBox<Float64, 2>;
+using BoundingBox3d = Eigen::AlignedBox<Float64, 3>;
+
 using Vector2i = Eigen::Vector2<Int32>;
 using Vector3i = Eigen::Vector3<Int32>;
 using Vector4i = Eigen::Vector4<Int32>;
@@ -150,6 +158,46 @@ struct spdlog::fmt_lib::formatter<Rad::Matrix3f> : spdlog::fmt_lib::ostream_form
 template <>
 struct spdlog::fmt_lib::formatter<Rad::Matrix4f> : spdlog::fmt_lib::ostream_formatter {};
 
+template <>
+struct spdlog::fmt_lib::formatter<Rad::Vector2d> {
+  template <typename FormatContext>
+  auto format(const Rad::Vector2d& v, FormatContext& ctx) const -> decltype(ctx.out()) {
+    return spdlog::fmt_lib::format_to(ctx.out(), "<{}, {}>", v[0], v[1]);
+  }
+  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+};
+template <>
+struct spdlog::fmt_lib::formatter<Rad::Vector3d> {
+  template <typename FormatContext>
+  auto format(const Rad::Vector3d& v, FormatContext& ctx) const -> decltype(ctx.out()) {
+    return spdlog::fmt_lib::format_to(ctx.out(), "<{}, {}, {}>", v[0], v[1], v[2]);
+  }
+  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+};
+template <>
+struct spdlog::fmt_lib::formatter<Rad::Vector4d> {
+  template <typename FormatContext>
+  auto format(const Rad::Vector4d& v, FormatContext& ctx) const -> decltype(ctx.out()) {
+    return spdlog::fmt_lib::format_to(ctx.out(), "<{}, {}, {}, {}>", v[0], v[1], v[2], v[3]);
+  }
+  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+};
+template <>
+struct spdlog::fmt_lib::formatter<Rad::Matrix3d> : spdlog::fmt_lib::ostream_formatter {};
+template <>
+struct spdlog::fmt_lib::formatter<Rad::Matrix4d> : spdlog::fmt_lib::ostream_formatter {};
 
 template <>
 struct spdlog::fmt_lib::formatter<Rad::Vector2i> {

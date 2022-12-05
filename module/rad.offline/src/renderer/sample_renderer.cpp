@@ -36,7 +36,7 @@ void Renderer::SaveResult(const LocationResolver& resolver) const {
   MatrixX<Color24f> tmp(fb.rows(), fb.cols());
   for (UInt32 y = 0; y < tmp.cols(); y++) {
     for (UInt32 x = 0; x < tmp.rows(); x++) {
-      tmp.coeffRef(x, y) = Color24f(fb.coeff(x, y));
+      tmp.coeffRef(x, y) = fb.coeff(x, y).cast<Float32>();
     }
   }
   auto stream = resolver.WriteStream(resolver.GetSaveName("exr"), std::ios::binary | std::ios::out);
