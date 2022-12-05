@@ -24,6 +24,8 @@ RadiantiumPlusPlus是一个非常简单的光线追踪渲染器, 只是基于兴
 * glad (可选)
 * imgui 1.89.1 (可选)
 
+glad已经包含在ext/glad里了，不需要额外安装
+
 ## Gallery
 
 ![](gallery/path_many_ball.png)
