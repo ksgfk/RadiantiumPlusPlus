@@ -15,12 +15,21 @@ int main(int argc, char** argv) {
     Rad::RadCreateWindowGlfw(opts);
     Rad::RadShowWindowGlfw();
     Rad::RadInitContextOpenGL();
+    Rad::ImguiInitOptions imOpts{};
+    imOpts.FontsPath = "fonts/SourceHanSerifCN-Medium.ttf";
+    imOpts.FontsSize = 21;
+    imOpts.DpiScale = 1.25f;
+    Rad::RadInitImguiOpenGL(imOpts);
     while (!Rad::RadShouldCloseWindowGlfw()) {
       Rad::RadPollEventGlfw();
       glClearColor(0.1f, 0.3f, 0.2f, 1);
       glClear(GL_COLOR_BUFFER_BIT);
+      Rad::RadImguiNewFrame();
+      ImGui::ShowDemoWindow();
+      Rad::RadImguiRender();
       Rad::RadSwapBuffersGlfw();
     }
+    Rad::RadShutdownImguiOpenGL();
     Rad::RadShutdownContextOpenGL();
     Rad::RadDestroyWindowGlfw();
   } catch (const std::exception& e) {

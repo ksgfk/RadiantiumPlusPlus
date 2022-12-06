@@ -53,6 +53,10 @@ bool RadIsWindowActiveGlfw() {
   return _window != nullptr;
 }
 
+void* RadWindowHandlerGlfw() {
+ return _window; 
+}
+
 void RadShowWindowGlfw() {
   glfwShowWindow(_window);
   glfwMakeContextCurrent(_window);

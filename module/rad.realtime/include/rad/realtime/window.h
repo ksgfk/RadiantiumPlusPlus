@@ -19,6 +19,7 @@ void RadShutdownGlfw();
 void RadCreateWindowGlfw(const GlfwWindowOptions& opts);
 void RadDestroyWindowGlfw();
 bool RadIsWindowActiveGlfw();
+void* RadWindowHandlerGlfw();
 void RadShowWindowGlfw();
 bool RadShouldCloseWindowGlfw();
 void RadPollEventGlfw();
