@@ -16,22 +16,17 @@ add_library(${RAD_IMGUI_LIB_NAME} STATIC
     ${RAD_EXT_LIB_PATH}/imgui/imgui_widgets.cpp
     ${RAD_EXT_LIB_PATH}/imgui/imgui.cpp
     ${RAD_EXT_LIB_PATH}/imgui/backends/imgui_impl_opengl3.cpp # 我们使用ogl+glfw作为绘制后端
-    ${RAD_EXT_LIB_PATH}/imgui/backends/imgui_impl_glfw.cpp
-    # 从这里开始是ImGuizmo，方便起见就放一起了...
-    ${RAD_EXT_LIB_PATH}/ImGuizmo/GraphEditor.cpp
-    ${RAD_EXT_LIB_PATH}/ImGuizmo/ImCurveEdit.cpp
-    ${RAD_EXT_LIB_PATH}/ImGuizmo/ImGradient.cpp
-    ${RAD_EXT_LIB_PATH}/ImGuizmo/ImGuizmo.cpp
-    ${RAD_EXT_LIB_PATH}/ImGuizmo/ImSequencer.cpp)
+    ${RAD_EXT_LIB_PATH}/imgui/backends/imgui_impl_glfw.cpp)
 target_include_directories(${RAD_IMGUI_LIB_NAME} PUBLIC
-    ${RAD_EXT_LIB_PATH}/imgui
-    ${RAD_EXT_LIB_PATH}/ImGuizmo)
+    ${RAD_EXT_LIB_PATH}/imgui)
 target_link_libraries(${RAD_IMGUI_LIB_NAME} PRIVATE glfw)
 
 # 然后再搞编辑器...
 add_executable(${RAD_OFFLINE_EDITOR_MODULE_NAME} 
-    main.cpp)
-target_link_libraries(${RAD_OFFLINE_EDITOR_MODULE_NAME} 
+    src/main.cpp)
+target_include_directories(${RAD_OFFLINE_EDITOR_MODULE_NAME} PUBLIC
+    "include")
+target_link_libraries(${RAD_OFFLINE_EDITOR_MODULE_NAME}
     ${RAD_REALTIME_MODULE_NAME}
     ${RAD_IMGUI_LIB_NAME})
 set_target_properties(${RAD_OFFLINE_EDITOR_MODULE_NAME} PROPERTIES

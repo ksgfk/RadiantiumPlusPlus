@@ -6,7 +6,6 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
-#include <ImGuizmo.h>
 
 int main(int argc, char** argv) {
   Rad::RadCoreInit();
@@ -31,13 +30,6 @@ int main(int argc, char** argv) {
     ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)Rad::RadWindowHandlerGlfw(), false);
     ImGui_ImplOpenGL3_Init("#version 450 core");
 
-    bool isPerspective = true;
-    float fov = 27.f;
-    float viewWidth = 10.f;  // for orthographic
-    float camYAngle = 165.f / 180.f * 3.14159f;
-    float camXAngle = 32.f / 180.f * 3.14159f;
-    float cameraProjection[16];
-
     while (!Rad::RadShouldCloseWindowGlfw()) {
       Rad::RadPollEventGlfw();
       glClearColor(0.1f, 0.3f, 0.2f, 1);
@@ -48,8 +40,6 @@ int main(int argc, char** argv) {
       ImGui::NewFrame();
 
       ImGui::ShowDemoWindow();
-
-      // ImGuizmo::BeginFrame();
 
       ImGui::Render();
       Rad::Vector2i size = Rad::RadGetFrameBufferSizeGlfw();
