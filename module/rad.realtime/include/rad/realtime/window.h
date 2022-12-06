@@ -1,6 +1,6 @@
 #pragma once
 
-#include <rad/core/types.h>
+#include "fwd.h"
 
 #include <string>
 
@@ -19,10 +19,11 @@ void RadShutdownGlfw();
 void RadCreateWindowGlfw(const GlfwWindowOptions& opts);
 void RadDestroyWindowGlfw();
 bool RadIsWindowActiveGlfw();
-void* RadWindowHandlerGlfw();
+GLFWwindow* RadWindowHandlerGlfw();
 void RadShowWindowGlfw();
 bool RadShouldCloseWindowGlfw();
 void RadPollEventGlfw();
 void RadSwapBuffersGlfw();
+Vector2i RadGetFrameBufferSizeGlfw();
 
 }  // namespace Rad

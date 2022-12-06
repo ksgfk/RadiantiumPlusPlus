@@ -53,8 +53,8 @@ bool RadIsWindowActiveGlfw() {
   return _window != nullptr;
 }
 
-void* RadWindowHandlerGlfw() {
- return _window; 
+GLFWwindow* RadWindowHandlerGlfw() {
+  return _window;
 }
 
 void RadShowWindowGlfw() {
@@ -72,6 +72,12 @@ void RadPollEventGlfw() {
 
 void RadSwapBuffersGlfw() {
   glfwSwapBuffers(_window);
+}
+
+Vector2i RadGetFrameBufferSizeGlfw() {
+  int width, height;
+  glfwGetFramebufferSize(_window, &width, &height);
+  return Vector2i(width, height);
 }
 
 }  // namespace Rad
