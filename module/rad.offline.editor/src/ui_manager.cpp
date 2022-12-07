@@ -5,6 +5,7 @@
 
 #include <rad/core/logger.h>
 #include <rad/realtime/window.h>
+#include <rad/offline/editor/editor_application.h>
 
 #include <algorithm>
 #include <filesystem>
@@ -112,11 +113,7 @@ void MainMenu::OnGui() {
         Unique<FileBrowser> v = std::make_unique<FileBrowser>(
             "打开",
             std::filesystem::current_path(),
-            [](auto&& i) {
-              for (auto&& j : i) {
-                Logger::Get()->info("{}", j.u8string());
-              }
-            });
+            [=](auto&& i) { _editor->OpenWorkspace(i[0]); });
         _ui->AddGui(std::move(v));
       }
       ImGui::EndMenu();
@@ -335,6 +332,7 @@ void MessageBox::OnGui() {
 }
 
 UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
+  _logger = Logger::GetCategory("UI");
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();

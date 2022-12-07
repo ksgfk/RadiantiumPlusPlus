@@ -49,6 +49,7 @@ class UIManager {
   void AddGui(Unique<GuiItem>);
 
  private:
+  Share<spdlog::logger> _logger;
   EditorApplication* _editor;
   std::vector<Unique<GuiItem>> _itemList;
   std::vector<Unique<GuiItem>> _drawList;
