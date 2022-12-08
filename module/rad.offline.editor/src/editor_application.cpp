@@ -63,20 +63,34 @@ Matrix4f ConfigNodeAsTransformf(ConfigNode node) {
 }
 
 void SceneNode::AfterAddChild(std::list<SceneNode>::iterator& childIter) {
-  _isDirty = true;
   auto&& child = *childIter;
-  child._isDirty = true;
   child._parent = this;
   child._inParentPos = childIter;
+  _editor->MarkSceneDirty();
+}
+
+SceneNode::SceneNode(EditorApplication* editor) {
+  _editor = editor;
+  _uniqueId = _editor->RequestUniqueId();
+  _toWorld = Matrix4f::Identity();
+  _toLocal = Matrix4f::Identity();
+  _localToWorld = Matrix4f::Identity();
+  _parent = nullptr;
 }
 
 SceneNode& SceneNode::AddChildBefore(const SceneNode& pos, SceneNode&& node) {
+  if (node._parent != nullptr) {
+    node._parent->RemoveChild(node);
+  }
   auto childIter = _children.emplace(pos._inParentPos, std::move(node));
   AfterAddChild(childIter);
   return *childIter;
 }
 
 SceneNode& SceneNode::AddChildAfter(const SceneNode& pos, SceneNode&& node) {
+  if (node._parent != nullptr) {
+    node._parent->RemoveChild(node);
+  }
   auto iter = pos._inParentPos;
   auto childIter = _children.emplace(iter++, std::move(node));
   AfterAddChild(childIter);
@@ -84,6 +98,9 @@ SceneNode& SceneNode::AddChildAfter(const SceneNode& pos, SceneNode&& node) {
 }
 
 SceneNode& SceneNode::AddChildLast(SceneNode&& node) {
+  if (node._parent != nullptr) {
+    node._parent->RemoveChild(node);
+  }
   auto childIter = _children.emplace(_children.end(), std::move(node));
   AfterAddChild(childIter);
   return *childIter;
@@ -91,8 +108,7 @@ SceneNode& SceneNode::AddChildLast(SceneNode&& node) {
 
 void SceneNode::RemoveChild(SceneNode& child) {
   if (child._parent != this) {
-    Logger::Get()->error("parent and child not same!");
-    return;
+    throw RadArgumentException("parent and child not same!");
   }
   _children.erase(child._inParentPos);
   child._parent = nullptr;
@@ -101,7 +117,7 @@ void SceneNode::RemoveChild(SceneNode& child) {
 
 void SceneNode::SetToWorldMatrix(const Matrix4f& toWorld) {
   _localToWorld = toWorld;
-  _isDirty = true;
+  _editor->MarkSceneDirty();
 }
 
 EditorApplication::EditorApplication(int argc, char** argv) {
@@ -134,6 +150,7 @@ EditorApplication::~EditorApplication() noexcept {
 void EditorApplication::Run() {
   while (!Rad::RadShouldCloseWindowGlfw()) {
     Rad::RadPollEventGlfw();
+    OnUpdate();
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     _ui->NewFrame();
@@ -166,7 +183,7 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
   if (IsWorkspaceActive()) {
     // TODO: 提示保存当前场景，清理现场
     _isWorkspaceActive = false;
-    _root = SceneNode{};
+    _root = SceneNode{this};
   }
   ConfigNode root(&cfg);
   // 拿到配置文件了，首先加载资产
@@ -183,8 +200,9 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
   //   }
   // }
   // 然后构造场景的树状结构
-  auto createNewNode = [](ConfigNode i) {
-    SceneNode newNode{};
+  auto that = this;
+  auto createNewNode = [=](ConfigNode i) {
+    SceneNode newNode{that};
     newNode.Name = "SceneObject";
     newNode.Name = i.ReadOrDefault("name", newNode.Name);
     Matrix4f toWorld = Matrix4f::Identity();
@@ -197,8 +215,8 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
   };
   {
     std::vector<ConfigNode> sceneNode;
-    std::queue<std::pair<SceneNode*, ConfigNode>> q;
     std::vector<ConfigNode> childrenNodes;
+    std::queue<std::pair<SceneNode*, ConfigNode>> q;
     if (root.TryRead("scene", sceneNode)) {
       for (auto i : sceneNode) {
         childrenNodes.clear();
@@ -224,11 +242,22 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
       }
     }
   }
+  _sceneName = filePath.filename().replace_extension().u8string();
+  _root.Name = _sceneName;
+  _isWorkspaceActive = true;
   _logger->info("done");
 }
 
 bool EditorApplication::IsWorkspaceActive() const {
   return _isWorkspaceActive;
+}
+
+void EditorApplication::OnUpdate() {
+}
+
+size_t EditorApplication::RequestUniqueId() {
+  _nowId++;
+  return _nowId;
 }
 
 }  // namespace Rad

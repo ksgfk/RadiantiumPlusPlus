@@ -9,12 +9,14 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <stack>
 
 namespace Rad {
 
 class MainMenu;
 class FileBrowser;
 class MessageBox;
+class HierarchyPanel;
 
 class MainMenu final : public GuiItem {
  public:
@@ -25,6 +27,11 @@ class MainMenu final : public GuiItem {
   ~MainMenu() noexcept override = default;
 
   void OnGui() override;
+
+  void AttachHierarchyPanel(HierarchyPanel* panel) { _hiePanel = panel; }
+
+ public:
+  HierarchyPanel* _hiePanel;
 };
 
 class FileBrowser final : public GuiItem {
@@ -34,19 +41,22 @@ class FileBrowser final : public GuiItem {
       const std::filesystem::path& current,
       std::function<void(const std::vector<std::filesystem::path>&)>&& on = nullptr,
       bool selectFile = true,
-      bool selectOneFile = true)
+      bool selectOneFile = true,
+      const std::string& filterExt = "*")
       : GuiItem(),
         _title(title), _currentPath(current),
         _onSelect(std::move(on)),
-        _isSelectFile(selectFile), _isSelectOneFile(selectOneFile) {
+        _isSelectFile(selectFile), _isSelectOneFile(selectOneFile),
+        _filterExt(filterExt) {
     _priority = 999;
     _isAlive = true;
-    RefreshDir();
   }
   ~FileBrowser() noexcept override = default;
 
   void OnStart() override;
   void OnGui() override;
+
+  void SetFilterExt(const std::string& ext) { _filterExt = ext; }
 
  public:
   Int32 Width{800}, Height{600};
@@ -74,6 +84,7 @@ class FileBrowser final : public GuiItem {
   std::function<void(const std::vector<std::filesystem::path>&)> _onSelect;
   bool _isSelectFile;
   bool _isSelectOneFile;
+  std::string _filterExt;
 
   std::string _inputPathBuf;
 
@@ -106,6 +117,26 @@ class MessageBox final : public GuiItem {
   std::function<void(void)> _onCancel;
 };
 
+class HierarchyPanel final : public GuiItem {
+ public:
+  HierarchyPanel();
+  ~HierarchyPanel() noexcept override = default;
+
+  void OnStart() override;
+  void OnGui() override;
+
+  bool IsShow() const { return _isShow; }
+  void SetShowState(bool isShow) { _isShow = isShow; }
+
+ private:
+  void RecursiveBuildTree(const SceneNode* node);
+
+  using NodeView = std::pair<const SceneNode*, Int32>;
+
+  bool _isShow;
+  std::stack<NodeView> _stack;
+};
+
 void MainMenu::OnGui() {
   if (ImGui::BeginMainMenuBar()) {
     if (ImGui::BeginMenu("文件")) {
@@ -114,8 +145,15 @@ void MainMenu::OnGui() {
             "打开",
             std::filesystem::current_path(),
             [=](auto&& i) { _editor->OpenWorkspace(i[0]); });
+        v->SetFilterExt(".json");
         _ui->AddGui(std::move(v));
       }
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("窗口")) {
+      bool isShow = _hiePanel->IsShow();
+      ImGui::MenuItem("层级面板", "", &isShow);
+      _hiePanel->SetShowState(isShow);
       ImGui::EndMenu();
     }
     ImGui::EndMainMenuBar();
@@ -123,6 +161,8 @@ void MainMenu::OnGui() {
 }
 
 void FileBrowser::OnStart() {
+  RefreshDir();
+
   ImGui::OpenPopup(_title.c_str());
 
   ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -289,7 +329,13 @@ void FileBrowser::RefreshDir() {
       _cacheDirEntries.emplace_back(DirectoryEntry{name});
     }
     if (p.is_regular_file()) {
-      _cacheFileEntries.emplace_back(FileEntry{name});
+      if (_filterExt == "*") {
+        _cacheFileEntries.emplace_back(FileEntry{name});
+      } else {
+        if (p.path().extension().u8string() == _filterExt) {
+          _cacheFileEntries.emplace_back(FileEntry{name});
+        }
+      }
     }
   }
   auto nameCmp = [](auto&& l, auto&& r) {
@@ -331,6 +377,77 @@ void MessageBox::OnGui() {
   }
 }
 
+HierarchyPanel::HierarchyPanel() {
+  _isAlive = true;
+  _priority = 0;
+}
+
+void HierarchyPanel::OnStart() {
+}
+
+void HierarchyPanel::RecursiveBuildTree(const SceneNode* node) {
+  ImGuiTreeNodeFlags nodeFlag = 0;
+  nodeFlag |= ImGuiTreeNodeFlags_OpenOnArrow;
+  nodeFlag |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
+  nodeFlag |= ImGuiTreeNodeFlags_SpanAvailWidth;
+  auto&& children = node->GetChildren();
+  if (children.empty()) {
+    nodeFlag |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+  }
+  bool isOpen = ImGui::TreeNodeEx((void*)node->GetUniqueId(), nodeFlag, "%s", node->Name.c_str());
+  if (isOpen) {
+    if (!children.empty()) {
+      for (auto it = children.begin(); it != children.end(); it++) {
+        RecursiveBuildTree(&(*it));
+      }
+      ImGui::TreePop();
+    }
+  }
+}
+
+void HierarchyPanel::OnGui() {
+  if (!_isShow) {
+    return;
+  }
+  ImGuiWindowFlags flags = 0;
+  if (ImGui::Begin("层级", &_isShow, flags)) {
+    if (_editor->IsWorkspaceActive()) {
+      _stack.emplace(std::make_pair(&_editor->GetRootNode(), 0));
+      Int32 lastDepth = 0;
+      while (!_stack.empty()) {
+        auto [node, depth] = _stack.top();
+        _stack.pop();
+        for (Int32 i = 0; i < lastDepth - depth; i++) {
+          ImGui::TreePop();
+        }
+        lastDepth = depth;
+        ImGuiTreeNodeFlags nodeFlag = 0;
+        nodeFlag |= ImGuiTreeNodeFlags_OpenOnArrow;
+        nodeFlag |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
+        nodeFlag |= ImGuiTreeNodeFlags_SpanAvailWidth;
+        auto&& children = node->GetChildren();
+        if (children.empty()) {
+          nodeFlag |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        }
+        bool isOpen = ImGui::TreeNodeEx((void*)node->GetUniqueId(), nodeFlag, "%s", node->Name.c_str());
+        if (isOpen) {
+          if (!children.empty()) {
+            for (auto it = children.rbegin(); it != children.rend(); it++) {
+              _stack.emplace(std::make_pair(&(*it), depth + 1));
+            }
+          }
+        }
+      }
+      for (Int32 i = 0; i < lastDepth; i++) {
+        ImGui::TreePop();
+      }
+    } else {
+      ImGui::Text("没有打开的工作区");
+    }
+    ImGui::End();
+  }
+}
+
 UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
   _logger = Logger::GetCategory("UI");
   IMGUI_CHECKVERSION();
@@ -352,7 +469,11 @@ UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
   AddCharEventGlfw(ImGui_ImplGlfw_CharCallback);
   AddMonitorEventGlfw(ImGui_ImplGlfw_MonitorCallback);
 
-  AddGui(std::make_unique<MainMenu>());
+  auto hiePanel = std::make_unique<HierarchyPanel>();
+  auto mainMenu = std::make_unique<MainMenu>();
+  mainMenu->_hiePanel = hiePanel.get();
+  AddGui(std::move(mainMenu));
+  AddGui(std::move(hiePanel));
 }
 
 UIManager::~UIManager() noexcept {

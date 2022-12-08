@@ -12,30 +12,29 @@
 
 namespace Rad {
 
+class EditorApplication;
+
 Matrix4f ConfigNodeAsTransformf(ConfigNode node);
 bool ConfigNodeTryReadRotatef(ConfigNode node, const std::string& name, Matrix3f& result);
 Matrix3f ConfigNodeAsRotatef(ConfigNode node);
 
 class SceneNode {
  public:
-  SceneNode() {
-    _isDirty = false;
-    _toWorld = Matrix4f::Identity();
-    _toLocal = Matrix4f::Identity();
-    _localToWorld = Matrix4f::Identity();
-    _parent = nullptr;
-  }
+  SceneNode(EditorApplication* editor);
 
   SceneNode& AddChildBefore(const SceneNode& pos, SceneNode&& node);
   SceneNode& AddChildAfter(const SceneNode& pos, SceneNode&& node);
   SceneNode& AddChildLast(SceneNode&& node);
   void RemoveChild(SceneNode& child);
   void SetToWorldMatrix(const Matrix4f& toWorld);
+  const std::list<SceneNode>& GetChildren() const { return _children; }
+  size_t GetUniqueId() const { return _uniqueId; }
 
  private:
   void AfterAddChild(std::list<SceneNode>::iterator&);
 
-  bool _isDirty;
+  size_t _uniqueId;
+  EditorApplication* _editor;
   Matrix4f _toWorld;
   Matrix4f _toLocal;
   Matrix4f _localToWorld;
@@ -57,15 +56,26 @@ class EditorApplication {
 
   void OpenWorkspace(const std::filesystem::path& filePath);
   bool IsWorkspaceActive() const;
+  std::string GetSceneName() const { return _sceneName; }
+  SceneNode& GetRootNode() { return _root; }
+  const SceneNode& GetRootNode() const { return _root; }
+  bool IsSceneDirty() const { return _isSceneDirty; }
+  void MarkSceneDirty() { _isSceneDirty = true; }
+  size_t RequestUniqueId();
 
  private:
+  void OnUpdate();
+
   Unique<UIManager> _ui;
   Share<spdlog::logger> _logger;
 
   bool _isWorkspaceActive{false};
+  std::string _sceneName;
   Unique<FactoryManager> _factory;
   Unique<AssetManager> _asset;
-  SceneNode _root{};
+  SceneNode _root{this};
+  bool _isSceneDirty{false};
+  size_t _nowId{0};
 };
 
 }  // namespace Rad
