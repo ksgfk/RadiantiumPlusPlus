@@ -70,6 +70,23 @@ inline float Fmadd(float a, float b, float c) { return std::fma(a, b, c); }
  * @brief a * b + c
  */
 inline double Fmadd(double a, double b, double c) { return std::fma(a, b, c); }
+/**
+ * @brief 二次根的倒数
+ */
+template <typename T>
+inline T Rsqrt(T v) { return Rcp(std::sqrt(v)); }
+/**
+ * @brief 计算传入值的sin与cos
+ */
+inline std::pair<float, float> SinCos(float v) {
+  return std::make_pair(std::sin(v), std::cos(v));
+}
+/**
+ * @brief 计算传入值的sin与cos
+ */
+inline std::pair<double, double> SinCos(double v) {
+  return std::make_pair(std::sin(v), std::cos(v));
+}
 template <typename Value, size_t N>
 constexpr Value RadHornerImpl___(const Value& x, const Value (&coeff)[N]) {
   Value accum = coeff[N - 1];

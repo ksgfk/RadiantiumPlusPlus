@@ -17,6 +17,10 @@ class EditorApplication;
 Matrix4f ConfigNodeAsTransformf(ConfigNode node);
 bool ConfigNodeTryReadRotatef(ConfigNode node, const std::string& name, Matrix3f& result);
 Matrix3f ConfigNodeAsRotatef(ConfigNode node);
+std::tuple<Matrix3f, Eigen::Quaternionf, Vector3f> DecomposeTransformf(const Matrix4f&);
+Vector3f MatToEulerAngleZXY(const Matrix3f& mat);
+Eigen::Quaternionf EulerAngleToQuatZXY(const Vector3f& eulerAngle);
+Matrix3f EulerAngleToMatZXY(const Vector3f& eulerAngle);
 
 class SceneNode {
  public:
@@ -28,7 +32,10 @@ class SceneNode {
   void RemoveChild(SceneNode& child);
   void SetToWorldMatrix(const Matrix4f& toWorld);
   const std::list<SceneNode>& GetChildren() const { return _children; }
+  std::list<SceneNode>& GetChildren() { return _children; }
   size_t GetUniqueId() const { return _uniqueId; }
+  bool IsSelect() const { return _isSelect; }
+  void SetSelect(bool isSelect) { _isSelect = isSelect; }
 
  private:
   void AfterAddChild(std::list<SceneNode>::iterator&);
@@ -37,10 +44,17 @@ class SceneNode {
   EditorApplication* _editor;
   Matrix4f _toWorld;
   Matrix4f _toLocal;
-  Matrix4f _localToWorld;
+
+ public:
+  Vector3f Position;
+  Vector3f Scale;
+  Eigen::Quaternionf Rotation;
+
+ private:
   SceneNode* _parent;
   std::list<SceneNode> _children;
   std::list<SceneNode>::iterator _inParentPos;
+  bool _isSelect;
 
  public:
   std::string Name;

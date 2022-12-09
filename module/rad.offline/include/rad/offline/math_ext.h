@@ -26,11 +26,6 @@ inline Vector3 Fmadd(const Vector3& a, const Vector3& b, const Vector3& c) {
       Fmadd(a.z(), b.z(), c.z()));
 }
 /**
- * @brief 二次根的倒数
- */
-template <typename T>
-inline T Rsqrt(T v) { return Rcp(std::sqrt(v)); }
-/**
  * @brief 安全的计算平方根, 如果输入负数返回0
  */
 inline Float SafeSqrt(Float v) { return std::sqrt(std::max(v, Float(0))); }
@@ -77,12 +72,6 @@ inline Matrix4 LookAtLeftHand(const Vector3& origin, const Vector3& target, cons
       left.z(), realUp.z(), dir.z(), origin.z(),
       0, 0, 0, 1;
   return result;
-}
-/**
- * @brief 计算传入值的sin与cos
- */
-inline std::pair<Float, Float> SinCos(Float v) {
-  return std::make_pair(std::sin(v), std::cos(v));
 }
 /**
  * @brief 解一元二次方程

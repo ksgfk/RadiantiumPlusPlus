@@ -3,6 +3,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
+#include <rad/core/math_base.h>
 #include <rad/core/logger.h>
 #include <rad/realtime/window.h>
 #include <rad/offline/editor/editor_application.h>
@@ -17,21 +18,26 @@ class MainMenu;
 class FileBrowser;
 class MessageBox;
 class HierarchyPanel;
+class SceneNodeInfoPanel;
 
 class MainMenu final : public GuiItem {
  public:
   MainMenu() {
     _priority = -9999;
     _isAlive = true;
+    _hiePanel = nullptr;
+    _nodeInfo = nullptr;
   }
   ~MainMenu() noexcept override = default;
 
   void OnGui() override;
 
   void AttachHierarchyPanel(HierarchyPanel* panel) { _hiePanel = panel; }
+  void AttachNodeInfoPanel(SceneNodeInfoPanel* panel) { _nodeInfo = panel; }
 
  public:
   HierarchyPanel* _hiePanel;
+  SceneNodeInfoPanel* _nodeInfo;
 };
 
 class FileBrowser final : public GuiItem {
@@ -127,14 +133,39 @@ class HierarchyPanel final : public GuiItem {
 
   bool IsShow() const { return _isShow; }
   void SetShowState(bool isShow) { _isShow = isShow; }
+  void AttachNodeInfoPanel(SceneNodeInfoPanel* panel) { _nodeInfo = panel; }
 
  private:
   void RecursiveBuildTree(const SceneNode* node);
 
-  using NodeView = std::pair<const SceneNode*, Int32>;
+  using NodeView = std::pair<SceneNode*, Int32>;
 
   bool _isShow;
+  SceneNodeInfoPanel* _nodeInfo;
   std::stack<NodeView> _stack;
+};
+
+class SceneNodeInfoPanel final : public GuiItem {
+ public:
+  SceneNodeInfoPanel() {
+    _isAlive = true;
+    _priority = -1;
+    _isShow = true;
+    _node = nullptr;
+  }
+  ~SceneNodeInfoPanel() noexcept override = default;
+
+  void OnStart() override;
+  void OnGui() override;
+
+  bool IsShow() const { return _isShow; }
+  void SetShowState(bool isShow) { _isShow = isShow; }
+
+  void AttachNode(SceneNode* node) { _node = node; }
+
+ private:
+  bool _isShow;
+  SceneNode* _node;
 };
 
 void MainMenu::OnGui() {
@@ -151,9 +182,16 @@ void MainMenu::OnGui() {
       ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("窗口")) {
-      bool isShow = _hiePanel->IsShow();
-      ImGui::MenuItem("层级面板", "", &isShow);
-      _hiePanel->SetShowState(isShow);
+      {
+        bool isShow = _hiePanel->IsShow();
+        ImGui::MenuItem("层级面板", "", &isShow);
+        _hiePanel->SetShowState(isShow);
+      }
+      {
+        bool isShow = _nodeInfo->IsShow();
+        ImGui::MenuItem("节点信息", "", &isShow);
+        _nodeInfo->SetShowState(isShow);
+      }
       ImGui::EndMenu();
     }
     ImGui::EndMainMenuBar();
@@ -380,6 +418,8 @@ void MessageBox::OnGui() {
 HierarchyPanel::HierarchyPanel() {
   _isAlive = true;
   _priority = 0;
+  _isShow = true;
+  _nodeInfo = nullptr;
 }
 
 void HierarchyPanel::OnStart() {
@@ -414,6 +454,7 @@ void HierarchyPanel::OnGui() {
     if (_editor->IsWorkspaceActive()) {
       _stack.emplace(std::make_pair(&_editor->GetRootNode(), 0));
       Int32 lastDepth = 0;
+      // 先序遍历
       while (!_stack.empty()) {
         auto [node, depth] = _stack.top();
         _stack.pop();
@@ -429,7 +470,14 @@ void HierarchyPanel::OnGui() {
         if (children.empty()) {
           nodeFlag |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
         }
+        if (node->IsSelect()) {
+          nodeFlag |= ImGuiTreeNodeFlags_Selected;
+        }
         bool isOpen = ImGui::TreeNodeEx((void*)node->GetUniqueId(), nodeFlag, "%s", node->Name.c_str());
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+          node->SetSelect(!node->IsSelect());
+          _nodeInfo->AttachNode(node);
+        }
         if (isOpen) {
           if (!children.empty()) {
             for (auto it = children.rbegin(); it != children.rend(); it++) {
@@ -443,6 +491,37 @@ void HierarchyPanel::OnGui() {
       }
     } else {
       ImGui::Text("没有打开的工作区");
+    }
+    ImGui::End();
+  }
+}
+
+void SceneNodeInfoPanel::OnStart() {
+}
+
+void SceneNodeInfoPanel::OnGui() {
+  if (!_isShow) {
+    return;
+  }
+  ImGuiWindowFlags flags = 0;
+  if (ImGui::Begin("节点信息", &_isShow, flags)) {
+    if (_node == nullptr) {
+      ImGui::Text("没有选中节点");
+    } else {
+      ImGuiSliderFlags flags = ImGuiSliderFlags_NoRoundToFormat;
+      ImGui::DragFloat3("坐标", (float*)(&_node->Position), 0.2f, 0, 0, "%.3f", flags);
+      ImGui::DragFloat3("缩放", (float*)(&_node->Scale), 0.2f, 0, 0, "%.3f", flags);
+      {
+        Eigen::Matrix3f rotMat = _node->Rotation.toRotationMatrix();
+        Vector3f radian = rotMat.eulerAngles(2, 0, 1);
+        Vector3f degree(Math::Degree(radian.x()), Math::Degree(radian.y()), Math::Degree(radian.z()));
+        ImGui::DragFloat3("旋转", (float*)(&degree), 1, 0, 0, "%.3f", flags);
+        Logger::Get()->info("{}", degree);
+        Eigen::AngleAxisf rollAngle(Math::Radian(degree.x()), Eigen::Vector3f::UnitZ());
+        Eigen::AngleAxisf yawAngle(Math::Radian(degree.y()), Eigen::Vector3f::UnitX());
+        Eigen::AngleAxisf pitchAngle(Math::Radian(degree.z()), Eigen::Vector3f::UnitY());
+        _node->Rotation = rollAngle * yawAngle * pitchAngle;
+      }
     }
     ImGui::End();
   }
@@ -471,9 +550,13 @@ UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
 
   auto hiePanel = std::make_unique<HierarchyPanel>();
   auto mainMenu = std::make_unique<MainMenu>();
-  mainMenu->_hiePanel = hiePanel.get();
+  auto nodeInfo = std::make_unique<SceneNodeInfoPanel>();
+  mainMenu->AttachHierarchyPanel(hiePanel.get());
+  mainMenu->AttachNodeInfoPanel(nodeInfo.get());
+  hiePanel->AttachNodeInfoPanel(nodeInfo.get());
   AddGui(std::move(mainMenu));
   AddGui(std::move(hiePanel));
+  AddGui(std::move(nodeInfo));
 }
 
 UIManager::~UIManager() noexcept {
