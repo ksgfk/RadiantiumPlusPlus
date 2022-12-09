@@ -33,6 +33,7 @@ class SceneNode {
   void SetToWorldMatrix(const Matrix4f& toWorld);
   const std::list<SceneNode>& GetChildren() const { return _children; }
   std::list<SceneNode>& GetChildren() { return _children; }
+  SceneNode* GetParent() const { return _parent; }
   size_t GetUniqueId() const { return _uniqueId; }
   bool IsSelect() const { return _isSelect; }
   void SetSelect(bool isSelect) { _isSelect = isSelect; }

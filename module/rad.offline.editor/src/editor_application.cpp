@@ -183,8 +183,6 @@ void SceneNode::RemoveChild(SceneNode& child) {
     throw RadArgumentException("parent and child not same!");
   }
   _children.erase(child._inParentPos);
-  child._parent = nullptr;
-  child._inParentPos = std::list<SceneNode>::iterator{};
 }
 
 void SceneNode::SetToWorldMatrix(const Matrix4f& toWorld) {
@@ -258,18 +256,18 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
   }
   ConfigNode root(&cfg);
   // 拿到配置文件了，首先加载资产
-  // _asset->SetWorkDirectory(filePath.parent_path());
-  // _asset->SetImageStorageIsBlockBased(false);
-  // std::vector<ConfigNode> assetNode;
-  // if (root.TryRead("assets", assetNode)) {
-  //   for (ConfigNode node : assetNode) {
-  //     AssetLoadResult result = _asset->Load(node);
-  //     if (!result.IsSuccess) {
-  //       _logger->error("cannot open workspace: {}", result.FailReason);
-  //       return;
-  //     }
-  //   }
-  // }
+  _asset->SetWorkDirectory(filePath.parent_path());
+  _asset->SetImageStorageIsBlockBased(false);
+  std::vector<ConfigNode> assetNode;
+  if (root.TryRead("assets", assetNode)) {
+    for (ConfigNode node : assetNode) {
+      AssetLoadResult result = _asset->Load(node);
+      if (!result.IsSuccess) {
+        _logger->error("cannot open workspace: {}", result.FailReason);
+        return;
+      }
+    }
+  }
   // 然后构造场景的树状结构
   auto that = this;
   auto createNewNode = [=](ConfigNode i) {

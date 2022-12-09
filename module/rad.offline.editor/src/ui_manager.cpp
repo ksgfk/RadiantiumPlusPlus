@@ -2,6 +2,7 @@
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <misc/cpp/imgui_stdlib.h>
 
 #include <rad/core/math_base.h>
 #include <rad/core/logger.h>
@@ -142,6 +143,7 @@ class HierarchyPanel final : public GuiItem {
 
   bool _isShow;
   SceneNodeInfoPanel* _nodeInfo;
+  // SceneNode* _nowSelect;
   std::stack<NodeView> _stack;
 };
 
@@ -161,6 +163,9 @@ class SceneNodeInfoPanel final : public GuiItem {
   bool IsShow() const { return _isShow; }
   void SetShowState(bool isShow) { _isShow = isShow; }
 
+  SceneNode* NowSelect() const { return _node; }
+  bool HasSelect() const { return _node != nullptr; }
+  void ClearSelect() { _node = nullptr; }
   void AttachNode(SceneNode* node) { _node = node; }
 
  private:
@@ -221,7 +226,7 @@ void FileBrowser::OnGui() {
     inputFlags |= ImGuiInputTextFlags_EnterReturnsTrue;
     bool completion = ImGui::InputText(
         "##file_browser_path",
-        _inputPathBuf.data(), _inputPathBuf.size(),
+        &_inputPathBuf,
         inputFlags);
     if (completion) {
       size_t pos = _inputPathBuf.find('\0');
@@ -229,7 +234,6 @@ void FileBrowser::OnGui() {
         _inputPathBuf.resize(pos);
       }
       _currentPath = std::filesystem::path(_inputPathBuf);
-      Logger::Get()->info("hummmmm {}", _inputPathBuf);
       RefreshDir();
     }
     if (ImGui::BeginListBox("##fb_fls", ImVec2(-FLT_MIN, 20 * ImGui::GetTextLineHeightWithSpacing()))) {
@@ -420,6 +424,7 @@ HierarchyPanel::HierarchyPanel() {
   _priority = 0;
   _isShow = true;
   _nodeInfo = nullptr;
+  // _nowSelect = nullptr;
 }
 
 void HierarchyPanel::OnStart() {
@@ -452,6 +457,26 @@ void HierarchyPanel::OnGui() {
   ImGuiWindowFlags flags = 0;
   if (ImGui::Begin("层级", &_isShow, flags)) {
     if (_editor->IsWorkspaceActive()) {
+      if (ImGui::Button("添加节点")) {
+        SceneNode* target;
+        if (_nodeInfo->HasSelect()) {
+          target = _nodeInfo->NowSelect();
+        } else {
+          target = &_editor->GetRootNode();
+        }
+        SceneNode newNode{_editor};
+        newNode.Name = "New Node";
+        SceneNode& added = target->AddChildLast(std::move(newNode));
+        _nodeInfo->AttachNode(&added);
+      }
+      ImGui::SameLine();
+      ImGui::BeginDisabled(!_nodeInfo->HasSelect());
+      if (ImGui::Button("删除节点")) {
+        SceneNode* node = _nodeInfo->NowSelect();
+        _nodeInfo->ClearSelect();
+        node->GetParent()->RemoveChild(*node);
+      }
+      ImGui::EndDisabled();
       _stack.emplace(std::make_pair(&_editor->GetRootNode(), 0));
       Int32 lastDepth = 0;
       // 先序遍历
@@ -470,13 +495,18 @@ void HierarchyPanel::OnGui() {
         if (children.empty()) {
           nodeFlag |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
         }
-        if (node->IsSelect()) {
+        if (node->GetParent() != nullptr && _nodeInfo->NowSelect() == node) {
           nodeFlag |= ImGuiTreeNodeFlags_Selected;
         }
         bool isOpen = ImGui::TreeNodeEx((void*)node->GetUniqueId(), nodeFlag, "%s", node->Name.c_str());
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-          node->SetSelect(!node->IsSelect());
-          _nodeInfo->AttachNode(node);
+          if (node->GetParent() != nullptr) {
+            if (_nodeInfo->NowSelect() == node) {
+              _nodeInfo->ClearSelect();
+            } else {
+              _nodeInfo->AttachNode(node);
+            }
+          }
         }
         if (isOpen) {
           if (!children.empty()) {
@@ -492,8 +522,8 @@ void HierarchyPanel::OnGui() {
     } else {
       ImGui::Text("没有打开的工作区");
     }
-    ImGui::End();
   }
+  ImGui::End();
 }
 
 void SceneNodeInfoPanel::OnStart() {
@@ -505,9 +535,14 @@ void SceneNodeInfoPanel::OnGui() {
   }
   ImGuiWindowFlags flags = 0;
   if (ImGui::Begin("节点信息", &_isShow, flags)) {
-    if (_node == nullptr) {
+    if (!HasSelect()) {
       ImGui::Text("没有选中节点");
     } else {
+      ImGuiInputTextFlags inputFlags = 0;
+      inputFlags |= ImGuiInputTextFlags_AutoSelectAll;
+      inputFlags |= ImGuiInputTextFlags_EnterReturnsTrue;
+      ImGui::InputText("名称", &_node->Name, inputFlags);
+      ImGui::Separator();
       ImGuiSliderFlags flags = ImGuiSliderFlags_NoRoundToFormat;
       ImGui::DragFloat3("坐标", (float*)(&_node->Position), 0.2f, 0, 0, "%.3f", flags);
       ImGui::DragFloat3("缩放", (float*)(&_node->Scale), 0.2f, 0, 0, "%.3f", flags);
@@ -516,15 +551,14 @@ void SceneNodeInfoPanel::OnGui() {
         Vector3f radian = rotMat.eulerAngles(2, 0, 1);
         Vector3f degree(Math::Degree(radian.x()), Math::Degree(radian.y()), Math::Degree(radian.z()));
         ImGui::DragFloat3("旋转", (float*)(&degree), 1, 0, 0, "%.3f", flags);
-        Logger::Get()->info("{}", degree);
         Eigen::AngleAxisf rollAngle(Math::Radian(degree.x()), Eigen::Vector3f::UnitZ());
         Eigen::AngleAxisf yawAngle(Math::Radian(degree.y()), Eigen::Vector3f::UnitX());
         Eigen::AngleAxisf pitchAngle(Math::Radian(degree.z()), Eigen::Vector3f::UnitY());
         _node->Rotation = rollAngle * yawAngle * pitchAngle;
       }
     }
-    ImGui::End();
   }
+  ImGui::End();
 }
 
 UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
