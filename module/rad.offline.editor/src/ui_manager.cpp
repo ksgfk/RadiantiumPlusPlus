@@ -20,6 +20,7 @@ class FileBrowser;
 class MessageBox;
 class HierarchyPanel;
 class SceneNodeInfoPanel;
+class AssetsPanel;
 
 class MainMenu final : public GuiItem {
  public:
@@ -35,10 +36,12 @@ class MainMenu final : public GuiItem {
 
   void AttachHierarchyPanel(HierarchyPanel* panel) { _hiePanel = panel; }
   void AttachNodeInfoPanel(SceneNodeInfoPanel* panel) { _nodeInfo = panel; }
+  void AttachAssetPanel(AssetsPanel* panel) { _asset = panel; }
 
  public:
   HierarchyPanel* _hiePanel;
   SceneNodeInfoPanel* _nodeInfo;
+  AssetsPanel* _asset;
 };
 
 class FileBrowser final : public GuiItem {
@@ -173,6 +176,31 @@ class SceneNodeInfoPanel final : public GuiItem {
   SceneNode* _node;
 };
 
+class AssetsPanel final : public GuiItem {
+ public:
+  AssetsPanel() {
+    _isAlive = true;
+    _priority = -1;
+    _isShow = true;
+    _selectType = 0;
+  }
+  ~AssetsPanel() noexcept override = default;
+
+  void OnStart() override;
+  void OnGui() override;
+
+  bool IsShow() const { return _isShow; }
+  void SetShowState(bool isShow) { _isShow = isShow; }
+
+ private:
+  bool _isShow;
+  std::string _select;
+
+  std::string _nameBuffer;
+  int _selectType;
+  std::string _location;
+};
+
 void MainMenu::OnGui() {
   if (ImGui::BeginMainMenuBar()) {
     if (ImGui::BeginMenu("文件")) {
@@ -196,6 +224,11 @@ void MainMenu::OnGui() {
         bool isShow = _nodeInfo->IsShow();
         ImGui::MenuItem("节点信息", "", &isShow);
         _nodeInfo->SetShowState(isShow);
+      }
+      {
+        bool isShow = _asset->IsShow();
+        ImGui::MenuItem("资产管理", "", &isShow);
+        _asset->SetShowState(isShow);
       }
       ImGui::EndMenu();
     }
@@ -224,15 +257,12 @@ void FileBrowser::OnGui() {
     ImGuiInputTextFlags inputFlags = 0;
     inputFlags |= ImGuiInputTextFlags_AutoSelectAll;
     inputFlags |= ImGuiInputTextFlags_EnterReturnsTrue;
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool completion = ImGui::InputText(
         "##file_browser_path",
         &_inputPathBuf,
         inputFlags);
     if (completion) {
-      size_t pos = _inputPathBuf.find('\0');
-      if (pos != std::string::npos) {
-        _inputPathBuf.resize(pos);
-      }
       _currentPath = std::filesystem::path(_inputPathBuf);
       RefreshDir();
     }
@@ -362,8 +392,11 @@ void FileBrowser::RefreshDir() {
     _box->OnStart();
     _currentPath = std::filesystem::current_path();
   } else {
+    std::filesystem::directory_entry e(_currentPath);
+    if (e.is_regular_file()) {
+      _currentPath = _currentPath.parent_path();
+    }
     _inputPathBuf = _currentPath.u8string();
-    _inputPathBuf.resize(512, '\0');
   }
   for (auto&& p : std::filesystem::directory_iterator(_currentPath)) {
     auto name = p.path().filename().u8string();
@@ -561,6 +594,193 @@ void SceneNodeInfoPanel::OnGui() {
   ImGui::End();
 }
 
+static void ImGuiPrintAssetType(AssetType type) {
+  switch (type) {
+    case AssetType::Model:
+      ImGui::Text("Model");
+      break;
+    case AssetType::Image:
+      ImGui::Text("Image");
+      break;
+    case AssetType::Volume:
+      ImGui::Text("Volume");
+      break;
+    default:
+      ImGui::Text("UNKNOWN");
+      break;
+  }
+}
+
+void AssetsPanel::OnStart() {
+}
+
+void AssetsPanel::OnGui() {
+  if (!_isShow) {
+    return;
+  }
+  ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar;
+  if (ImGui::Begin("资产管理", &_isShow, flags)) {
+    if (_editor->IsWorkspaceActive()) {
+      auto&& asset = _editor->GetAssetManager();
+      bool hasSelect;
+      auto checkSelect = [&]() {
+        if (_select.size() > 0) {
+          if (asset.IsLoaded(_select)) {
+            hasSelect = true;
+          } else {
+            _select.clear();
+            hasSelect = false;
+          }
+        } else {
+          hasSelect = false;
+        }
+      };
+      checkSelect();
+      if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("加载")) {
+          ImGui::InputText("名字", &_nameBuffer, ImGuiInputTextFlags_AutoSelectAll);
+          const char* assetsObjName[] = {
+              "UNKNOWN",
+              "image_default",
+              "image_exr",
+              "model_obj",
+              "volume_data_mitsuba_vol",
+              "volume_data_vdb"};
+          if (ImGui::BeginCombo("资源类型", assetsObjName[_selectType], flags)) {
+            for (int n = 0; n < IM_ARRAYSIZE(assetsObjName); n++) {
+              bool isSelected = (_selectType == n);
+              if (ImGui::Selectable(assetsObjName[n], isSelected)) {
+                _selectType = n;
+              }
+              if (isSelected) {
+                ImGui::SetItemDefaultFocus();
+              }
+            }
+            ImGui::EndCombo();
+          }
+          ImGui::InputText("路径", &_location, ImGuiInputTextFlags_AutoSelectAll);
+          ImGui::SameLine();
+          if (ImGui::Button("..")) {
+            Unique<FileBrowser> v = std::make_unique<FileBrowser>(
+                "打开",
+                _editor->GetAssetManager().GetLocationResolver().GetWorkDirectory(),
+                [this](auto&& i) {
+                  auto work = _editor->GetAssetManager().GetLocationResolver().GetWorkDirectory();
+                  _location = std::filesystem::relative(i[0], work).u8string();
+                });
+            _ui->AddGui(std::move(v));
+          }
+          if (ImGui::Button("加载")) {
+            bool succ = false;
+            std::string why;
+            auto&& assetManager = _editor->GetAssetManager();
+            if (_nameBuffer.size() == 0 || assetManager.IsLoaded(_nameBuffer)) {
+              succ = false;
+              why = fmt::format("已经存在的资源名: {}", _nameBuffer);
+            } else {
+              try {
+                nlohmann::json cfg;
+                cfg["name"] = _nameBuffer;
+                cfg["type"] = assetsObjName[_selectType];
+                cfg["location"] = _location;
+                ConfigNode node(&cfg);
+                auto result = assetManager.Load(node);
+                succ = result.IsSuccess;
+                why = result.FailReason;
+              } catch (const std::exception& e) {
+                succ = false;
+                why = e.what();
+              }
+            }
+            if (!succ) {
+              Unique<MessageBox> msg = std::make_unique<MessageBox>(
+                  fmt::format("加载资产失败，原因: {}", why));
+              _ui->AddGui(std::move(msg));
+            }
+          }
+          ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("卸载")) {
+          ImGui::BeginDisabled(!hasSelect);
+          if (ImGui::MenuItem("卸载选中")) {
+            _editor->GetAssetManager().Unload(_select);
+          }
+          ImGui::EndDisabled();
+          if (ImGui::MenuItem("卸载所有未引用")) {
+            _editor->GetAssetManager().GarbageCollect();
+          }
+          ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+      }
+      ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+      ImGuiWindowFlags cflag = ImGuiWindowFlags_HorizontalScrollbar;
+      {
+        auto region = ImGui::GetContentRegionAvail();
+        if (ImGui::BeginChild("_List1", ImVec2(region.x * 0.5f, region.y), true, cflag)) {
+          ImGui::BeginTable(
+              "_title",
+              2,
+              ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings);
+          ImGui::TableNextRow();
+          ImGui::TableNextColumn();
+          ImGui::Text("名字");
+          ImGui::TableNextColumn();
+          ImGui::Text("类型");
+          for (auto&& i : asset.GetAllAssets()) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            auto&& [name, asset] = i;
+            bool isSelected = hasSelect && _select == name;
+            bool isClick = ImGui::Selectable(name.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns);
+            ImGui::TableNextColumn();
+            ImGuiPrintAssetType(asset->GetType());
+            if (isClick) {
+              if (isSelected) {
+                _select.clear();
+              } else {
+                _select = name;
+              }
+            }
+          }
+          ImGui::EndTable();
+        }
+        ImGui::EndChild();
+      }
+      ImGui::SameLine();
+      checkSelect();
+      if (hasSelect && !asset.IsLoaded(_select)) {
+        _select.clear();
+        hasSelect = false;
+      }
+      {
+        auto region = ImGui::GetContentRegionAvail();
+        if (ImGui::BeginChild("_List2", ImVec2(region.x, region.y), true, cflag)) {
+          if (hasSelect) {
+            auto assIns = asset.Borrow(_select);
+            ImGui::Text("名字：");
+            ImGui::SameLine();
+            ImGui::Text("%s", assIns->GetName().c_str());
+            ImGui::Text("类型：");
+            ImGui::SameLine();
+            ImGuiPrintAssetType(assIns->GetType());
+            ImGui::Text("路径：");
+            ImGui::SameLine();
+            ImGui::Text("%s", assIns->GetLocation().c_str());
+          } else {
+            ImGui::Text("没有选中资产项");
+          }
+        }
+        ImGui::EndChild();
+      }
+      ImGui::PopStyleVar();
+    } else {
+      ImGui::Text("没有打开的工作区");
+    }
+  }
+  ImGui::End();
+}
+
 UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
   _logger = Logger::GetCategory("UI");
   IMGUI_CHECKVERSION();
@@ -585,12 +805,15 @@ UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
   auto hiePanel = std::make_unique<HierarchyPanel>();
   auto mainMenu = std::make_unique<MainMenu>();
   auto nodeInfo = std::make_unique<SceneNodeInfoPanel>();
+  auto assets = std::make_unique<AssetsPanel>();
   mainMenu->AttachHierarchyPanel(hiePanel.get());
   mainMenu->AttachNodeInfoPanel(nodeInfo.get());
+  mainMenu->AttachAssetPanel(assets.get());
   hiePanel->AttachNodeInfoPanel(nodeInfo.get());
   AddGui(std::move(mainMenu));
   AddGui(std::move(hiePanel));
   AddGui(std::move(nodeInfo));
+  AddGui(std::move(assets));
 }
 
 UIManager::~UIManager() noexcept {

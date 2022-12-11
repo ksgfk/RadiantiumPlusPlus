@@ -142,6 +142,7 @@ class RAD_EXPORT_API AssetManager {
   }
   const LocationResolver& GetLocationResolver() const { return *_resolver; }
   bool IsImageStorageBlockBased() const { return _isImageBlock; }
+  const std::map<std::string, Share<Asset>>& GetAllAssets() const { return _assets; }
 
  private:
   const FactoryManager* _factory{nullptr};

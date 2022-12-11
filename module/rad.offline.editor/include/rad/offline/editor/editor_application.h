@@ -77,6 +77,7 @@ class EditorApplication {
   bool IsSceneDirty() const { return _isSceneDirty; }
   void MarkSceneDirty() { _isSceneDirty = true; }
   size_t RequestUniqueId();
+  AssetManager& GetAssetManager() const { return *_asset; }
 
  private:
   void OnUpdate();

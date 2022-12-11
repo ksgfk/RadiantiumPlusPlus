@@ -38,11 +38,27 @@ AssetLoadResult AssetManager::Load(ConfigNode cfg) {
 }
 
 void AssetManager::Unload(const std::string& name) {
-  throw RadNotImplementedException("todo");
+  auto iter = _assets.find(name);
+  if (iter == _assets.end()) {
+    throw RadArgumentException("unknown asset {}", name);
+  }
+  auto&& ptr = (*iter).second;
+  if (ptr.use_count() > 1) {
+    throw RadArgumentException("asset {} cannot unload. ref count: {}", name, ptr.use_count());
+  }
+  _assets.erase(iter);
 }
 
 void AssetManager::GarbageCollect() {
-  throw RadNotImplementedException("todo");
+  std::vector<std::string> canUnload;
+  for (auto&& i : _assets) {
+    if (i.second.use_count() == 1) {
+      canUnload.emplace_back(i.first);
+    }
+  }
+  for (auto&& i : canUnload) {
+    Unload(i);
+  }
 }
 
 void AssetManager::SetObjectFactory(const FactoryManager& manager) { _factory = &manager; }
