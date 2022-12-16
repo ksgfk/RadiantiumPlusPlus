@@ -26,7 +26,8 @@ target_link_libraries(${RAD_IMGUI_LIB_NAME} PRIVATE glfw)
 add_executable(${RAD_OFFLINE_EDITOR_MODULE_NAME} 
     src/main.cpp
     src/ui_manager.cpp
-    src/editor_application.cpp)
+    src/editor_application.cpp
+    src/coms.cpp)
 target_include_directories(${RAD_OFFLINE_EDITOR_MODULE_NAME} PUBLIC
     "include")
 target_link_libraries(${RAD_OFFLINE_EDITOR_MODULE_NAME}

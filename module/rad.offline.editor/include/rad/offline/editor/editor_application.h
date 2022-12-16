@@ -9,6 +9,7 @@
 #include <list>
 
 #include "ui_manager.h"
+#include "coms.h"
 
 namespace Rad {
 
@@ -59,6 +60,9 @@ class SceneNode {
 
  public:
   std::string Name;
+
+  Unique<OfflineConfig> Shape;
+  Unique<OfflineConfig> Bsdf;
 };
 
 class EditorApplication {
