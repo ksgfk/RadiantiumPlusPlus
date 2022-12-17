@@ -503,16 +503,44 @@ void HierarchyPanel::OnGui() {
         _nodeInfo->AttachNode(&added);
       }
       ImGui::SameLine();
-      ImGui::BeginDisabled(!_nodeInfo->HasSelect());
-      if (ImGui::Button("删除节点")) {
-        SceneNode* node = _nodeInfo->NowSelect();
-        _nodeInfo->ClearSelect();
-        node->GetParent()->RemoveChild(*node);
+      {
+        SceneNode* now = _nodeInfo->HasSelect() ? _nodeInfo->NowSelect() : nullptr;
+        SceneNode* prev = _nodeInfo->HasSelect() ? now->PreviousNode() : nullptr;
+        SceneNode* next = _nodeInfo->HasSelect() ? now->NextNode() : nullptr;
+        ImGui::BeginDisabled(!_nodeInfo->HasSelect());
+        if (ImGui::Button("删除节点")) {
+          SceneNode temp = std::move(*_nodeInfo->NowSelect());
+          _nodeInfo->ClearSelect();
+          temp.GetParent()->RemoveChild(temp);
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(prev == nullptr);
+        if (ImGui::Button("向上移动")) {
+          SceneNode* parent = now->GetParent();
+          SceneNode temp = std::move(*now);
+          parent->RemoveChild(temp);
+          parent->AddChildBefore(*prev, std::move(temp));
+          _nodeInfo->ClearSelect();
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(next == nullptr);
+        if (ImGui::Button("向下移动")) {
+          SceneNode* parent = now->GetParent();
+          SceneNode temp = std::move(*now);
+          parent->RemoveChild(temp);
+          parent->AddChildAfter(*next, std::move(temp));
+          _nodeInfo->ClearSelect();
+        }
+        ImGui::EndDisabled();
       }
-      ImGui::EndDisabled();
       _stack.emplace(std::make_pair(&_editor->GetRootNode(), 0));
       Int32 lastDepth = 0;
       // 先序遍历
+      bool moveNode = false;
+      SceneNode* fromNode{nullptr};
+      SceneNode* toNode{nullptr};
       while (!_stack.empty()) {
         auto [node, depth] = _stack.top();
         _stack.pop();
@@ -525,7 +553,8 @@ void HierarchyPanel::OnGui() {
         nodeFlag |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
         nodeFlag |= ImGuiTreeNodeFlags_SpanAvailWidth;
         auto&& children = node->GetChildren();
-        if (children.empty()) {
+        bool isLeaf = children.empty();
+        if (isLeaf) {
           nodeFlag |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
         }
         if (node->GetParent() != nullptr && _nodeInfo->NowSelect() == node) {
@@ -541,16 +570,44 @@ void HierarchyPanel::OnGui() {
             }
           }
         }
-        if (isOpen) {
-          if (!children.empty()) {
-            for (auto it = children.rbegin(); it != children.rend(); it++) {
-              _stack.emplace(std::make_pair(&(*it), depth + 1));
+        ImGui::PushID(node);
+        if (node->GetParent() != nullptr) {
+          ImGuiDragDropFlags dragFlag = 0;
+          dragFlag |= ImGuiDragDropFlags_SourceNoPreviewTooltip;
+          if (ImGui::BeginDragDropSource(dragFlag)) {
+            ImGui::SetDragDropPayload("drag_scene_obj", &node, sizeof(void*));
+            Logger::Get()->info("start drag {}", node->Name);
+            ImGui::EndDragDropSource();
+          }
+        }
+        if (ImGui::BeginDragDropTarget()) {
+          auto payload = ImGui::AcceptDragDropPayload("drag_scene_obj");
+          if (payload != nullptr) {
+            SceneNode* from = *reinterpret_cast<SceneNode**>(payload->Data);
+            if (from != node && from->GetParent() != node) {
+              moveNode = true;
+              fromNode = from;
+              toNode = node;
+              _nodeInfo->ClearSelect();
             }
+          }
+          ImGui::EndDragDropTarget();
+        }
+        ImGui::PopID();
+        if (isOpen) {
+          for (auto it = children.rbegin(); it != children.rend(); it++) {
+            _stack.emplace(std::make_pair(&(*it), depth + 1));
           }
         }
       }
       for (Int32 i = 0; i < lastDepth; i++) {
         ImGui::TreePop();
+      }
+      if (moveNode) {
+        Logger::Get()->info("drop {} to {}", fromNode->Name, toNode->Name);
+        SceneNode temp = std::move(*fromNode);
+        temp.GetParent()->RemoveChild(temp);
+        toNode->AddChildLast(std::move(temp));
       }
     } else {
       ImGui::Text("没有打开的工作区");

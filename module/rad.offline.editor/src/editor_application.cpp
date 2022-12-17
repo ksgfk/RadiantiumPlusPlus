@@ -151,29 +151,32 @@ SceneNode::SceneNode(EditorApplication* editor) {
 }
 
 SceneNode& SceneNode::AddChildBefore(const SceneNode& pos, SceneNode&& node) {
-  if (node._parent != nullptr) {
-    node._parent->RemoveChild(node);
+  SceneNode temp = std::move(node);
+  if (temp._parent != nullptr) {
+    throw Rad::RadInvalidOperationException("node {} cannot have parent", temp.Name);
   }
-  auto childIter = _children.emplace(pos._inParentPos, std::move(node));
+  auto childIter = _children.emplace(pos._inParentPos, std::move(temp));
   AfterAddChild(childIter);
   return *childIter;
 }
 
 SceneNode& SceneNode::AddChildAfter(const SceneNode& pos, SceneNode&& node) {
-  if (node._parent != nullptr) {
-    node._parent->RemoveChild(node);
+  SceneNode temp = std::move(node);
+  if (temp._parent != nullptr) {
+    throw Rad::RadInvalidOperationException("node {} cannot have parent", temp.Name);
   }
   auto iter = pos._inParentPos;
-  auto childIter = _children.emplace(iter++, std::move(node));
+  auto childIter = _children.emplace(++iter, std::move(temp));
   AfterAddChild(childIter);
   return *childIter;
 }
 
 SceneNode& SceneNode::AddChildLast(SceneNode&& node) {
-  if (node._parent != nullptr) {
-    node._parent->RemoveChild(node);
+  SceneNode temp = std::move(node);
+  if (temp._parent != nullptr) {
+    throw Rad::RadInvalidOperationException("node {} cannot have parent", temp.Name);
   }
-  auto childIter = _children.emplace(_children.end(), std::move(node));
+  auto childIter = _children.emplace(_children.end(), std::move(temp));
   AfterAddChild(childIter);
   return *childIter;
 }
@@ -183,10 +186,32 @@ void SceneNode::RemoveChild(SceneNode& child) {
     throw RadArgumentException("parent and child not same!");
   }
   _children.erase(child._inParentPos);
+  child._inParentPos = {};
+  child._parent = nullptr;
 }
 
 void SceneNode::SetToWorldMatrix(const Matrix4f& toWorld) {
   _editor->MarkSceneDirty();
+}
+
+SceneNode* SceneNode::PreviousNode() {
+  auto first = _parent->_children.begin();
+  if (_inParentPos == first) {
+    return nullptr;
+  }
+  auto prev = _inParentPos;
+  prev--;
+  return &(*(prev));
+}
+
+SceneNode* SceneNode::NextNode() {
+  auto last = GetParent()->_children.end();
+  auto next = _inParentPos;
+  next++;
+  if (next == last) {
+    return nullptr;
+  }
+  return &(*(next));
 }
 
 EditorApplication::EditorApplication(int argc, char** argv) {
@@ -206,6 +231,7 @@ EditorApplication::EditorApplication(int argc, char** argv) {
   RadCreateWindowGlfw(opts);
   RadShowWindowGlfw();
   RadInitContextOpenGL();
+  _root = std::make_unique<SceneNode>(this);
   _ui = std::make_unique<UIManager>(this);
 }
 
@@ -252,7 +278,7 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
   if (IsWorkspaceActive()) {
     // TODO: 提示保存当前场景，清理现场
     _isWorkspaceActive = false;
-    _root = SceneNode{this};
+    _root = std::make_unique<SceneNode>(this);
   }
   ConfigNode root(&cfg);
   // 拿到配置文件了，首先加载资产
@@ -308,7 +334,7 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
       for (auto i : sceneNode) {
         childrenNodes.clear();
         SceneNode newNode = createNewNode(i);
-        SceneNode& thisNode = _root.AddChildLast(std::move(newNode));
+        SceneNode& thisNode = _root->AddChildLast(std::move(newNode));
         if (i.TryRead("children", childrenNodes)) {
           for (auto j : childrenNodes) {
             q.emplace(std::make_pair(&thisNode, j));
@@ -330,7 +356,7 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
     }
   }
   _sceneName = filePath.filename().replace_extension().u8string();
-  _root.Name = _sceneName;
+  _root->Name = _sceneName;
   _isWorkspaceActive = true;
   _logger->info("done");
 }

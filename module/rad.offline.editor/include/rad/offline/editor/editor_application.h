@@ -38,12 +38,14 @@ class SceneNode {
   size_t GetUniqueId() const { return _uniqueId; }
   bool IsSelect() const { return _isSelect; }
   void SetSelect(bool isSelect) { _isSelect = isSelect; }
+  SceneNode* PreviousNode();
+  SceneNode* NextNode();
 
  private:
   void AfterAddChild(std::list<SceneNode>::iterator&);
 
-  size_t _uniqueId;
-  EditorApplication* _editor;
+  size_t _uniqueId{0};
+  EditorApplication* _editor{nullptr};
   Matrix4f _toWorld;
   Matrix4f _toLocal;
 
@@ -53,10 +55,10 @@ class SceneNode {
   Eigen::Quaternionf Rotation;
 
  private:
-  SceneNode* _parent;
+  SceneNode* _parent{nullptr};
   std::list<SceneNode> _children;
-  std::list<SceneNode>::iterator _inParentPos;
-  bool _isSelect;
+  std::list<SceneNode>::iterator _inParentPos{};
+  bool _isSelect{false};
 
  public:
   std::string Name;
@@ -76,8 +78,8 @@ class EditorApplication {
   void OpenWorkspace(const std::filesystem::path& filePath);
   bool IsWorkspaceActive() const;
   std::string GetSceneName() const { return _sceneName; }
-  SceneNode& GetRootNode() { return _root; }
-  const SceneNode& GetRootNode() const { return _root; }
+  SceneNode& GetRootNode() { return *_root; }
+  const SceneNode& GetRootNode() const { return *_root; }
   bool IsSceneDirty() const { return _isSceneDirty; }
   void MarkSceneDirty() { _isSceneDirty = true; }
   size_t RequestUniqueId();
@@ -93,7 +95,7 @@ class EditorApplication {
   std::string _sceneName;
   Unique<FactoryManager> _factory;
   Unique<AssetManager> _asset;
-  SceneNode _root{this};
+  Unique<SceneNode> _root;
   bool _isSceneDirty{false};
   size_t _nowId{0};
 };
