@@ -1,6 +1,7 @@
 #pragma once
 
 #include <rad/core/types.h>
+#include <rad/core/config_node.h>
 
 #include <imgui.h>
 
@@ -11,6 +12,7 @@ namespace Rad {
 
 class EditorApplication;
 class UIManager;
+class SceneNode;
 
 struct UIContext {
   EditorApplication* App;
@@ -56,5 +58,8 @@ class UIManager {
   std::vector<Unique<GuiItem>> _drawList;
   std::vector<Unique<GuiItem>> _startList;
 };
+
+void SetupNodeShape(EditorApplication* app, UIManager* ui, SceneNode* node, ConfigNode cfg);
+void SetupNodeBsdf(EditorApplication* app, UIManager* ui, SceneNode* node, ConfigNode cfg);
 
 }  // namespace Rad

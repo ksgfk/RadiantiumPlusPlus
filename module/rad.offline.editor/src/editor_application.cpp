@@ -325,7 +325,8 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
         newNode.Rotation = Eigen::Quaternionf(rotation);
       }
     }
-    // newNode.SetToWorldMatrix(toWorld);
+    SetupNodeShape(this, _ui.get(), &newNode, i);
+    SetupNodeShape(this, _ui.get(), &newNode, i);
     return newNode;
   };
   {

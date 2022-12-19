@@ -34,6 +34,12 @@ void OnGuiTexture(
     Unique<TextureConfig>& tex,
     const std::string& name,
     Color24f defaultValue);
+void SetupTexture(
+    EditorApplication* app, UIManager* ui,
+    ConfigNode cfg,
+    Unique<TextureConfig>& tex,
+    const std::string& name,
+    Color24f defaultValue);
 
 class MainMenu final : public GuiItem {
  public:
@@ -271,6 +277,10 @@ class BitmapConfig final : public TextureConfig {
         _anisotropicLevel(0) {
     _typeName = "Bitmap";
   }
+  BitmapConfig(
+      EditorApplication* app, UIManager* ui,
+      ConfigNode cfg) : BitmapConfig(app, ui) {
+  }
   ~BitmapConfig() noexcept override = default;
 
   void OnGui() override {
@@ -359,6 +369,10 @@ class ChessboardConfig final : public TextureConfig {
       UIManager* ui) : TextureConfig(app, ui) {
     _typeName = "Chessboard";
   }
+  ChessboardConfig(
+      EditorApplication* app, UIManager* ui, ConfigNode cfg)
+      : ChessboardConfig(app, ui) {
+  }
   ~ChessboardConfig() noexcept override = default;
 
   void OnGui() override {
@@ -374,6 +388,10 @@ class ChessboardConfig final : public TextureConfig {
 class MeshConfig final : public OfflineConfig {
  public:
   MeshConfig(EditorApplication* app, UIManager* ui) : OfflineConfig(app, ui) {}
+  MeshConfig(EditorApplication* app, UIManager* ui, ConfigNode cfg) : MeshConfig(app, ui) {
+    std::string assetName = cfg.Read<std::string>("asset_name");
+    _model = app->GetAssetManager().Reference<ModelAsset>(assetName);
+  }
   ~MeshConfig() noexcept override = default;
 
   void OnGui() override {
@@ -399,21 +417,24 @@ class MeshConfig final : public OfflineConfig {
     }
   }
 
- private:
+ public:
   Share<ModelAsset> _model;
 };
 
 class DiffuseConfig final : public OfflineConfig {
  public:
   DiffuseConfig(EditorApplication* app, UIManager* ui) : OfflineConfig(app, ui) {}
+  DiffuseConfig(EditorApplication* app, UIManager* ui, ConfigNode cfg) : DiffuseConfig(app, ui) {
+    SetupTexture(app, ui, cfg, _reflectance, "reflectance", Color24f(0.5f));
+  }
   ~DiffuseConfig() noexcept override = default;
 
   void OnGui() override {
-    OnGuiTexture(_app, _ui, _reflection, "Reflection", Color24f(0.5f));
+    OnGuiTexture(_app, _ui, _reflectance, "reflectance", Color24f(0.5f));
   }
 
- private:
-  Unique<TextureConfig> _reflection;
+ public:
+  Unique<TextureConfig> _reflectance;
 };
 
 void OnGuiTexture(
@@ -461,6 +482,35 @@ void OnGuiTexture(
       tex->OnGui();
     }
     ImGui::TreePop();
+  }
+}
+
+void SetupTexture(
+    EditorApplication* app, UIManager* ui,
+    ConfigNode cfg,
+    Unique<TextureConfig>& texIns,
+    const std::string& name,
+    Color24f defaultValue) {
+  if (cfg.GetData() == nullptr) {
+    texIns = std::make_unique<ConstantColorConfig>(app, ui, defaultValue);
+    return;
+  }
+  auto iter = cfg.GetData()->find(name);
+  if (iter == cfg.GetData()->end()) {
+    texIns = std::make_unique<ConstantColorConfig>(app, ui, defaultValue);
+    return;
+  }
+  ConfigNode tex(&iter.value());
+  if (tex.GetData()->is_number() || tex.GetData()->is_array()) {
+    Color24f value = tex.As<Color24f>();
+    texIns = std::make_unique<ConstantColorConfig>(app, ui, value);
+    return;
+  }
+  std::string type = tex.Read<std::string>("type");
+  if (type == std::string("bitmap")) {
+    texIns = std::make_unique<BitmapConfig>(app, ui, cfg);
+  } else if (type == std::string("chessboard")) {
+    texIns = std::make_unique<ChessboardConfig>(app, ui, cfg);
   }
 }
 
@@ -1288,6 +1338,30 @@ void UIManager::AddGui(Unique<GuiItem> ui) {
   ui->_editor = _editor;
   ui->_ui = this;
   _startList.emplace_back(std::move(ui));
+}
+
+void SetupNodeShape(EditorApplication* app, UIManager* ui, SceneNode* node, ConfigNode cfg) {
+  ConfigNode shapeNode;
+  if (!cfg.TryRead("shape", shapeNode)) {
+    return;
+  }
+  std::string type = shapeNode.Read<std::string>("type");
+  if (type == std::string("mesh")) {
+    auto mesh = std::make_unique<MeshConfig>(app, ui, shapeNode);
+    node->Shape = std::move(mesh);
+  }
+}
+
+void SetupNodeBsdf(EditorApplication* app, UIManager* ui, SceneNode* node, ConfigNode cfg) {
+  ConfigNode bsdfNode;
+  if (!cfg.TryRead("bsdf", bsdfNode)) {
+    return;
+  }
+  std::string type = bsdfNode.Read<std::string>("type");
+  if (type == std::string("diffuse")) {
+    auto diffuse = std::make_unique<DiffuseConfig>(app, ui, bsdfNode);
+    node->Bsdf = std::move(diffuse);
+  }
 }
 
 }  // namespace Rad
