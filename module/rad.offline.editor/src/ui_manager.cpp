@@ -22,6 +22,19 @@ class HierarchyPanel;
 class SceneNodeInfoPanel;
 class AssetsPanel;
 
+class TextureConfig;
+class ConstantColorConfig;
+class BitmapConfig;
+class ChessboardConfig;
+class MeshConfig;
+class DiffuseConfig;
+
+void OnGuiTexture(
+    EditorApplication* app, UIManager* ui,
+    Unique<TextureConfig>& tex,
+    const std::string& name,
+    Color24f defaultValue);
+
 class MainMenu final : public GuiItem {
  public:
   MainMenu() {
@@ -157,6 +170,8 @@ class SceneNodeInfoPanel final : public GuiItem {
     _priority = -1;
     _isShow = true;
     _node = nullptr;
+    _selectShape = 0;
+    _selectBsdf = 0;
   }
   ~SceneNodeInfoPanel() noexcept override = default;
 
@@ -168,12 +183,22 @@ class SceneNodeInfoPanel final : public GuiItem {
 
   SceneNode* NowSelect() const { return _node; }
   bool HasSelect() const { return _node != nullptr; }
-  void ClearSelect() { _node = nullptr; }
-  void AttachNode(SceneNode* node) { _node = node; }
+  void ClearSelect() {
+    _node = nullptr;
+    _selectShape = 0;
+    _selectBsdf = 0;
+  }
+  void AttachNode(SceneNode* node) {
+    _node = node;
+    _selectShape = 0;
+    _selectBsdf = 0;
+  }
 
  private:
   bool _isShow;
   SceneNode* _node;
+  size_t _selectShape;
+  size_t _selectBsdf;
 };
 
 class AssetsPanel final : public GuiItem {
@@ -197,9 +222,247 @@ class AssetsPanel final : public GuiItem {
   std::string _select;
 
   std::string _nameBuffer;
-  int _selectType;
+  size_t _selectType;
   std::string _location;
 };
+
+class TextureConfig : public OfflineConfig {
+ public:
+  TextureConfig(EditorApplication* app, UIManager* ui) : OfflineConfig(app, ui) {}
+  ~TextureConfig() noexcept override = default;
+
+  const std::string& GetTypeName() const { return _typeName; }
+
+ protected:
+  std::string _typeName;
+};
+class ConstantColorConfig final : public TextureConfig {
+ public:
+  ConstantColorConfig(
+      EditorApplication* app,
+      UIManager* ui,
+      Color24f defaultColor)
+      : TextureConfig(app, ui),
+        _color(defaultColor) {
+    _typeName = "Constant";
+  }
+  ~ConstantColorConfig() noexcept override = default;
+
+  void OnGui() override {
+    ImGuiColorEditFlags colorFlag = 0;
+    colorFlag |= ImGuiColorEditFlags_NoOptions;
+    colorFlag |= ImGuiColorEditFlags_Float;
+    ImGui::ColorEdit3("value", (float*)&_color, colorFlag);
+  };
+
+ private:
+  Color24f _color;
+};
+class BitmapConfig final : public TextureConfig {
+ public:
+  BitmapConfig(
+      EditorApplication* app,
+      UIManager* ui)
+      : TextureConfig(app, ui),
+        _image(nullptr),
+        _filter(0),
+        _wrap(0),
+        _maxLevel(0),
+        _anisotropicLevel(0) {
+    _typeName = "Bitmap";
+  }
+  ~BitmapConfig() noexcept override = default;
+
+  void OnGui() override {
+    auto&& assets = _app->GetAssetManager();
+    const char* name = _image == nullptr ? "NULL" : _image->GetName().c_str();
+    bool isUse = ImGui::BeginCombo("asset_name", name);
+    if (isUse) {
+      for (auto i : assets.GetAllAssets()) {
+        const std::string& name = i.first;
+        const Share<Asset>& asset = i.second;
+        if (asset->GetType() != AssetType::Image) {
+          continue;
+        }
+        bool isSelected = _image == asset;
+        if (ImGui::Selectable(name.c_str(), isSelected)) {
+          _image = std::static_pointer_cast<ImageAsset, Asset>(asset);
+        }
+        if (isSelected) {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+    {
+      const char* filterType[] = {
+          "bilinear",
+          "nearest",
+          "trilinear",
+          "anisotropic"};
+      if (ImGui::BeginCombo("filter", filterType[_filter])) {
+        for (size_t i = 0; i < Math::ArrayLength(filterType); i++) {
+          bool isSelected = _filter == i;
+          if (ImGui::Selectable(filterType[i], isSelected)) {
+            _filter = i;
+            if (!isSelected && i == 2) {
+              _maxLevel = -1;
+            }
+            if (!isSelected && i == 3) {
+              _maxLevel = -1;
+              _anisotropicLevel = 8;
+            }
+          }
+          if (isSelected) {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
+    }
+    {
+      const char* wrapMode[] = {
+          "clamp",
+          "repeat"};
+      if (ImGui::BeginCombo("wrap", wrapMode[_wrap])) {
+        for (size_t i = 0; i < Math::ArrayLength(wrapMode); i++) {
+          bool isSelected = _wrap == i;
+          if (ImGui::Selectable(wrapMode[i], isSelected)) {
+            _wrap = i;
+          }
+          if (isSelected) {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
+    }
+    if (_filter == 2 || _filter == 3) {
+      ImGui::DragInt("max_level", &_maxLevel, 1.0f, -1, INT_MAX);
+    }
+    if (_filter == 3) {
+      ImGui::DragInt("anisotropic_level", &_anisotropicLevel, 1.0f, 2, 16);
+    }
+  };
+
+ private:
+  Share<ImageAsset> _image;
+  size_t _filter;
+  size_t _wrap;
+  int _maxLevel;
+  int _anisotropicLevel;
+};
+class ChessboardConfig final : public TextureConfig {
+ public:
+  ChessboardConfig(
+      EditorApplication* app,
+      UIManager* ui) : TextureConfig(app, ui) {
+    _typeName = "Chessboard";
+  }
+  ~ChessboardConfig() noexcept override = default;
+
+  void OnGui() override {
+    OnGuiTexture(_app, _ui, _colorA, "color_a", Color24f(0.4f));
+    OnGuiTexture(_app, _ui, _colorB, "color_b", Color24f(0.2f));
+  }
+
+ private:
+  Unique<TextureConfig> _colorA;
+  Unique<TextureConfig> _colorB;
+};
+
+class MeshConfig final : public OfflineConfig {
+ public:
+  MeshConfig(EditorApplication* app, UIManager* ui) : OfflineConfig(app, ui) {}
+  ~MeshConfig() noexcept override = default;
+
+  void OnGui() override {
+    auto&& assets = _app->GetAssetManager();
+    const char* name = _model == nullptr ? "NULL" : _model->GetName().c_str();
+    bool isUse = ImGui::BeginCombo("asset_name", name);
+    if (isUse) {
+      for (auto i : assets.GetAllAssets()) {
+        const std::string& name = i.first;
+        const Share<Asset>& asset = i.second;
+        if (asset->GetType() != AssetType::Model) {
+          continue;
+        }
+        bool isSelected = _model == asset;
+        if (ImGui::Selectable(name.c_str(), isSelected)) {
+          _model = std::static_pointer_cast<ModelAsset, Asset>(asset);
+        }
+        if (isSelected) {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+  }
+
+ private:
+  Share<ModelAsset> _model;
+};
+
+class DiffuseConfig final : public OfflineConfig {
+ public:
+  DiffuseConfig(EditorApplication* app, UIManager* ui) : OfflineConfig(app, ui) {}
+  ~DiffuseConfig() noexcept override = default;
+
+  void OnGui() override {
+    OnGuiTexture(_app, _ui, _reflection, "Reflection", Color24f(0.5f));
+  }
+
+ private:
+  Unique<TextureConfig> _reflection;
+};
+
+void OnGuiTexture(
+    EditorApplication* app, UIManager* ui,
+    Unique<TextureConfig>& tex,
+    const std::string& name,
+    Color24f defaultValue) {
+  if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+    const char* texType[] = {
+        "UNKNOWN",
+        "Constant",
+        "Bitmap",
+        "Chessboard"};
+    const char* preview = tex == nullptr ? texType[0] : tex->GetTypeName().c_str();
+    if (ImGui::BeginCombo("type", preview)) {
+      for (size_t i = 0; i < Math::ArrayLength(texType); i++) {
+        bool isSelected = tex == nullptr ? (i == 0) : (tex->GetTypeName() == std::string(texType[i]));
+        if (ImGui::Selectable(texType[i], isSelected)) {
+          switch (i) {
+            case 0: {
+              tex = nullptr;
+              break;
+            }
+            case 1: {
+              tex = std::make_unique<ConstantColorConfig>(app, ui, defaultValue);
+              break;
+            }
+            case 2: {
+              tex = std::make_unique<BitmapConfig>(app, ui);
+              break;
+            }
+            case 3: {
+              tex = std::make_unique<ChessboardConfig>(app, ui);
+              break;
+            }
+          }
+        }
+        if (isSelected) {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+    if (tex != nullptr) {
+      tex->OnGui();
+    }
+    ImGui::TreePop();
+  }
+}
 
 void MainMenu::OnGui() {
   if (ImGui::BeginMainMenuBar()) {
@@ -623,29 +886,123 @@ void SceneNodeInfoPanel::OnGui() {
   if (!_isShow) {
     return;
   }
-  ImGuiWindowFlags flags = 0;
-  if (ImGui::Begin("节点信息", &_isShow, flags)) {
+  ImGuiWindowFlags windowFlags = 0;
+  if (ImGui::Begin("节点信息", &_isShow, windowFlags)) {
     if (!HasSelect()) {
       ImGui::Text("没有选中节点");
     } else {
-      ImGuiInputTextFlags inputFlags = 0;
-      inputFlags |= ImGuiInputTextFlags_AutoSelectAll;
-      inputFlags |= ImGuiInputTextFlags_EnterReturnsTrue;
-      ImGui::InputText("名称", &_node->Name, inputFlags);
-      ImGui::Separator();
-      ImGuiSliderFlags flags = ImGuiSliderFlags_NoRoundToFormat;
-      ImGui::DragFloat3("坐标", (float*)(&_node->Position), 0.2f, 0, 0, "%.3f", flags);
-      ImGui::DragFloat3("缩放", (float*)(&_node->Scale), 0.2f, 0, 0, "%.3f", flags);
+      ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
       {
-        Eigen::Matrix3f rotMat = _node->Rotation.toRotationMatrix();
-        Vector3f radian = rotMat.eulerAngles(2, 0, 1);
-        Vector3f degree(Math::Degree(radian.x()), Math::Degree(radian.y()), Math::Degree(radian.z()));
-        ImGui::DragFloat3("旋转", (float*)(&degree), 1, 0, 0, "%.3f", flags);
-        Eigen::AngleAxisf rollAngle(Math::Radian(degree.x()), Eigen::Vector3f::UnitZ());
-        Eigen::AngleAxisf yawAngle(Math::Radian(degree.y()), Eigen::Vector3f::UnitX());
-        Eigen::AngleAxisf pitchAngle(Math::Radian(degree.z()), Eigen::Vector3f::UnitY());
-        _node->Rotation = rollAngle * yawAngle * pitchAngle;
+        ImGuiInputTextFlags inputFlags = 0;
+        inputFlags |= ImGuiInputTextFlags_AutoSelectAll;
+        inputFlags |= ImGuiInputTextFlags_EnterReturnsTrue;
+        ImGui::InputText("名称", &_node->Name, inputFlags);
       }
+      ImGui::Separator();
+      ImGuiTreeNodeFlags treeFlags = ImGuiTreeNodeFlags_DefaultOpen;
+      if (ImGui::TreeNodeEx("Transform 组件", treeFlags)) {
+        ImGuiSliderFlags sliderFlags = ImGuiSliderFlags_NoRoundToFormat;
+        ImGui::DragFloat3("坐标", (float*)(&_node->Position), 0.2f, 0, 0, "%.3f", sliderFlags);
+        ImGui::DragFloat3("缩放", (float*)(&_node->Scale), 0.2f, 0, 0, "%.3f", sliderFlags);
+        {
+          Eigen::Matrix3f rotMat = _node->Rotation.toRotationMatrix();
+          Vector3f radian = rotMat.eulerAngles(2, 0, 1);
+          Vector3f degree(Math::Degree(radian.x()), Math::Degree(radian.y()), Math::Degree(radian.z()));
+          ImGui::DragFloat3("旋转", (float*)(&degree), 1, 0, 0, "%.3f", sliderFlags);
+          Eigen::AngleAxisf rollAngle(Math::Radian(degree.x()), Eigen::Vector3f::UnitZ());
+          Eigen::AngleAxisf yawAngle(Math::Radian(degree.y()), Eigen::Vector3f::UnitX());
+          Eigen::AngleAxisf pitchAngle(Math::Radian(degree.z()), Eigen::Vector3f::UnitY());
+          _node->Rotation = rollAngle * yawAngle * pitchAngle;
+        }
+        ImGui::TreePop();
+      }
+      ImGui::Separator();
+      if (ImGui::TreeNodeEx("Shape 组件", treeFlags)) {
+        if (_node->Shape == nullptr) {
+          const char* shapeTypeName[] = {
+              "UNKNOWN",
+              "mesh",
+              "sphere",
+              "rectangle",
+              "cube"};
+          ImGui::Text("不存在Shape, 请先创建");
+          if (ImGui::BeginCombo("选择类型", shapeTypeName[_selectShape], 0)) {
+            for (size_t i = 0; i < Math::ArrayLength(shapeTypeName); i++) {
+              bool isSelected = (_selectShape == i);
+              if (ImGui::Selectable(shapeTypeName[i], isSelected)) {
+                _selectShape = i;
+              }
+              if (isSelected) {
+                ImGui::SetItemDefaultFocus();
+              }
+            }
+            ImGui::EndCombo();
+          }
+          ImGui::BeginDisabled(_selectShape == 0);
+          if (ImGui::Button("创建组件")) {
+            switch (_selectShape) {
+              case 1: {
+                _node->Shape = std::make_unique<MeshConfig>(_editor, _ui);
+                break;
+              }
+              case 2: {
+                break;
+              }
+              case 3: {
+                break;
+              }
+              case 4: {
+                break;
+              }
+            }
+          }
+          ImGui::EndDisabled();
+        } else {
+          _node->Shape->OnGui();
+          if (ImGui::Button("删除组件")) {
+            _node->Shape = nullptr;
+          }
+        }
+        ImGui::TreePop();
+      }
+      ImGui::Separator();
+      if (ImGui::TreeNodeEx("BSDF 组件", treeFlags)) {
+        if (_node->Bsdf == nullptr) {
+          ImGui::Text("不存在BSDF, 请先创建");
+          const char* bsdfTypeName[] = {
+              "UNKNOWN",
+              "diffuse"};
+          if (ImGui::BeginCombo("选择类型", bsdfTypeName[_selectBsdf], 0)) {
+            for (size_t i = 0; i < Math::ArrayLength(bsdfTypeName); i++) {
+              bool isSelected = (_selectBsdf == i);
+              if (ImGui::Selectable(bsdfTypeName[i], isSelected)) {
+                _selectBsdf = i;
+              }
+              if (isSelected) {
+                ImGui::SetItemDefaultFocus();
+              }
+            }
+            ImGui::EndCombo();
+          }
+          ImGui::BeginDisabled(_selectBsdf == 0);
+          if (ImGui::Button("创建组件")) {
+            switch (_selectBsdf) {
+              case 1: {
+                _node->Bsdf = std::make_unique<DiffuseConfig>(_editor, _ui);
+                break;
+              }
+            }
+          }
+          ImGui::EndDisabled();
+        } else {
+          _node->Bsdf->OnGui();
+          if (ImGui::Button("删除组件")) {
+            _node->Bsdf = nullptr;
+          }
+        }
+        ImGui::TreePop();
+      }
+      ImGui::PopStyleVar();
     }
   }
   ImGui::End();
@@ -703,8 +1060,8 @@ void AssetsPanel::OnGui() {
               "model_obj",
               "volume_data_mitsuba_vol",
               "volume_data_vdb"};
-          if (ImGui::BeginCombo("资源类型", assetsObjName[_selectType], flags)) {
-            for (int n = 0; n < IM_ARRAYSIZE(assetsObjName); n++) {
+          if (ImGui::BeginCombo("资源类型", assetsObjName[_selectType], 0)) {
+            for (size_t n = 0; n < Math::ArrayLength(assetsObjName); n++) {
               bool isSelected = (_selectType == n);
               if (ImGui::Selectable(assetsObjName[n], isSelected)) {
                 _selectType = n;
@@ -814,7 +1171,7 @@ void AssetsPanel::OnGui() {
         auto region = ImGui::GetContentRegionAvail();
         if (ImGui::BeginChild("_List2", ImVec2(region.x, region.y), true, cflag)) {
           if (hasSelect) {
-            auto assIns = asset.Borrow(_select);
+            auto assIns = asset.Reference(_select);
             ImGui::Text("名字：");
             ImGui::SameLine();
             ImGui::Text("%s", assIns->GetName().c_str());
@@ -824,6 +1181,9 @@ void AssetsPanel::OnGui() {
             ImGui::Text("路径：");
             ImGui::SameLine();
             ImGui::Text("%s", assIns->GetLocation().c_str());
+            ImGui::Text("引用数：");
+            ImGui::SameLine();
+            ImGui::Text("%ld", assIns.use_count() - 2);  // 因为这里有一个引用，资源管理里也有个引用，所以要减2
           } else {
             ImGui::Text("没有选中资产项");
           }
@@ -859,18 +1219,7 @@ UIManager::UIManager(EditorApplication* editor) : _editor(editor) {
   AddCharEventGlfw(ImGui_ImplGlfw_CharCallback);
   AddMonitorEventGlfw(ImGui_ImplGlfw_MonitorCallback);
 
-  auto hiePanel = std::make_unique<HierarchyPanel>();
-  auto mainMenu = std::make_unique<MainMenu>();
-  auto nodeInfo = std::make_unique<SceneNodeInfoPanel>();
-  auto assets = std::make_unique<AssetsPanel>();
-  mainMenu->AttachHierarchyPanel(hiePanel.get());
-  mainMenu->AttachNodeInfoPanel(nodeInfo.get());
-  mainMenu->AttachAssetPanel(assets.get());
-  hiePanel->AttachNodeInfoPanel(nodeInfo.get());
-  AddGui(std::move(mainMenu));
-  AddGui(std::move(hiePanel));
-  AddGui(std::move(nodeInfo));
-  AddGui(std::move(assets));
+  Reset();
 }
 
 UIManager::~UIManager() noexcept {
@@ -915,6 +1264,24 @@ void UIManager::Draw() {
   Rad::Vector2i size = Rad::RadGetFrameBufferSizeGlfw();
   glViewport(0, 0, size.x(), size.y());
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void UIManager::Reset() {
+  _itemList.clear();
+  _drawList.clear();
+  _startList.clear();
+  auto hiePanel = std::make_unique<HierarchyPanel>();
+  auto mainMenu = std::make_unique<MainMenu>();
+  auto nodeInfo = std::make_unique<SceneNodeInfoPanel>();
+  auto assets = std::make_unique<AssetsPanel>();
+  mainMenu->AttachHierarchyPanel(hiePanel.get());
+  mainMenu->AttachNodeInfoPanel(nodeInfo.get());
+  mainMenu->AttachAssetPanel(assets.get());
+  hiePanel->AttachNodeInfoPanel(nodeInfo.get());
+  AddGui(std::move(mainMenu));
+  AddGui(std::move(hiePanel));
+  AddGui(std::move(nodeInfo));
+  AddGui(std::move(assets));
 }
 
 void UIManager::AddGui(Unique<GuiItem> ui) {

@@ -45,6 +45,7 @@ class UIManager {
   void NewFrame();
   void OnGui();
   void Draw();
+  void Reset();
 
   void AddGui(Unique<GuiItem>);
 

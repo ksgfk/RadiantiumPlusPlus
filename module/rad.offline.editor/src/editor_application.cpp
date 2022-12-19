@@ -278,6 +278,8 @@ void EditorApplication::OpenWorkspace(const std::filesystem::path& filePath) {
   if (IsWorkspaceActive()) {
     // TODO: 提示保存当前场景，清理现场
     _isWorkspaceActive = false;
+    _asset = std::make_unique<AssetManager>();
+    _asset->SetObjectFactory(*_factory.get());
     _root = std::make_unique<SceneNode>(this);
   }
   ConfigNode root(&cfg);

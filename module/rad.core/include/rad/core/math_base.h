@@ -103,5 +103,12 @@ constexpr Value Horner(const Value& x, Number... n) {
   Value coeffs[]{Value(n)...};
   return RadHornerImpl___(x, coeffs);
 }
+/**
+ * @brief 获取原生数组长度
+ */
+template <typename T, size_t N>
+constexpr size_t ArrayLength(const T (&)[N]) {
+  return N;
+};
 
 }  // namespace Rad::Math

@@ -2,10 +2,4 @@
 
 namespace Rad {
 
-void MeshModelConfig::OnGui() {
-}
-
-void DiffuseBsdfConfig::OnGui() {
-}
-
 }  // namespace Rad
