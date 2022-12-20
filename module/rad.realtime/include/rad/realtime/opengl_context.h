@@ -7,6 +7,7 @@
 namespace Rad {
 
 void RadInitContextOpenGL();
+void RadSetupDebugLayerOpenGL();
 void RadShutdownContextOpenGL();
 
 }  // namespace Rad

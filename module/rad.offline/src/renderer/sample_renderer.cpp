@@ -39,8 +39,10 @@ void Renderer::SaveResult(const LocationResolver& resolver) const {
       tmp.coeffRef(x, y) = fb.coeff(x, y).cast<Float32>();
     }
   }
-  auto stream = resolver.WriteStream(resolver.GetSaveName("exr"), std::ios::binary | std::ios::out);
+  auto saveName = resolver.GetSaveName("exr");
+  auto stream = resolver.WriteStream(saveName, std::ios::binary | std::ios::out);
   ImageReader::WriteExr(*stream, tmp);
+  _logger->info("save result to: {}", (resolver.GetWorkDirectory() / saveName).u8string());
 }
 
 SampleRenderer::SampleRenderer(

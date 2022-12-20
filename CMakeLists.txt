@@ -13,7 +13,8 @@ if(WIN32)
 endif()
 
 option(RAD_IS_BUILD_REALTIME  "RAD is build realtime?" ON)
-option(RAD_IS_BUILD_OFFLINE_EDITOR  "RAD is build offline.editor" ON)
+option(RAD_IS_BUILD_OFFLINE_EDITOR  "RAD is build offline.editor" OFF)
+option(RAD_IS_BUILD_PREVIEW_WINDOW "RAD is build preview window?" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RAD_IS_BUILD_DEBUG TRUE)
@@ -30,6 +31,8 @@ if(RAD_IS_BUILD_DEBUG)
   set(RAD_OFFLINE_EDITOR_MODULE_NAME "rad.offline.editor_debug")
   set(RAD_REALTIME_MODULE_NAME "rad.realtime_debug")
   set(RAD_GLAD_MODULE_NAME "glad_debug")
+  set(RAD_IMGUI_LIB_NAME "imgui_debug")
+  set(RAD_OFFLINE_WINDOW_MODULE_NAME "rad.offline.window_debug")
 else()
   set(RAD_CORE_MODULE_NAME "rad.core")
   set(RAD_OFFLINE_MODULE_NAME "rad.offline")
@@ -37,6 +40,8 @@ else()
   set(RAD_OFFLINE_EDITOR_MODULE_NAME "rad.offline.editor")
   set(RAD_REALTIME_MODULE_NAME "rad.realtime")
   set(RAD_GLAD_MODULE_NAME "glad")
+  set(RAD_IMGUI_LIB_NAME "imgui")
+  set(RAD_OFFLINE_WINDOW_MODULE_NAME "rad.offline.window")
 endif()
 
 set(RAD_EXT_LIB_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ext")
@@ -47,7 +52,11 @@ add_subdirectory("module/rad.offline.cli") # 离线渲染控制台应用
 if(RAD_IS_BUILD_REALTIME)
   add_subdirectory("${RAD_EXT_LIB_PATH}/glad") # 总之我不知道CMake为什么不是子文件夹就不能add, 傻逼cmake
   add_subdirectory("module/rad.realtime") # 可选构建实时渲染库
+  add_subdirectory("${RAD_EXT_LIB_PATH}/imgui_cmake") # 总之先给imgui构建一个静态库
   if(RAD_IS_BUILD_OFFLINE_EDITOR)
     add_subdirectory("module/rad.offline.editor") # 可选构建离线渲染的编辑器
   endif()
+endif()
+if(RAD_IS_BUILD_PREVIEW_WINDOW)
+  add_subdirectory("module/rad.offline.window") # 可选构建带预览窗口的渲染器应用
 endif()

@@ -144,6 +144,10 @@ Vector2i RadGetFrameBufferSizeGlfw() {
   return Vector2i(width, height);
 }
 
+void RadSetWindowSizeGlfw(const Vector2i& size) {
+  glfwSetWindowSize(_window, size.x(), size.y());
+}
+
 void AddWindowFocusEventGlfw(std::function<void(GLFWwindow*, int)> action) {
   _windowFocusActions.emplace_back(std::move(action));
 }

@@ -22,6 +22,51 @@ namespace Rad {
 static Share<spdlog::logger> _logger{nullptr};
 static bool _isInitOgl{false};
 
+static void DebugMessage(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    GLchar const* message,
+    void const* user_param) {
+  auto src = [](GLenum src) {
+    switch (src) {
+      case GL_DEBUG_SOURCE_API:
+        return "API";
+      case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+        return "Window System";
+      case GL_DEBUG_SOURCE_SHADER_COMPILER:
+        return "Shader Compiler";
+      case GL_DEBUG_SOURCE_THIRD_PARTY:
+        return "Third Party";
+      case GL_DEBUG_SOURCE_APPLICATION:
+        return "App";
+      case GL_DEBUG_SOURCE_OTHER:
+        return "Other";
+      default:
+        return "Unknown Source";
+    }
+  };
+  if (source == GL_DEBUG_SOURCE_APPLICATION && severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+    return;
+  }
+  switch (severity) {
+    case GL_DEBUG_SEVERITY_NOTIFICATION:
+      _logger->debug("[{}] {}", src(source), message);
+      break;
+    case GL_DEBUG_SEVERITY_LOW:
+      _logger->info("[{}] {}", src(source), message);
+      break;
+    case GL_DEBUG_SEVERITY_MEDIUM:
+      _logger->warn("[{}] {}", src(source), message);
+      break;
+    case GL_DEBUG_SEVERITY_HIGH:
+      _logger->error("[{}] {}", src(source), message);
+      break;
+  }
+}
+
 void RadInitContextOpenGL() {
   if (!RadIsWindowActiveGlfw()) {
     throw RadInvalidOperationException("should create a glfw window before init ogl ctx");
@@ -42,6 +87,11 @@ void RadInitContextOpenGL() {
   _logger->info("Device: {}", device);
   _logger->info("Driver: {}", driver);
   _isInitOgl = true;
+}
+
+void RadSetupDebugLayerOpenGL() {
+  glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(DebugMessage, nullptr);
 }
 
 void RadShutdownContextOpenGL() {

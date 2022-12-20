@@ -27,6 +27,7 @@ bool RadShouldCloseWindowGlfw();
 void RadPollEventGlfw();
 void RadSwapBuffersGlfw();
 Vector2i RadGetFrameBufferSizeGlfw();
+void RadSetWindowSizeGlfw(const Vector2i& size);
 
 void AddWindowFocusEventGlfw(std::function<void(GLFWwindow*, int)>);
 void AddCursorEnterEventGlfw(std::function<void(GLFWwindow*, int)>);

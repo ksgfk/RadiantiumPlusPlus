@@ -28,6 +28,7 @@ class RAD_EXPORT_API Renderer {
    * @brief 从开始渲染到现在已经经过的时间
    */
   Int64 ElapsedTime() const { return _sw.ElapsedMilliseconds(); }
+  const Scene& GetScene() const { return *_scene; }
 
   virtual void Start() = 0;
   virtual void Wait();
@@ -40,7 +41,7 @@ class RAD_EXPORT_API Renderer {
   Unique<std::thread> _renderThread;
   Int32 _threadCount;
   UInt64 _allTask = 0;
-  std::atomic_uint64_t _completeTask = 0;  //已完成任务数量
+  std::atomic_uint64_t _completeTask = 0;  // 已完成任务数量
   Stopwatch _sw{};
   bool _isComplete = false;
   bool _isStop = false;
