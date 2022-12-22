@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
           if (ImGui::Begin("Preview", nullptr, windowFlag)) {
             float progress = (float)renderer->CompletedTaskCount() / renderer->AllTaskCount();
             float speed = (float)renderer->CompletedTaskCount() / renderer->ElapsedTime();
-            float eta = speed * (renderer->AllTaskCount() - renderer->CompletedTaskCount());
+            float eta = (renderer->AllTaskCount() - renderer->CompletedTaskCount()) / speed;
             ImGui::ProgressBar(progress, ImVec2(-1.0f, 20.0f));
             ImGui::Text("Elapsed: %lld ms", renderer->ElapsedTime());
             ImGui::Text("ETA: %.2f ms", eta);
