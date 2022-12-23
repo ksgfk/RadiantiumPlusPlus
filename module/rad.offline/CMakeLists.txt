@@ -44,6 +44,7 @@ add_library(${RAD_OFFLINE_MODULE_NAME} SHARED
     src/bsdf/rough_plastic.cpp
     src/bsdf/rough_glass.cpp
     src/phase_function/isotropic.cpp
+    src/phase_function/henyey_greenstein.cpp
     src/sampler/independent.cpp
     src/texture/bitmap.cpp
     src/texture/chessboard.cpp

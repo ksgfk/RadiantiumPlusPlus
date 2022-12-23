@@ -30,6 +30,7 @@ Unique<RendererFactory> _FactoryCreatePTracerFunc_();
 Unique<RendererFactory> _FactoryCreateVolPathFunc_();
 Unique<CameraFactory> _FactoryCreatePerspectiveFunc_();
 Unique<PhaseFunctionFactory> _FactoryCreateIsotropicPhaseFunc_();
+Unique<PhaseFunctionFactory> _FactoryCreateHenyeyGreensteinFunc_();
 Unique<MediumFactory> _FactoryCreateHomogeneousMediumFunc_();
 Unique<MediumFactory> _FactoryCreateHeterogeneousMediumFunc_();
 Unique<VolumeFactory> _FactoryCreateVolumeGridFunc_();
@@ -64,6 +65,7 @@ std::vector<std::function<Unique<Factory>(void)>> GetRadOfflineFactories() {
       _FactoryCreateVolPathFunc_,
       _FactoryCreatePerspectiveFunc_,
       _FactoryCreateIsotropicPhaseFunc_,
+      _FactoryCreateHenyeyGreensteinFunc_,
       _FactoryCreateHomogeneousMediumFunc_,
       _FactoryCreateHeterogeneousMediumFunc_,
       _FactoryCreateVolumeGridFunc_,
