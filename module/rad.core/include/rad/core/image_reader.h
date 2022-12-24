@@ -54,6 +54,11 @@ class RAD_EXPORT_API ImageReader {
       Int32 requireChannel,
       bool isFlipY = true);
 
+  static ImageReadResult ReadHdrStb(
+      std::istream& stream,
+      Int32 requireChannel,
+      bool isFlipY = true);
+
   /**
    * @brief 读取exr格式图片，只支持读取RGB三通道
    *

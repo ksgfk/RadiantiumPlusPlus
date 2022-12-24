@@ -82,6 +82,7 @@ const Asset* AssetManager::Borrow(const std::string& name) const {
 
 Unique<AssetFactory> _FactoryCreateImageStbFunc_();
 Unique<AssetFactory> _FactoryCreateImageExrFunc_();
+Unique<AssetFactory> _FactoryCreateImageHdrFunc_();
 Unique<AssetFactory> _FactoryCreateModelObjFunc_();
 Unique<AssetFactory> _FactoryCreateVolumeVdbFunc_();
 Unique<AssetFactory> _FactoryCreateVolumeMitsubaVolFunc_();
@@ -90,6 +91,7 @@ std::vector<std::function<Unique<Factory>(void)>> GetRadCoreAssetFactories() {
   return {
       _FactoryCreateImageStbFunc_,
       _FactoryCreateImageExrFunc_,
+      _FactoryCreateImageHdrFunc_,
       _FactoryCreateModelObjFunc_,
       _FactoryCreateVolumeVdbFunc_,
       _FactoryCreateVolumeMitsubaVolFunc_,

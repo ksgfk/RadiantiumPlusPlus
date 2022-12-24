@@ -21,6 +21,7 @@ add_library(${RAD_CORE_MODULE_NAME} SHARED
     src/asset.cpp
     src/asset/image_stb.cpp
     src/asset/image_exr.cpp
+    src/asset/image_hdr.cpp
     src/asset/model_obj.cpp
     src/asset/volume_mitsuba_vol.cpp
     src/asset/volume_vdb.cpp)

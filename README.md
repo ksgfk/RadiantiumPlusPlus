@@ -36,6 +36,8 @@ glad已经包含在ext/glad里了，不需要额外安装
 
 ![](gallery/staircase.png)
 
+![](gallery/glass-of-water.png)
+
 ![](gallery/mitsuba_banner6.png)
 
 ## License

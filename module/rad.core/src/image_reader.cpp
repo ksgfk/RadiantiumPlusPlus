@@ -22,11 +22,7 @@
 
 namespace Rad {
 
-ImageReadResult ImageReader::ReadLdrStb(
-    std::istream& stream,
-    Int32 requireChannel,
-    bool isFlipY) {
-  static_assert(sizeof(Byte) == sizeof(stbi_uc), "byte size in Rad and stb is inconsistent");
+static stbi_io_callbacks CreateStbIO() {
   stbi_io_callbacks cb;
   cb.read = [](void* user, char* data, int size) -> int {
     std::istream* stream = reinterpret_cast<std::istream*>(user);
@@ -42,6 +38,15 @@ ImageReadResult ImageReader::ReadLdrStb(
     std::istream* stream = reinterpret_cast<std::istream*>(user);
     return stream->eof() || stream->bad() || stream->fail();
   };
+  return cb;
+}
+
+ImageReadResult ImageReader::ReadLdrStb(
+    std::istream& stream,
+    Int32 requireChannel,
+    bool isFlipY) {
+  static_assert(sizeof(Byte) == sizeof(stbi_uc), "byte size in Rad and stb is inconsistent");
+  stbi_io_callbacks cb = CreateStbIO();
   int x, y, channel;
   stbi_set_flip_vertically_on_load_thread(isFlipY);
   auto data = stbi_load_from_callbacks(
@@ -59,6 +64,35 @@ ImageReadResult ImageReader::ReadLdrStb(
     result.Data.resize(size, (std::byte)0);
     result.ChannelType = ImageChannelType::UInt;
     std::copy(data, data + size, (stbi_uc*)result.Data.data());
+  }
+  if (data != nullptr) {
+    stbi_image_free(data);
+  }
+  return result;
+}
+
+ImageReadResult ImageReader::ReadHdrStb(
+    std::istream& stream,
+    Int32 requireChannel,
+    bool isFlipY) {
+  stbi_io_callbacks cb = CreateStbIO();
+  int x, y, channel;
+  stbi_set_flip_vertically_on_load_thread(isFlipY);
+  auto data = stbi_loadf_from_callbacks(
+      &cb, &stream,
+      &x, &y, &channel,
+      requireChannel);
+  ImageReadResult result{};
+  if (data == nullptr) {
+    result.IsSuccess = false;
+    result.FailReason = stbi_failure_reason();
+  } else {
+    result.IsSuccess = true;
+    result.Size = Eigen::Vector3i(x, y, requireChannel);
+    size_t size = (size_t)x * (size_t)y * (size_t)requireChannel * sizeof(float);
+    result.Data.resize(size, (std::byte)0);
+    result.ChannelType = ImageChannelType::Float;
+    std::copy(data, data + (x * y * requireChannel), (float*)result.Data.data());
   }
   if (data != nullptr) {
     stbi_image_free(data);
@@ -110,7 +144,7 @@ ImageReadResult ImageReader::ReadExr(std::istream& stream) {
       return -1;
     };
     bool isUsed[] = {false, false, false};  // exr文件是否拥有通道
-    std::string rgb[] = {{}, {}, {}};       //通道编码对应名字
+    std::string rgb[] = {{}, {}, {}};       // 通道编码对应名字
     for (auto iter = channels.begin(); iter != channels.end(); iter++) {
       std::string name(iter.name());
       int type = channelType(name);
@@ -143,12 +177,12 @@ ImageReadResult ImageReader::ReadExr(std::istream& stream) {
       default:
         throw RadArgumentException("unknown pixel format");
     }
-    size_t pixelStride = comSize * 3;        //一个颜色在exr文件中的大小
-    size_t rowStride = pixelStride * width;  //一行颜色在exr文件中的大小
+    size_t pixelStride = comSize * 3;        // 一个颜色在exr文件中的大小
+    size_t rowStride = pixelStride * width;  // 一行颜色在exr文件中的大小
     std::vector<Byte> data;
     data.resize(rowStride * height, (Byte)0);
     Byte* ptr = data.data() - (dataWindow.min.x + dataWindow.min.y * width) * pixelStride;
-    Imf::FrameBuffer framebuffer;  //将RGB放入fb
+    Imf::FrameBuffer framebuffer;  // 将RGB放入fb
     for (size_t i = 0; i < 3; i++) {
       if (!isUsed[i]) {
         continue;
