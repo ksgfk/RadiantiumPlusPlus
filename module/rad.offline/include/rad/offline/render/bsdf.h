@@ -38,6 +38,7 @@ enum class BsdfType : UInt32 {
   Delta = 0b000100,
   Reflection = 0b001000,
   Transmission = 0b010000,
+  Null = 0b100000,
 
   All = Diffuse | Glossy | Delta | Reflection | Transmission,
   NoDelta = Diffuse | Glossy

@@ -23,6 +23,7 @@ Unique<BsdfFactory> _FactoryCreatePlasticFunc_();
 Unique<BsdfFactory> _FactoryCreateRoughMetalFunc_();
 Unique<BsdfFactory> _FactoryCreateRoughPlasticFunc_();
 Unique<BsdfFactory> _FactoryCreateRoughGlassFunc_();
+Unique<BsdfFactory> _FactoryCreateMaskBsdfFunc_();
 Unique<RendererFactory> _FactoryCreatePathFunc_();
 Unique<RendererFactory> _FactoryCreateAOFunc_();
 Unique<RendererFactory> _FactoryCreateBdptFunc_();
@@ -58,6 +59,7 @@ std::vector<std::function<Unique<Factory>(void)>> GetRadOfflineFactories() {
       _FactoryCreateRoughMetalFunc_,
       _FactoryCreateRoughPlasticFunc_,
       _FactoryCreateRoughGlassFunc_,
+      _FactoryCreateMaskBsdfFunc_,
       _FactoryCreatePathFunc_,
       _FactoryCreateAOFunc_,
       _FactoryCreateBdptFunc_,
