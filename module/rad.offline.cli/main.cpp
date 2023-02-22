@@ -26,7 +26,11 @@ int main(int argc, char** argv) {
       }
       std::filesystem::path p(scenePath);
       if (!std::filesystem::exists(p)) {
-        throw Rad::RadArgumentException("cannot open file: {}", scenePath);
+        std::filesystem::path work = std::filesystem::current_path() / p;
+        if (!std::filesystem::exists(work)) {
+          throw Rad::RadArgumentException("cannot open file: {}", scenePath);
+        }
+        p = work;
       }
       nlohmann::json cfg;
       {

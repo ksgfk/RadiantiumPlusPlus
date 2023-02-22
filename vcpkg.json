@@ -1,0 +1,16 @@
+{
+  "name": "rad",
+  "version-string": "0.0.1",
+  "dependencies": [
+    "eigen3",
+    "fmt",
+    "spdlog",
+    "tbb",
+    "embree3",
+    "nlohmann-json",
+    "stb",
+    "openexr",
+    "openvdb",
+    "glfw3"
+  ]
+}
