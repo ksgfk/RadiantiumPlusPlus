@@ -1,12 +1,12 @@
 #include <rad/core/common.h>
 #include <rad/core/logger.h>
 
-#include <rad/offline/editor/editor_application.h>
+#include <rad/offline/editor/application.h>
 
 int main(int argc, char** argv) {
   Rad::RadCoreInit();
   try {
-    Rad::Unique<Rad::EditorApplication> app = std::make_unique<Rad::EditorApplication>(argc, argv);
+    auto app = std::make_unique<Rad::Application>(argc, argv);
     app->Run();
   } catch (const std::exception& e) {
     Rad::Logger::Get()->error("unhandled exception: {}", e.what());
