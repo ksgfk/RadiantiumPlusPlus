@@ -1,8 +1,11 @@
 #pragma once
 
-#if defined (_WIN32)
+#if defined(_WIN32)
 #include <windows.h>
 #endif
+
+#include <filesystem>
+#include <unordered_map>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -35,6 +38,8 @@ class Application {
   Application(int argc, char** argv);
 
   void Run();
+  void LoadI18n(const std::filesystem::path& path);
+  const char* I18n(const std::string& key) const;
 
  private:
   void Start();
@@ -51,11 +56,27 @@ class Application {
   bool GLLinkProgram(const GLuint* shader, int count, GLuint* program);
 
   void OnGui();
+  void OnGuiMenuBar();
+  void OnGuiMsgBox();
+
+  void ShowMsgBox(const std::string& msg);
+  bool IsMsgBoxOpen();
 
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
   ImGuiRenderData _imRender;
-  Unique<ImGui::FileBrowser> _fileDialog;
+
+  std::unordered_map<std::string, std::string> _i18n;
+  bool _hasWorkspace;
+  std::filesystem::path _workRoot;
+  Vector3f _backgroundColor;
+
+  Unique<ImGui::FileBrowser> _menuBarFb;
+  bool _isMenuBarNewSceneRecFbRes;
+
+  bool _isShowMsgBox;
+  std::string _msgBoxTitle;
+  std::string _msgBoxText;
 };
 
 }  // namespace Rad

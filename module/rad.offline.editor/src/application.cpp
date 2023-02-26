@@ -2,6 +2,9 @@
 
 #include <thread>
 #include <string>
+#include <algorithm>
+
+#include <nlohmann/json.hpp>
 
 #include <rad/realtime/opengl_context.h>
 
@@ -85,12 +88,35 @@ Application::Application(int argc, char** argv)
     : _logger(Logger::GetCategory("app")),
       _window(nullptr),
       _imRender({}),
-      _fileDialog(std::make_unique<ImGui::FileBrowser>()) {}
+      _i18n(),
+      _hasWorkspace(false),
+      _workRoot(std::filesystem::current_path()),
+      _backgroundColor(0.2f, 0.3f, 0.3f) {
+  LoadI18n(std::filesystem::current_path() / "i18n" / "zh_cn_utf8.json");
+}
 
 void Application::Run() {
   Start();
   Update();
   Destroy();
+}
+
+void Application::LoadI18n(const std::filesystem::path& path) {
+  if (!std::filesystem::exists(path)) {
+    _logger->warn("cannot load i18n file: {}", path.generic_string());
+    return;
+  }
+  _i18n.clear();
+  std::ifstream cfgStream(path);
+  nlohmann::json cfg = nlohmann::json::parse(cfgStream);
+  for (auto iter = cfg.begin(); iter != cfg.end(); iter++) {
+    _i18n.emplace(iter.key(), iter->get<std::string>());
+  }
+}
+
+const char* Application::I18n(const std::string& key) const {
+  auto iter = _i18n.find(key);
+  return iter == _i18n.end() ? key.c_str() : iter->second.c_str();
 }
 
 void Application::Start() {
@@ -237,7 +263,7 @@ void Application::DrawStartPass() {
   int width, height;
   glfwGetFramebufferSize(_window, &width, &height);
   glViewport(0, 0, width, height);
-  glClearColor(0.2f, 0.3f, 0.1f, 1.0f);
+  glClearColor(_backgroundColor.x(), _backgroundColor.y(), _backgroundColor.z(), 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
@@ -373,7 +399,100 @@ bool Application::GLLinkProgram(const GLuint* shader, int count, GLuint* program
 
 void Application::OnGui() {
   ImGui::ShowDemoWindow();
-  _fileDialog->Display();
+  OnGuiMenuBar();
+}
+
+void Application::OnGuiMenuBar() {
+  if (ImGui::BeginMainMenuBar()) {
+    if (ImGui::BeginMenu(I18n("main_menu_bar.file"))) {
+      if (ImGui::MenuItem(I18n("main_menu_bar.file.new_scene"))) {
+        _menuBarFb = std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+        _menuBarFb->SetPwd(_workRoot);
+        _menuBarFb->SetTitle(I18n("main_menu_bar.file.open_scene.file_dialog_title"));
+        _menuBarFb->Open();
+        _isMenuBarNewSceneRecFbRes = true;
+      }
+      if (ImGui::MenuItem(I18n("main_menu_bar.file.open_scene"))) {
+        _logger->info("open");
+      }
+      if (ImGui::MenuItem(I18n("main_menu_bar.file.save_scene"))) {
+        _logger->info("save");
+      }
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu(I18n("main_menu_bar.setting"))) {
+      if (ImGui::BeginMenu(I18n("main_menu_bar.setting.background color"))) {
+        ImGui::ColorEdit3(I18n("main_menu_bar.setting.background color"), _backgroundColor.data(), ImGuiColorEditFlags_NoLabel);
+        ImGui::EndMenu();
+      }
+      if (ImGui::BeginMenu(I18n("main_menu_bar.setting.switch_language"))) {
+        for (const auto& iter : std::filesystem::directory_iterator(std::filesystem::current_path() / "i18n")) {
+          if (!iter.is_regular_file()) {
+            continue;
+          }
+          auto filePath = iter.path();
+          auto fileName = filePath.filename().string();
+          std::transform(fileName.begin(), fileName.end(), fileName.begin(),
+                         [](unsigned char c) { return std::tolower(c); });
+          if (fileName == "zh_cn_utf8.json") {
+            if (ImGui::MenuItem("中文")) {
+              LoadI18n(filePath);
+              break;
+            }
+          } else if (fileName == "en_us.json") {
+            if (ImGui::MenuItem("English")) {
+              LoadI18n(filePath);
+              break;
+            }
+          } else {
+            if (ImGui::MenuItem(fileName.c_str())) {
+              LoadI18n(filePath);
+              break;
+            }
+          }
+        }
+        ImGui::EndMenu();
+      }
+      ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+  }
+  if (_menuBarFb != nullptr) {
+    _menuBarFb->Display();
+    if (_menuBarFb->HasSelected() && _isMenuBarNewSceneRecFbRes) {
+      auto select = _menuBarFb->GetSelected();
+      _logger->info("select {}", select.generic_string());
+      _menuBarFb->ClearSelected();
+      _isMenuBarNewSceneRecFbRes = false;
+    }
+  }
+}
+
+void Application::OnGuiMsgBox() {
+  if (ImGui::BeginPopupModal("message box", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::TextWrapped("%s", _msgBoxText.c_str());
+    ImGui::Separator();
+    if (ImGui::Button("cancel")) {
+      _isShowMsgBox = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("ok")) {
+      _isShowMsgBox = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+}
+
+void Application::ShowMsgBox(const std::string& msg) {
+  ImGui::OpenPopup("message box");
+  _isShowMsgBox = true;
+  _msgBoxText = msg;
+}
+
+bool Application::IsMsgBoxOpen() {
+  return _isShowMsgBox;
 }
 
 }  // namespace Rad
