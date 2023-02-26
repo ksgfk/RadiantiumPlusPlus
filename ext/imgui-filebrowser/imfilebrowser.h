@@ -125,6 +125,11 @@ namespace ImGui
         // this function will pre-fill the input dialog with a filename.
         void SetInputName(std::string_view input);
 
+        // when ImGuiFileBrowserFlags_EnterNewFilename is set
+        // set the hint text before input dialog
+        void SetInpuTextHint(const std::string& input);
+        void SetButtonOkHint(const std::string& input);
+        void SetButtonCancelHint(const std::string& input);
     private:
 
         template <class Functor>
@@ -202,13 +207,17 @@ namespace ImGui
 #ifdef _WIN32
         uint32_t drives_;
 #endif
+        std::string buttonOkHint_;
+        std::string buttonCancelHint_;
+        std::string newFileHint_;
     };
 } // namespace ImGui
 
 inline ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags flags)
     : width_(700), height_(450), posX_(0), posY_(0), flags_(flags),
       openFlag_(false), closeFlag_(false), isOpened_(false), ok_(false), posIsSet_(false),
-      inputNameBuf_(std::make_unique<std::array<char, INPUT_NAME_BUF_SIZE>>())
+      inputNameBuf_(std::make_unique<std::array<char, INPUT_NAME_BUF_SIZE>>()),
+      buttonOkHint_("ok"), buttonCancelHint_("cancel"), newFileHint_("Filename:")
 {
     if(flags_ & ImGuiFileBrowserFlags_CreateNewDir)
     {
@@ -506,7 +515,7 @@ inline void ImGui::FileBrowser::Display()
             InputText("name", newDirNameBuf_->data(), newDirNameBuf_->size());
             SameLine();
 
-            if(Button("ok") && (*newDirNameBuf_)[0] != '\0')
+            if(Button(buttonOkHint_.c_str()) && (*newDirNameBuf_)[0] != '\0')
             {
                 ScopeGuard closeNewDirPopup([] { CloseCurrentPopup(); });
                 if(create_directory(pwd_ / newDirNameBuf_->data()))
@@ -636,7 +645,9 @@ inline void ImGui::FileBrowser::Display()
     {
         PushID(this);
         ScopeGuard popTextID([] { PopID(); });
-
+        
+        Text(newFileHint_.c_str());
+        SameLine();
         PushItemWidth(-1);
         if(InputText("", inputNameBuf_->data(), inputNameBuf_->size()) &&
            inputNameBuf_->at(0) != '\0')
@@ -648,7 +659,7 @@ inline void ImGui::FileBrowser::Display()
 
     if(!(flags_ & ImGuiFileBrowserFlags_SelectDirectory))
     {
-        if(Button(" ok ") && !selectedFilenames_.empty())
+        if(Button(buttonOkHint_.c_str()) && !selectedFilenames_.empty())
         {
             ok_ = true;
             CloseCurrentPopup();
@@ -656,7 +667,7 @@ inline void ImGui::FileBrowser::Display()
     }
     else
     {
-        if(Button(" ok "))
+        if(Button(buttonOkHint_.c_str()))
         {
             ok_ = true;
             CloseCurrentPopup();
@@ -666,7 +677,7 @@ inline void ImGui::FileBrowser::Display()
     SameLine();
 
     bool shouldExit =
-        Button("cancel") || closeFlag_ ||
+        Button(buttonCancelHint_.c_str()) || closeFlag_ ||
         ((flags_ & ImGuiFileBrowserFlags_CloseOnEsc) &&
         IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
         IsKeyPressed(ImGuiKey_Escape));
@@ -1005,3 +1016,16 @@ inline std::uint32_t ImGui::FileBrowser::GetDrivesBitMask()
 }
 
 #endif
+
+inline void ImGui::FileBrowser::SetInpuTextHint(const std::string& input)
+{
+  newFileHint_ = input;
+}
+inline void ImGui::FileBrowser::SetButtonOkHint(const std::string& input)
+{
+  buttonOkHint_ = input;
+}
+inline void ImGui::FileBrowser::SetButtonCancelHint(const std::string& input)
+{
+  buttonCancelHint_ = input;
+}

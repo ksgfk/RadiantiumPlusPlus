@@ -406,9 +406,13 @@ void Application::OnGuiMenuBar() {
   if (ImGui::BeginMainMenuBar()) {
     if (ImGui::BeginMenu(I18n("main_menu_bar.file"))) {
       if (ImGui::MenuItem(I18n("main_menu_bar.file.new_scene"))) {
+        _logger->debug("new scene");
         _menuBarFb = std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
         _menuBarFb->SetPwd(_workRoot);
         _menuBarFb->SetTitle(I18n("main_menu_bar.file.open_scene.file_dialog_title"));
+        _menuBarFb->SetInpuTextHint(I18n("main_menu_bar.file.open_scene.file_dialog_filename"));
+        _menuBarFb->SetButtonOkHint(I18n("ok"));
+        _menuBarFb->SetButtonCancelHint(I18n("cancel"));
         _menuBarFb->Open();
         _isMenuBarNewSceneRecFbRes = true;
       }
@@ -461,7 +465,7 @@ void Application::OnGuiMenuBar() {
     _menuBarFb->Display();
     if (_menuBarFb->HasSelected() && _isMenuBarNewSceneRecFbRes) {
       auto select = _menuBarFb->GetSelected();
-      _logger->info("select {}", select.generic_string());
+      _logger->debug("select {}", select.generic_string());
       _menuBarFb->ClearSelected();
       _isMenuBarNewSceneRecFbRes = false;
     }

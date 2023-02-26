@@ -1,7 +1,10 @@
 {
+  "ok": "OK",
+  "cancel": "Cancel",
   "main_menu_bar.file": "File",
   "main_menu_bar.file.new_scene": "New Scene",
   "main_menu_bar.file.open_scene.file_dialog_title": "Select a directory and enter the scene name",
+  "main_menu_bar.file.open_scene.file_dialog_filename": "New scene name:",
   "main_menu_bar.file.open_scene": "Open Scene",
   "main_menu_bar.file.save_scene": "Save Scene",
   "main_menu_bar.setting": "Setting",
