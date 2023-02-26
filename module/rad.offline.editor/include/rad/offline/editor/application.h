@@ -1,11 +1,19 @@
 #pragma once
 
-#include <rad/core/types.h>
-#include <rad/core/logger.h>
+#if defined (_WIN32)
+#include <windows.h>
+#endif
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <imfilebrowser.h>
+
+#include <rad/core/types.h>
+#include <rad/core/logger.h>
+
+struct GLFWwindow;
 
 namespace Rad {
 
@@ -42,9 +50,12 @@ class Application {
   bool GLCompileShader(const char* source, GLenum type, GLuint* shader);
   bool GLLinkProgram(const GLuint* shader, int count, GLuint* program);
 
+  void OnGui();
+
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
   ImGuiRenderData _imRender;
+  Unique<ImGui::FileBrowser> _fileDialog;
 };
 
 }  // namespace Rad

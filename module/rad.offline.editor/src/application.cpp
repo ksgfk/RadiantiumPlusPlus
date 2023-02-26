@@ -3,8 +3,6 @@
 #include <thread>
 #include <string>
 
-#include <backends/imgui_impl_glfw.h>
-
 #include <rad/realtime/opengl_context.h>
 
 namespace Rad {
@@ -83,9 +81,11 @@ Matrix4f Ortho(float left, float right, float bottom, float top, float zNear, fl
   return mat;
 }
 
-Application::Application(int argc, char** argv) {
-  _logger = Logger::GetCategory("app");
-}
+Application::Application(int argc, char** argv)
+    : _logger(Logger::GetCategory("app")),
+      _window(nullptr),
+      _imRender({}),
+      _fileDialog(std::make_unique<ImGui::FileBrowser>()) {}
 
 void Application::Run() {
   Start();
@@ -229,16 +229,16 @@ void Application::InitImGui() {
 void Application::UpdateImGui() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
-  ImGui::ShowDemoWindow();
+  OnGui();
   ImGui::Render();
 }
 
 void Application::DrawStartPass() {
-  glClearColor(0.2f, 0.3f, 0.1f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
   int width, height;
   glfwGetFramebufferSize(_window, &width, &height);
   glViewport(0, 0, width, height);
+  glClearColor(0.2f, 0.3f, 0.1f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void Application::DrawImGuiPass() {
@@ -369,6 +369,11 @@ bool Application::GLLinkProgram(const GLuint* shader, int count, GLuint* program
     glDeleteProgram(glProgram);
   }
   return success;
+}
+
+void Application::OnGui() {
+  ImGui::ShowDemoWindow();
+  _fileDialog->Display();
 }
 
 }  // namespace Rad
