@@ -1,14 +1,24 @@
 #include <rad/offline/editor/application.h>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 #include <thread>
 #include <string>
 #include <algorithm>
 
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+
 #include <nlohmann/json.hpp>
 
-#include <rad/realtime/opengl_context.h>
-
+// #include <rad/realtime/opengl_context.h>
+#include <rad/offline/build/factory.h>
 #include <rad/offline/editor/gui_main_bar.h>
+#include <rad/offline/editor/gui_asset_panel.h>
 
 namespace Rad {
 
@@ -125,6 +135,30 @@ void Application::AddGui(Unique<GuiObject> ui) {
   _firstUseGui.emplace_back(std::move(ui));
 }
 
+void Application::NewScene(const std::filesystem::path& sceneFile) {
+  _hasRequestNewScene = true;
+  _requestNewScenePath = sceneFile;
+}
+
+std::optional<GuiObject*> Application::FindUi(const std::string& name) {
+  for (auto&& i : _firstUseGui) {
+    if (i != nullptr && i->GetName() == name) {
+      return std::make_optional(i.get());
+    }
+  }
+  for (auto&& i : _activeGui) {
+    if (i != nullptr && i->GetName() == name) {
+      return std::make_optional(i.get());
+    }
+  }
+  for (auto&& i : _iterGuiCache) {
+    if (i != nullptr && i->GetName() == name) {
+      return std::make_optional(i.get());
+    }
+  }
+  return std::nullopt;
+}
+
 void Application::Start() {
   InitGraphics();
   InitImGui();
@@ -136,6 +170,7 @@ void Application::Update() {
     UpdateImGui();
     DrawStartPass();
     DrawImGuiPass();
+    ExecuteRequestNewScene();
     glfwSwapBuffers(_window);
     glfwPollEvents();
     std::this_thread::yield();
@@ -409,9 +444,6 @@ void Application::InitBasicGuiObject() {
 }
 
 void Application::OnGui() {
-  // ImGui::ShowDemoWindow();
-  // OnGuiMenuBar();
-
   auto priorityCompare = [](const auto& l, const auto& r) {
     return l->GetPriority() > r->GetPriority();
   };
@@ -432,6 +464,28 @@ void Application::OnGui() {
       _activeGui.emplace_back(std::move(i));
     }
   }
+  ImGui::ShowDemoWindow();
+}
+
+void Application::ExecuteRequestNewScene() {
+  if (!_hasRequestNewScene) {
+    return;
+  }
+  _hasRequestNewScene = false;
+
+  if (_hasWorkspace) {
+    // TODO: 提示储存场景
+  }
+  _hasWorkspace = true;
+  auto workDir = _requestNewScenePath.parent_path();
+  _workRoot = workDir;
+  _sceneName = _requestNewScenePath.filename().replace_extension("").string();
+
+  _iterGuiCache.clear();
+  _activeGui.clear();
+  _firstUseGui.clear();
+  InitBasicGuiObject();
+  AddGui(std::make_unique<GuiAssetPanel>(this));
 }
 
 // void Application::OnGuiMsgBox() {

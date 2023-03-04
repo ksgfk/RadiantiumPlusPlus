@@ -3,7 +3,7 @@
 namespace Rad {
 
 GuiFileBrowserWrapper::GuiFileBrowserWrapper(Application* app, ImGui::FileBrowser&& browser)
-    : GuiObject(app, -999, true),
+    : GuiObject(app, -999, true,"_file_browser_wrapper"),
       _browser(std::move(browser)) {}
 
 void GuiFileBrowserWrapper::OnStart() {

@@ -1,21 +1,16 @@
 #pragma once
 
-#if defined(_WIN32)
-#include <windows.h>
-#endif
-
 #include <filesystem>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <imfilebrowser.h>
 
 #include <rad/core/types.h>
 #include <rad/core/logger.h>
+#include <rad/core/factory.h>
+#include <rad/core/asset.h>
 
 #include "gui_object.h"
 
@@ -47,8 +42,11 @@ class Application {
   Share<spdlog::logger> GetLogger() const { return _logger; }
   Vector3f& GetBackgroundColor() { return _backgroundColor; }
   const std::filesystem::path& GetWorkRoot() const { return _workRoot; }
+  bool HasWorkspace() const { return _hasWorkspace; }
 
   void AddGui(Unique<GuiObject> ui);
+  void NewScene(const std::filesystem::path& sceneFile);
+  std::optional<GuiObject*> FindUi(const std::string& name);
 
  private:
   void Start();
@@ -67,20 +65,21 @@ class Application {
   void InitBasicGuiObject();
   void OnGui();
 
+  void ExecuteRequestNewScene();
+
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
   ImGuiRenderData _imRender;
   std::vector<Unique<GuiObject>> _firstUseGui;
   std::vector<Unique<GuiObject>> _activeGui;
   std::vector<Unique<GuiObject>> _iterGuiCache;
-
   std::unordered_map<std::string, std::string> _i18n;
-  bool _hasWorkspace;
+  bool _hasWorkspace{false};
+  bool _hasRequestNewScene{false};
+  std::filesystem::path _requestNewScenePath;
   std::filesystem::path _workRoot;
+  std::string _sceneName;
   Vector3f _backgroundColor;
-
-  Unique<ImGui::FileBrowser> _menuBarFb;
-  bool _isMenuBarNewSceneRecFbRes;
 };
 
 }  // namespace Rad

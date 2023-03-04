@@ -2,7 +2,7 @@
 
 namespace Rad {
 
-GuiObject::GuiObject(Application* app, int priority, bool isAlive)
-    : _app(app), _priority(priority), _isAlive(isAlive) {}
+GuiObject::GuiObject(Application* app, int priority, bool isAlive, const std::string name)
+    : _app(app), _priority(priority), _isAlive(isAlive), _name(name) {}
 
 }  // namespace Rad

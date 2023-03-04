@@ -9,5 +9,7 @@
   "main_menu_bar.file.save_scene": "Save Scene",
   "main_menu_bar.setting": "Setting",
   "main_menu_bar.setting.background color": "Background Color",
-  "main_menu_bar.setting.switch_language": "Language"
+  "main_menu_bar.setting.switch_language": "Language",
+  "main_menu_bar.window": "Window",
+  "asset_panel.title": "Assets"
 }

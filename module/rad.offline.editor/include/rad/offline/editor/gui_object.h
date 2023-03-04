@@ -1,8 +1,20 @@
 #pragma once
 
+#include <string>
+#include <utility>
+
 namespace Rad {
 
 class Application;
+
+template <class Functor>
+struct ScopeGuard {
+  ScopeGuard(Functor&& t) : _func(std::move(t)) {}
+  ~ScopeGuard() noexcept { _func(); }
+
+ private:
+  Functor _func;
+};
 
 class GuiObject {
  public:
@@ -13,13 +25,15 @@ class GuiObject {
 
   bool IsAlive() const { return _isAlive; }
   int GetPriority() const { return _priority; }
+  const std::string& GetName() const { return _name; }
 
  protected:
-  GuiObject(Application* app, int priority, bool isAlive);
+  GuiObject(Application* app, int priority, bool isAlive, const std::string name);
 
   Application* _app;
   int _priority;
   bool _isAlive;
+  std::string _name;
 };
 
 }  // namespace Rad

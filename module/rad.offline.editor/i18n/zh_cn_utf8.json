@@ -9,5 +9,7 @@
   "main_menu_bar.file.save_scene": "保存场景",
   "main_menu_bar.setting": "设置",
   "main_menu_bar.setting.background color": "背景颜色",
-  "main_menu_bar.setting.switch_language": "切换语言"
+  "main_menu_bar.setting.switch_language": "切换语言",
+  "main_menu_bar.window": "窗口",
+  "asset_panel.title": "资产"
 }

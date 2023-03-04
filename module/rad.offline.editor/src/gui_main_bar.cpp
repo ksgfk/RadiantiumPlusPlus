@@ -5,11 +5,12 @@
 #include <rad/offline/editor/application.h>
 
 #include <rad/offline/editor/gui_file_browser_wrapper.h>
+#include <rad/offline/editor/gui_asset_panel.h>
 
 namespace Rad {
 
 GuiMainBar::GuiMainBar(Application* app)
-    : GuiObject(app, 0, true),
+    : GuiObject(app, 0, true, "main_bar"),
       _logger(app->GetLogger()) {}
 
 void GuiMainBar::OnGui() {
@@ -26,8 +27,14 @@ void GuiMainBar::OnGui() {
         auto wrapper = std::make_unique<GuiFileBrowserWrapper>(_app, std::move(browser));
         wrapper->OnSelected = [=](GuiFileBrowserWrapper& wrapper) {
           auto&& b = wrapper.GetBrowser();
-          auto&& path = b.GetSelected();
+          auto path = b.GetSelected();
           _logger->info("select {}", path.string());
+          if (path.has_extension()) {
+            path.replace_extension(".json");
+          } else {
+            path += ".json";
+          }
+          _app->NewScene(path);
         };
         _app->AddGui(std::move(wrapper));
       }
@@ -73,6 +80,18 @@ void GuiMainBar::OnGui() {
         ImGui::EndMenu();
       }
       ImGui::EndMenu();
+    }
+    if (_app->HasWorkspace()) {
+      if (ImGui::BeginMenu(_app->I18n("main_menu_bar.window"))) {
+        auto assetPanel = _app->FindUi("asset_panel");
+        if (assetPanel) {
+          auto ptr = static_cast<GuiAssetPanel*>(*assetPanel);
+          if (ImGui::MenuItem(_app->I18n("asset_panel.title"), nullptr, ptr->IsOpen)) {
+            ptr->IsOpen = !ptr->IsOpen;
+          }
+        }
+        ImGui::EndMenu();
+      }
     }
     ImGui::EndMainMenuBar();
   }
