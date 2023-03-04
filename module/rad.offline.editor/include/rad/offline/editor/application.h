@@ -6,6 +6,7 @@
 
 #include <filesystem>
 #include <unordered_map>
+#include <vector>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -15,6 +16,8 @@
 
 #include <rad/core/types.h>
 #include <rad/core/logger.h>
+
+#include "gui_object.h"
 
 struct GLFWwindow;
 
@@ -41,6 +44,11 @@ class Application {
   void LoadI18n(const std::filesystem::path& path);
   const char* I18n(const std::string& key) const;
 
+  Share<spdlog::logger> GetLogger() const { return _logger; }
+  Vector3f& BackgroundColor() { return _backgroundColor; }
+
+  void AddGui(Unique<GuiObject> ui);
+
  private:
   void Start();
   void Update();
@@ -55,6 +63,7 @@ class Application {
   bool GLCompileShader(const char* source, GLenum type, GLuint* shader);
   bool GLLinkProgram(const GLuint* shader, int count, GLuint* program);
 
+  void InitBasicGuiObject();
   void OnGui();
   void OnGuiMenuBar();
   void OnGuiMsgBox();
@@ -65,6 +74,9 @@ class Application {
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
   ImGuiRenderData _imRender;
+  std::vector<Unique<GuiObject>> _firstUseGui;
+  std::vector<Unique<GuiObject>> _activeGui;
+  std::vector<Unique<GuiObject>> _iterGuiCache;
 
   std::unordered_map<std::string, std::string> _i18n;
   bool _hasWorkspace;

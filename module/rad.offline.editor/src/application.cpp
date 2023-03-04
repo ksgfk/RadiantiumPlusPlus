@@ -8,6 +8,8 @@
 
 #include <rad/realtime/opengl_context.h>
 
+#include <rad/offline/editor/gui_main_bar.h>
+
 namespace Rad {
 
 constexpr const float PI = 3.1415926f;
@@ -119,9 +121,14 @@ const char* Application::I18n(const std::string& key) const {
   return iter == _i18n.end() ? key.c_str() : iter->second.c_str();
 }
 
+void Application::AddGui(Unique<GuiObject> ui) {
+  _firstUseGui.emplace_back(std::move(ui));
+}
+
 void Application::Start() {
   InitGraphics();
   InitImGui();
+  InitBasicGuiObject();
 }
 
 void Application::Update() {
@@ -397,9 +404,34 @@ bool Application::GLLinkProgram(const GLuint* shader, int count, GLuint* program
   return success;
 }
 
+void Application::InitBasicGuiObject() {
+  AddGui(std::make_unique<GuiMainBar>(this));
+}
+
 void Application::OnGui() {
-  ImGui::ShowDemoWindow();
-  OnGuiMenuBar();
+  // ImGui::ShowDemoWindow();
+  // OnGuiMenuBar();
+
+  auto priorityCompare = [](const auto& l, const auto& r) {
+    return l->GetPriority() > r->GetPriority();
+  };
+  _iterGuiCache.clear();
+  _activeGui.swap(_iterGuiCache);
+  std::sort(_firstUseGui.begin(), _firstUseGui.end(), priorityCompare);
+  for (auto&& i : _firstUseGui) {
+    i->OnStart();
+    if (i->IsAlive()) {
+      _iterGuiCache.emplace_back(std::move(i));
+    }
+  }
+  _firstUseGui.clear();
+  std::sort(_iterGuiCache.begin(), _iterGuiCache.end(), priorityCompare);
+  for (auto&& i : _iterGuiCache) {
+    if (i->IsAlive()) {
+      i->OnGui();
+      _activeGui.emplace_back(std::move(i));
+    }
+  }
 }
 
 void Application::OnGuiMenuBar() {

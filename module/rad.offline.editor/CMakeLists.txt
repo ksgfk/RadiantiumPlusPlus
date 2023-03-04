@@ -4,7 +4,10 @@ message(STATUS "RAD offline.editor find realtime module ${RAD_REALTIME_MODULE_NA
 # 然后再搞编辑器...
 add_executable(${RAD_OFFLINE_EDITOR_MODULE_NAME} 
     src/main.cpp
-    src/application.cpp)
+    src/application.cpp
+    src/gui_object.cpp
+    src/gui_main_bar.cpp
+    src/gui_file_browser_wrapper.cpp)
 target_include_directories(${RAD_OFFLINE_EDITOR_MODULE_NAME} PUBLIC
     "include")
 target_link_libraries(${RAD_OFFLINE_EDITOR_MODULE_NAME}
