@@ -18,6 +18,9 @@ void GuiFileBrowserWrapper::OnGui() {
       _isAlive = false;
     }
   }
+  if (!_browser.IsOpened()) {
+    _isAlive = false;
+  }
 }
 
 }  // namespace Rad

@@ -4,6 +4,8 @@
 
 #include <rad/offline/editor/application.h>
 
+#include <rad/offline/editor/gui_file_browser_wrapper.h>
+
 namespace Rad {
 
 GuiMainBar::GuiMainBar(Application* app)
@@ -15,13 +17,19 @@ void GuiMainBar::OnGui() {
     if (ImGui::BeginMenu(_app->I18n("main_menu_bar.file"))) {
       if (ImGui::MenuItem(_app->I18n("main_menu_bar.file.new_scene"))) {
         _logger->debug("new scene");
-        auto _menuBarFb = std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
-        // _menuBarFb->SetPwd(_workRoot);
-        _menuBarFb->SetTitle(_app->I18n("main_menu_bar.file.open_scene.file_dialog_title"));
-        _menuBarFb->SetInpuTextHint(_app->I18n("main_menu_bar.file.open_scene.file_dialog_filename"));
-        _menuBarFb->SetButtonOkHint(_app->I18n("ok"));
-        _menuBarFb->SetButtonCancelHint(_app->I18n("cancel"));
-        _menuBarFb->Open();
+        ImGui::FileBrowser browser(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+        browser.SetPwd(_app->GetWorkRoot());
+        browser.SetTitle(_app->I18n("main_menu_bar.file.open_scene.file_dialog_title"));
+        browser.SetInpuTextHint(_app->I18n("main_menu_bar.file.open_scene.file_dialog_filename"));
+        browser.SetButtonOkHint(_app->I18n("ok"));
+        browser.SetButtonCancelHint(_app->I18n("cancel"));
+        auto wrapper = std::make_unique<GuiFileBrowserWrapper>(_app, std::move(browser));
+        wrapper->OnSelected = [=](GuiFileBrowserWrapper& wrapper) {
+          auto&& b = wrapper.GetBrowser();
+          auto&& path = b.GetSelected();
+          _logger->info("select {}", path.string());
+        };
+        _app->AddGui(std::move(wrapper));
       }
       if (ImGui::MenuItem(_app->I18n("main_menu_bar.file.open_scene"))) {
         _logger->info("open");
@@ -33,7 +41,7 @@ void GuiMainBar::OnGui() {
     }
     if (ImGui::BeginMenu(_app->I18n("main_menu_bar.setting"))) {
       if (ImGui::BeginMenu(_app->I18n("main_menu_bar.setting.background color"))) {
-        ImGui::ColorEdit3(_app->I18n("main_menu_bar.setting.background color"), _app->BackgroundColor().data(), ImGuiColorEditFlags_NoLabel);
+        ImGui::ColorEdit3(_app->I18n("main_menu_bar.setting.background color"), _app->GetBackgroundColor().data(), ImGuiColorEditFlags_NoLabel);
         ImGui::EndMenu();
       }
       if (ImGui::BeginMenu(_app->I18n("main_menu_bar.setting.switch_language"))) {

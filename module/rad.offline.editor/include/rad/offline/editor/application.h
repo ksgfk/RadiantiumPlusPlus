@@ -45,7 +45,8 @@ class Application {
   const char* I18n(const std::string& key) const;
 
   Share<spdlog::logger> GetLogger() const { return _logger; }
-  Vector3f& BackgroundColor() { return _backgroundColor; }
+  Vector3f& GetBackgroundColor() { return _backgroundColor; }
+  const std::filesystem::path& GetWorkRoot() const { return _workRoot; }
 
   void AddGui(Unique<GuiObject> ui);
 
@@ -65,11 +66,6 @@ class Application {
 
   void InitBasicGuiObject();
   void OnGui();
-  void OnGuiMenuBar();
-  void OnGuiMsgBox();
-
-  void ShowMsgBox(const std::string& msg);
-  bool IsMsgBoxOpen();
 
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
@@ -85,10 +81,6 @@ class Application {
 
   Unique<ImGui::FileBrowser> _menuBarFb;
   bool _isMenuBarNewSceneRecFbRes;
-
-  bool _isShowMsgBox;
-  std::string _msgBoxTitle;
-  std::string _msgBoxText;
 };
 
 }  // namespace Rad

@@ -434,101 +434,21 @@ void Application::OnGui() {
   }
 }
 
-void Application::OnGuiMenuBar() {
-  if (ImGui::BeginMainMenuBar()) {
-    if (ImGui::BeginMenu(I18n("main_menu_bar.file"))) {
-      if (ImGui::MenuItem(I18n("main_menu_bar.file.new_scene"))) {
-        _logger->debug("new scene");
-        _menuBarFb = std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
-        _menuBarFb->SetPwd(_workRoot);
-        _menuBarFb->SetTitle(I18n("main_menu_bar.file.open_scene.file_dialog_title"));
-        _menuBarFb->SetInpuTextHint(I18n("main_menu_bar.file.open_scene.file_dialog_filename"));
-        _menuBarFb->SetButtonOkHint(I18n("ok"));
-        _menuBarFb->SetButtonCancelHint(I18n("cancel"));
-        _menuBarFb->Open();
-        _isMenuBarNewSceneRecFbRes = true;
-      }
-      if (ImGui::MenuItem(I18n("main_menu_bar.file.open_scene"))) {
-        _logger->info("open");
-      }
-      if (ImGui::MenuItem(I18n("main_menu_bar.file.save_scene"))) {
-        _logger->info("save");
-      }
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu(I18n("main_menu_bar.setting"))) {
-      if (ImGui::BeginMenu(I18n("main_menu_bar.setting.background color"))) {
-        ImGui::ColorEdit3(I18n("main_menu_bar.setting.background color"), _backgroundColor.data(), ImGuiColorEditFlags_NoLabel);
-        ImGui::EndMenu();
-      }
-      if (ImGui::BeginMenu(I18n("main_menu_bar.setting.switch_language"))) {
-        for (const auto& iter : std::filesystem::directory_iterator(std::filesystem::current_path() / "i18n")) {
-          if (!iter.is_regular_file()) {
-            continue;
-          }
-          auto filePath = iter.path();
-          auto fileName = filePath.filename().string();
-          std::transform(fileName.begin(), fileName.end(), fileName.begin(),
-                         [](unsigned char c) { return std::tolower(c); });
-          if (fileName == "zh_cn_utf8.json") {
-            if (ImGui::MenuItem("中文")) {
-              LoadI18n(filePath);
-              break;
-            }
-          } else if (fileName == "en_us.json") {
-            if (ImGui::MenuItem("English")) {
-              LoadI18n(filePath);
-              break;
-            }
-          } else {
-            if (ImGui::MenuItem(fileName.c_str())) {
-              LoadI18n(filePath);
-              break;
-            }
-          }
-        }
-        ImGui::EndMenu();
-      }
-      ImGui::EndMenu();
-    }
-    ImGui::EndMainMenuBar();
-  }
-  if (_menuBarFb != nullptr) {
-    _menuBarFb->Display();
-    if (_menuBarFb->HasSelected() && _isMenuBarNewSceneRecFbRes) {
-      auto select = _menuBarFb->GetSelected();
-      _logger->debug("select {}", select.generic_string());
-      _menuBarFb->ClearSelected();
-      _isMenuBarNewSceneRecFbRes = false;
-    }
-  }
-}
-
-void Application::OnGuiMsgBox() {
-  if (ImGui::BeginPopupModal("message box", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::TextWrapped("%s", _msgBoxText.c_str());
-    ImGui::Separator();
-    if (ImGui::Button("cancel")) {
-      _isShowMsgBox = false;
-      ImGui::CloseCurrentPopup();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("ok")) {
-      _isShowMsgBox = false;
-      ImGui::CloseCurrentPopup();
-    }
-    ImGui::EndPopup();
-  }
-}
-
-void Application::ShowMsgBox(const std::string& msg) {
-  ImGui::OpenPopup("message box");
-  _isShowMsgBox = true;
-  _msgBoxText = msg;
-}
-
-bool Application::IsMsgBoxOpen() {
-  return _isShowMsgBox;
-}
+// void Application::OnGuiMsgBox() {
+//   if (ImGui::BeginPopupModal("message box", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+//     ImGui::TextWrapped("%s", _msgBoxText.c_str());
+//     ImGui::Separator();
+//     if (ImGui::Button("cancel")) {
+//       _isShowMsgBox = false;
+//       ImGui::CloseCurrentPopup();
+//     }
+//     ImGui::SameLine();
+//     if (ImGui::Button("ok")) {
+//       _isShowMsgBox = false;
+//       ImGui::CloseCurrentPopup();
+//     }
+//     ImGui::EndPopup();
+//   }
+// }
 
 }  // namespace Rad
