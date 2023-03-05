@@ -2,6 +2,10 @@
   "ok": "确认",
   "cancel": "取消",
   "close": "关闭",
+  "name": "名称",
+  "position": "坐标",
+  "scale": "缩放",
+  "rotation": "旋转",
   "main_menu_bar.file": "文件",
   "main_menu_bar.file.new_scene": "新场景",
   "main_menu_bar.file.open_scene.file_dialog_title": "选择文件夹并输入新场景名称",
@@ -20,8 +24,15 @@
   "asset_panel.clear": "清空",
   "asset_panel.load.fail": "资源加载失败",
   "asset_panel.load.reason": "原因: {}",
-  "asset_panel.name": "名称",
   "asset_panel.type": "类型",
   "asset_panel.location": "路径",
-  "asset_panel.ref": "引用计数"
+  "asset_panel.ref": "引用计数",
+  "hierarchy.title": "层级",
+  "hierarchy.add_node": "添加",
+  "hierarchy.rm_node": "删除",
+  "hierarchy.shape": "形状",
+  "camera.title": "摄像机",
+  "camera.fovy": "视角",
+  "camera.near_z": "近平面",
+  "camera.far_z": "远平面"
 }

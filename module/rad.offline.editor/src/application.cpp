@@ -20,6 +20,8 @@
 #include <rad/offline/build/factory.h>
 #include <rad/offline/editor/gui_main_bar.h>
 #include <rad/offline/editor/gui_asset_panel.h>
+#include <rad/offline/editor/gui_hierarchy.h>
+#include <rad/offline/editor/gui_camera.h>
 
 namespace Rad {
 
@@ -123,6 +125,50 @@ ObjMeshAsset::~ObjMeshAsset() noexcept {
   }
 }
 
+EditorAssetGuard::EditorAssetGuard(EditorAsset* ptr) : Ptr(ptr) {
+  if (Ptr != nullptr) {
+    Ptr->Reference++;
+  }
+}
+
+EditorAssetGuard::EditorAssetGuard(const EditorAssetGuard& other) : Ptr(other.Ptr) {
+  if (Ptr != nullptr) {
+    Ptr->Reference++;
+  }
+}
+
+EditorAssetGuard::EditorAssetGuard(EditorAssetGuard&& other) {
+  if (Ptr != nullptr) {
+    Ptr->Reference--;
+  }
+  Ptr = other.Ptr;
+  other.Ptr = nullptr;
+}
+
+EditorAssetGuard& EditorAssetGuard::operator=(const EditorAssetGuard& other) {
+  Ptr = other.Ptr;
+  if (Ptr != nullptr) {
+    Ptr->Reference++;
+  }
+  return *this;
+}
+
+EditorAssetGuard& EditorAssetGuard::operator=(EditorAssetGuard&& other) {
+  if (Ptr != nullptr) {
+    Ptr->Reference--;
+  }
+  Ptr = other.Ptr;
+  other.Ptr = nullptr;
+  return *this;
+}
+
+EditorAssetGuard::~EditorAssetGuard() noexcept {
+  if (Ptr != nullptr) {
+    Ptr->Reference--;
+    Ptr = nullptr;
+  }
+}
+
 std::pair<bool, std::string> ObjMeshAsset::Load(Application* app) {
   WavefrontObjReader reader(std::make_unique<std::ifstream>(app->GetWorkRoot() / Loaction));
   reader.Read();
@@ -163,6 +209,72 @@ std::pair<bool, std::string> ObjMeshAsset::Load(Application* app) {
     result.first = true;
   }
   return result;
+}
+
+ShapeNode& ShapeNode::AddChildBefore(const ShapeNode& pos, ShapeNode&& node) {
+  ShapeNode temp = std::move(node);
+  if (temp.Parent != nullptr) {
+    throw Rad::RadInvalidOperationException("node {} cannot have parent", temp.Name);
+  }
+  auto childIter = Children.emplace(pos.InParentIter, std::move(temp));
+  AfterAddChild(childIter);
+  return *childIter;
+}
+
+ShapeNode& ShapeNode::AddChildAfter(const ShapeNode& pos, ShapeNode&& node) {
+  ShapeNode temp = std::move(node);
+  if (temp.Parent != nullptr) {
+    throw Rad::RadInvalidOperationException("node {} cannot have parent", temp.Name);
+  }
+  auto iter = pos.InParentIter;
+  auto childIter = Children.emplace(++iter, std::move(temp));
+  AfterAddChild(childIter);
+  return *childIter;
+}
+
+ShapeNode& ShapeNode::AddChildLast(ShapeNode&& node) {
+  ShapeNode temp = std::move(node);
+  if (temp.Parent != nullptr) {
+    throw Rad::RadInvalidOperationException("node {} cannot have parent", temp.Name);
+  }
+  auto childIter = Children.emplace(Children.end(), std::move(temp));
+  AfterAddChild(childIter);
+  return *childIter;
+}
+
+void ShapeNode::RemoveChild(ShapeNode& child) {
+  if (child.Parent != this) {
+    throw RadArgumentException("parent and child not same!");
+  }
+  Children.erase(child.InParentIter);
+  child.InParentIter = {};
+  child.Parent = nullptr;
+}
+
+std::optional<ShapeNode*> ShapeNode::PreviousNode() {
+  auto first = Parent->Children.begin();
+  if (InParentIter == first) {
+    return std::nullopt;
+  }
+  auto prev = InParentIter;
+  prev--;
+  return std::make_optional(&(*(prev)));
+}
+
+std::optional<ShapeNode*> ShapeNode::NextNode() {
+  auto last = Parent->Children.end();
+  auto next = InParentIter;
+  next++;
+  if (next == last) {
+    return std::nullopt;
+  }
+  return std::make_optional(&(*(next)));
+}
+
+void ShapeNode::AfterAddChild(std::list<ShapeNode>::iterator& childIter) {
+  auto&& child = *childIter;
+  child.Parent = this;
+  child.InParentIter = childIter;
 }
 
 Application::Application(int argc, char** argv)
@@ -260,6 +372,12 @@ std::pair<bool, std::string> Application::LoadAsset(const std::string& name, con
   return loadResult;
 }
 
+ShapeNode Application::NewNode() {
+  ShapeNode node{};
+  node.Id = _nodeIdPool++;
+  return node;
+}
+
 void Application::Start() {
   InitGraphics();
   InitImGui();
@@ -268,6 +386,7 @@ void Application::Start() {
 
 void Application::Update() {
   while (!glfwWindowShouldClose(_window)) {
+    CollectRenderItem();
     UpdateImGui();
     DrawStartPass();
     DrawImGuiPass();
@@ -299,7 +418,7 @@ void Application::InitGraphics() {
 #else
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
-  GLFWwindow* window = glfwCreateWindow(1280, 720, "Rad Editor", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(1440, 900, "Rad Editor", nullptr, nullptr);
   if (!window) {
     glfwTerminate();
     throw RadInvalidOperationException("cannot create window");
@@ -587,23 +706,36 @@ void Application::ExecuteRequestNewScene() {
   _firstUseGui.clear();
   InitBasicGuiObject();
   AddGui(std::make_unique<GuiAssetPanel>(this));
+  AddGui(std::make_unique<GuiHierarchy>(this));
+  AddGui(std::make_unique<GuiCamera>(this));
+
+  _root = std::make_unique<ShapeNode>();
+  _root->Name = _sceneName;
+  _nodeIdPool = 1;
 }
 
-// void Application::OnGuiMsgBox() {
-//   if (ImGui::BeginPopupModal("message box", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-//     ImGui::TextWrapped("%s", _msgBoxText.c_str());
-//     ImGui::Separator();
-//     if (ImGui::Button("cancel")) {
-//       _isShowMsgBox = false;
-//       ImGui::CloseCurrentPopup();
-//     }
-//     ImGui::SameLine();
-//     if (ImGui::Button("ok")) {
-//       _isShowMsgBox = false;
-//       ImGui::CloseCurrentPopup();
-//     }
-//     ImGui::EndPopup();
-//   }
-// }
+void Application::CollectRenderItem() {
+  if (!_hasWorkspace) {
+    return;
+  }
+  _recTemp.emplace(_root.get());
+  while (!_recTemp.empty()) {
+    auto node = _recTemp.front();
+    _recTemp.pop();
+    if (node->Parent != nullptr) {
+      node->ToWorld = node->ToWorld * node->Parent->ToWorld;
+    }
+    if (node->ShapeAsset.Ptr != nullptr) {
+      _renderItems.emplace_back(node);
+    }
+    for (auto&& i : node->Children) {
+      _recTemp.emplace(&i);
+    }
+  }
+  // Vector3f front = (_camera.Rotation * Vector3f(0, 0, 1)).normalized();
+  // Vector3f up = (_camera.Rotation * Vector3f(0, 1, 0)).normalized();
+  // _camera.ToView = LookAt(_camera.Position, _camera.Position + front, up);
+  // _camera.ToPersp = Perspective(_camera.Fovy, 0, 0, 0);
+}
 
 }  // namespace Rad

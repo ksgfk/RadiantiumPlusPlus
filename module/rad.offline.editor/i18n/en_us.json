@@ -2,6 +2,10 @@
   "ok": "OK",
   "cancel": "Cancel",
   "close": "Close",
+  "name": "Name",
+  "position": "Position",
+  "scale": "Scale",
+  "rotation": "Rotation",
   "main_menu_bar.file": "File",
   "main_menu_bar.file.new_scene": "New Scene",
   "main_menu_bar.file.open_scene.file_dialog_title": "Select a directory and enter the scene name",
@@ -20,8 +24,15 @@
   "asset_panel.clear": "Clear",
   "asset_panel.load.fail": "Asset Load Failed",
   "asset_panel.load.reason": "Reason: {}",
-  "asset_panel.name": "Name",
   "asset_panel.type": "Type",
   "asset_panel.location": "Location",
-  "asset_panel.ref": "Reference"
+  "asset_panel.ref": "Reference",
+  "hierarchy.title": "Hierarchy",
+  "hierarchy.add_node": "Add",
+  "hierarchy.rm_node": "Remove",
+  "hierarchy.shape": "Shape",
+  "camera.title": "Camera",
+  "camera.fovy": "FOV",
+  "camera.near_z": "Near Z",
+  "camera.far_z": "Far Z"
 }

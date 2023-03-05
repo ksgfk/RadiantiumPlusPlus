@@ -36,6 +36,7 @@ void GuiAssetPanel::OnGui() {
     return;
   }
   ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar;
+  ImGui::SetNextWindowPos(ImVec2(520, 580), ImGuiCond_Once);
   ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_Once);
   ScopeGuard _([]() { ImGui::End(); });
   if (ImGui::Begin(_app->I18n("asset_panel.title"), &IsOpen, flags)) {
@@ -101,7 +102,7 @@ void GuiAssetPanel::OnGui() {
       ImGui::BeginTable("_title", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings);
       ImGui::TableNextRow();
       ImGui::TableNextColumn();
-      ImGui::Text("%s", _app->I18n("asset_panel.name"));
+      ImGui::Text("%s", _app->I18n("name"));
       ImGui::TableNextColumn();
       ImGui::Text("%s", _app->I18n("asset_panel.type"));
       for (auto&& i : _app->GetAssets()) {
@@ -132,7 +133,7 @@ void GuiAssetPanel::OnGui() {
         auto iter = _app->GetAssets().find(SelectedAsset);
         if (iter != _app->GetAssets().end()) {
           auto&& assIns = iter->second;
-          ImGui::Text("%s: ", _app->I18n("asset_panel.name"));
+          ImGui::Text("%s: ", _app->I18n("name"));
           ImGui::SameLine();
           ImGui::Text("%s", assIns->Name.c_str());
           ImGui::Text("%s: ", _app->I18n("asset_panel.type"));

@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 
+#include <rad/core/types.h>
+
 namespace Rad {
 
 class Application;
@@ -26,6 +28,8 @@ class GuiObject {
   bool IsAlive() const { return _isAlive; }
   int GetPriority() const { return _priority; }
   const std::string& GetName() const { return _name; }
+
+  void DrawPSR(Vector3f* pos, Vector3f* sca, Eigen::Quaternionf* rot);
 
  protected:
   GuiObject(Application* app, int priority, bool isAlive, const std::string name);

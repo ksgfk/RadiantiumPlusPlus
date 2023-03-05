@@ -6,6 +6,7 @@
 
 #include <rad/offline/editor/gui_file_browser_wrapper.h>
 #include <rad/offline/editor/gui_asset_panel.h>
+#include <rad/offline/editor/gui_hierarchy.h>
 
 namespace Rad {
 
@@ -83,11 +84,22 @@ void GuiMainBar::OnGui() {
     }
     if (_app->HasWorkspace()) {
       if (ImGui::BeginMenu(_app->I18n("main_menu_bar.window"))) {
-        auto assetPanel = _app->FindUi("asset_panel");
-        if (assetPanel) {
-          auto ptr = static_cast<GuiAssetPanel*>(*assetPanel);
-          if (ImGui::MenuItem(_app->I18n("asset_panel.title"), nullptr, ptr->IsOpen)) {
-            ptr->IsOpen = !ptr->IsOpen;
+        {
+          auto assetPanel = _app->FindUi("asset_panel");
+          if (assetPanel) {
+            auto ptr = static_cast<GuiAssetPanel*>(*assetPanel);
+            if (ImGui::MenuItem(_app->I18n("asset_panel.title"), nullptr, ptr->IsOpen)) {
+              ptr->IsOpen = !ptr->IsOpen;
+            }
+          }
+        }
+        {
+          auto hierarchyPanel = _app->FindUi("hierarchy_panel");
+          if (hierarchyPanel) {
+            auto ptr = static_cast<GuiHierarchy*>(*hierarchyPanel);
+            if (ImGui::MenuItem(_app->I18n("hierarchy.title"), nullptr, ptr->IsOpen)) {
+              ptr->IsOpen = !ptr->IsOpen;
+            }
           }
         }
         ImGui::EndMenu();

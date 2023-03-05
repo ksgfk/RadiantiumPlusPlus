@@ -13,7 +13,7 @@ if(WIN32)
 endif()
 
 option(RAD_IS_BUILD_REALTIME  "RAD is build realtime?" ON)
-option(RAD_IS_BUILD_OFFLINE_EDITOR  "RAD is build offline.editor" OFF)
+option(RAD_IS_BUILD_OFFLINE_EDITOR  "RAD is build offline.editor" ON)
 option(RAD_IS_BUILD_PREVIEW_WINDOW "RAD is build preview window?" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

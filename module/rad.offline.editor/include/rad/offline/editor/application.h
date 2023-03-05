@@ -3,7 +3,10 @@
 #include <filesystem>
 #include <unordered_map>
 #include <map>
+#include <queue>
+#include <list>
 #include <vector>
+#include <random>
 #include <optional>
 
 #include <glad/gl.h>
@@ -65,6 +68,59 @@ class ObjMeshAsset : public EditorAsset {
   GLuint IBO;
 };
 
+class EditorAssetGuard {
+ public:
+  explicit EditorAssetGuard(EditorAsset*);
+  EditorAssetGuard(const EditorAssetGuard&);
+  EditorAssetGuard(EditorAssetGuard&&);
+  EditorAssetGuard& operator=(const EditorAssetGuard&);
+  EditorAssetGuard& operator=(EditorAssetGuard&&);
+  ~EditorAssetGuard() noexcept;
+
+  EditorAsset* Ptr{nullptr};
+};
+
+class ShapeNode {
+ public:
+  ShapeNode& AddChildBefore(const ShapeNode& pos, ShapeNode&& node);
+  ShapeNode& AddChildAfter(const ShapeNode& pos, ShapeNode&& node);
+  ShapeNode& AddChildLast(ShapeNode&& node);
+  void RemoveChild(ShapeNode& child);
+  void SetToWorldMatrix(const Matrix4f& toWorld);
+  std::optional<ShapeNode*> PreviousNode();
+  std::optional<ShapeNode*> NextNode();
+
+  Application* App{nullptr};
+  size_t Id{0};
+  std::string Name;
+  Vector3f Position{Vector3f::Zero()};
+  Vector3f Scale{Vector3f::Constant(1)};
+  Eigen::Quaternionf Rotation{Eigen::Quaternionf::Identity()};
+  Matrix4f ToWorld{Matrix4f::Identity()};
+  Matrix4f ToLocal{Matrix4f::Identity()};
+
+  ShapeNode* Parent{nullptr};
+  std::list<ShapeNode> Children;
+  std::list<ShapeNode>::iterator InParentIter{};
+
+  EditorAssetGuard ShapeAsset{nullptr};
+
+ private:
+  void AfterAddChild(std::list<ShapeNode>::iterator&);
+};
+
+class PerspCamera {
+ public:
+  Vector3f Position{Vector3f::Zero()};
+  Vector3f Scale{Vector3f::Constant(1)};
+  Eigen::Quaternionf Rotation{Eigen::Quaternionf::Identity()};
+  Matrix4f ToView{Matrix4f::Identity()};
+  float Fovy{30.0f};
+  float NearZ{0.001f};
+  float FarZ{100.0f};
+  Matrix4f ToPersp{Matrix4f::Identity()};
+};
+
 class Application {
  public:
   Application(int argc, char** argv);
@@ -79,11 +135,15 @@ class Application {
   bool HasWorkspace() const { return _hasWorkspace; }
   const FactoryManager& GetFactoryManager() { return *_factories; }
   const std::map<std::string, std::unique_ptr<EditorAsset>>& GetAssets() { return _nameToAsset; }
+  ShapeNode& GetRoot() { return *_root; }
+  PerspCamera& GetCamera() { return _camera; }
+  std::mt19937& GetRng() { return _rng; }
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
   std::optional<GuiObject*> FindUi(const std::string& name);
   std::pair<bool, std::string> LoadAsset(const std::string& name, const std::filesystem::path& loaction, int type);
+  ShapeNode NewNode();
 
  private:
   void Start();
@@ -104,6 +164,8 @@ class Application {
 
   void ExecuteRequestNewScene();
 
+  void CollectRenderItem();
+
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
   ImGuiRenderData _imRender;
@@ -119,6 +181,12 @@ class Application {
   std::string _sceneName;
   Vector3f _backgroundColor;
   std::map<std::string, std::unique_ptr<EditorAsset>> _nameToAsset;
+  Unique<ShapeNode> _root;
+  size_t _nodeIdPool;
+  std::queue<ShapeNode*> _recTemp;
+  std::vector<ShapeNode*> _renderItems;
+  PerspCamera _camera;
+  std::mt19937 _rng;
 };
 
 }  // namespace Rad
