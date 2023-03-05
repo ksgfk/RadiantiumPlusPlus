@@ -96,6 +96,17 @@ Matrix4f Ortho(float left, float right, float bottom, float top, float zNear, fl
   return mat;
 }
 
+const char* _assetNamesArray[] = {
+    "Wavefront Obj Model",
+    "OpenEXR Image",
+    "PNG,JPG,TGA...etc"};
+const char** AssetNames() {
+  return _assetNamesArray;
+}
+size_t AssetNameCount() {
+  return Math::ArrayLength(_assetNamesArray);
+}
+
 Application::Application(int argc, char** argv)
     : _logger(Logger::GetCategory("app")),
       _window(nullptr),
@@ -157,6 +168,10 @@ std::optional<GuiObject*> Application::FindUi(const std::string& name) {
     }
   }
   return std::nullopt;
+}
+
+std::pair<bool, std::string> Application::LoadAsset(const std::string& name, const std::filesystem::path& loaction, int type) {
+  return {false, "...233"};
 }
 
 void Application::Start() {

@@ -21,6 +21,8 @@ namespace Rad {
 Matrix4f LookAt(const Vector3f& pos, const Vector3f& target, const Vector3f& up);
 Matrix4f Perspective(float fovy, float aspect, float near, float far);
 Matrix4f Ortho(float left, float right, float bottom, float top, float zNear, float zFar);
+const char** AssetNames();
+size_t AssetNameCount();
 
 struct ImGuiRenderData {
   GLuint vao;
@@ -47,6 +49,7 @@ class Application {
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
   std::optional<GuiObject*> FindUi(const std::string& name);
+  std::pair<bool, std::string> LoadAsset(const std::string& name, const std::filesystem::path& loaction, int type);
 
  private:
   void Start();

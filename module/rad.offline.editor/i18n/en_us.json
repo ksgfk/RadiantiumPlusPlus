@@ -1,6 +1,7 @@
 {
   "ok": "OK",
   "cancel": "Cancel",
+  "close": "Close",
   "main_menu_bar.file": "File",
   "main_menu_bar.file.new_scene": "New Scene",
   "main_menu_bar.file.open_scene.file_dialog_title": "Select a directory and enter the scene name",
@@ -11,5 +12,12 @@
   "main_menu_bar.setting.background color": "Background Color",
   "main_menu_bar.setting.switch_language": "Language",
   "main_menu_bar.window": "Window",
-  "asset_panel.title": "Assets"
+  "asset_panel.title": "Assets",
+  "asset_panel.load": "Load",
+  "asset_panel.load.unique_name": "Unique Name",
+  "asset_panel.load.type": "Type",
+  "asset_panel.load.location": "Location: {}",
+  "asset_panel.clear": "Clear",
+  "asset_panel.load.fail": "Asset Load Failed",
+  "asset_panel.load.reason": "Reason: {}"
 }

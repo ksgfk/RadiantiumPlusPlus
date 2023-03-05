@@ -1,6 +1,7 @@
 {
   "ok": "确认",
   "cancel": "取消",
+  "close": "关闭",
   "main_menu_bar.file": "文件",
   "main_menu_bar.file.new_scene": "新场景",
   "main_menu_bar.file.open_scene.file_dialog_title": "选择文件夹并输入新场景名称",
@@ -11,5 +12,12 @@
   "main_menu_bar.setting.background color": "背景颜色",
   "main_menu_bar.setting.switch_language": "切换语言",
   "main_menu_bar.window": "窗口",
-  "asset_panel.title": "资产"
+  "asset_panel.title": "资产",
+  "asset_panel.load": "加载",
+  "asset_panel.load.unique_name": "唯一名称",
+  "asset_panel.load.type": "类型",
+  "asset_panel.load.location": "位置: {}",
+  "asset_panel.clear": "清空",
+  "asset_panel.load.fail": "资源加载失败",
+  "asset_panel.load.reason": "原因: {}"
 }
