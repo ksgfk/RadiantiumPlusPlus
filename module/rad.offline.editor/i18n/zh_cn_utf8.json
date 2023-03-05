@@ -19,5 +19,9 @@
   "asset_panel.load.location": "位置: {}",
   "asset_panel.clear": "清空",
   "asset_panel.load.fail": "资源加载失败",
-  "asset_panel.load.reason": "原因: {}"
+  "asset_panel.load.reason": "原因: {}",
+  "asset_panel.name": "名称",
+  "asset_panel.type": "类型",
+  "asset_panel.location": "路径",
+  "asset_panel.ref": "引用计数"
 }

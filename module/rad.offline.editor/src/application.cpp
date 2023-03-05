@@ -7,6 +7,7 @@
 #include <thread>
 #include <string>
 #include <algorithm>
+#include <fstream>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -15,7 +16,7 @@
 
 #include <nlohmann/json.hpp>
 
-// #include <rad/realtime/opengl_context.h>
+#include <rad/core/wavefront_obj_reader.h>
 #include <rad/offline/build/factory.h>
 #include <rad/offline/editor/gui_main_bar.h>
 #include <rad/offline/editor/gui_asset_panel.h>
@@ -107,15 +108,79 @@ size_t AssetNameCount() {
   return Math::ArrayLength(_assetNamesArray);
 }
 
+EditorAsset::EditorAsset(int type) : Type(type), Reference(0) {}
+
+ObjMeshAsset::ObjMeshAsset() : EditorAsset(0), VAO(0), VBO(0), IBO(0) {}
+
+ObjMeshAsset::~ObjMeshAsset() noexcept {
+  if (VAO != 0) {
+    glDeleteVertexArrays(1, &VAO);
+    VAO = 0;
+    GLuint v[] = {VBO, IBO};
+    glDeleteBuffers(2, v);
+    VBO = 0;
+    IBO = 0;
+  }
+}
+
+std::pair<bool, std::string> ObjMeshAsset::Load(Application* app) {
+  WavefrontObjReader reader(std::make_unique<std::ifstream>(app->GetWorkRoot() / Loaction));
+  reader.Read();
+  std::pair<bool, std::string> result;
+  if (reader.HasError()) {
+    result.first = false;
+    result.second = reader.Error();
+  } else {
+    auto model = reader.ToModel();
+    std::vector<GLVertex> vertices;
+    vertices.reserve(model.VertexCount());
+    for (size_t i = 0; i < model.VertexCount(); i++) {
+      vertices.emplace_back(GLVertex{model.GetPosition()[i], model.GetNormal()[i], model.GetUV()[i]});
+    }
+    auto indices = model.GetIndices();
+    GLuint vao;
+    glCreateVertexArrays(1, &vao);
+    GLuint vbo;
+    glCreateBuffers(1, &vbo);
+    glNamedBufferStorage(vbo, sizeof(GLVertex) * vertices.size(), vertices.data(), 0);
+    GLuint ibo;
+    glCreateBuffers(1, &ibo);
+    glNamedBufferStorage(ibo, sizeof(UInt32) * model.IndexCount(), indices.get(), 0);
+    glVertexArrayElementBuffer(vao, ibo);
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(GLVertex));
+    glEnableVertexArrayAttrib(vao, 0);
+    glEnableVertexArrayAttrib(vao, 1);
+    glEnableVertexArrayAttrib(vao, 2);
+    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(GLVertex, Position));
+    glVertexArrayAttribFormat(vao, 1, 3, GL_FLOAT, GL_FALSE, offsetof(GLVertex, Normal));
+    glVertexArrayAttribFormat(vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(GLVertex, UV));
+    glVertexArrayAttribBinding(vao, 0, 0);
+    glVertexArrayAttribBinding(vao, 1, 0);
+    glVertexArrayAttribBinding(vao, 2, 0);
+    VAO = vao;
+    VBO = vbo;
+    IBO = ibo;
+    result.first = true;
+  }
+  return result;
+}
+
 Application::Application(int argc, char** argv)
     : _logger(Logger::GetCategory("app")),
       _window(nullptr),
       _imRender({}),
       _i18n(),
+      _factories(std::make_unique<FactoryManager>()),
       _hasWorkspace(false),
       _workRoot(std::filesystem::current_path()),
       _backgroundColor(0.2f, 0.3f, 0.3f) {
   LoadI18n(std::filesystem::current_path() / "i18n" / "zh_cn_utf8.json");
+  for (auto&& i : GetRadCoreAssetFactories()) {
+    _factories->RegisterFactory(i());
+  }
+  for (auto&& i : GetRadOfflineFactories()) {
+    _factories->RegisterFactory(i());
+  }
 }
 
 void Application::Run() {
@@ -171,7 +236,28 @@ std::optional<GuiObject*> Application::FindUi(const std::string& name) {
 }
 
 std::pair<bool, std::string> Application::LoadAsset(const std::string& name, const std::filesystem::path& loaction, int type) {
-  return {false, "...233"};
+  if (_nameToAsset.find(name) != _nameToAsset.end()) {
+    return {false, fmt::format("duplicate name: {}", name)};
+  }
+  if (!std::filesystem::exists(GetWorkRoot() / loaction)) {
+    return {false, fmt::format("cannot find path: {}", loaction.string())};
+  }
+  std::unique_ptr<EditorAsset> ins;
+  switch (type) {
+    case 0: {
+      ins = std::make_unique<ObjMeshAsset>();
+      break;
+    }
+    default:
+      return {false, fmt::format("unknown asset type: {}", type)};
+  }
+  ins->Name = name;
+  ins->Loaction = loaction;
+  auto loadResult = ins->Load(this);
+  if (loadResult.first) {
+    _nameToAsset.emplace(name, std::move(ins));
+  }
+  return loadResult;
 }
 
 void Application::Start() {

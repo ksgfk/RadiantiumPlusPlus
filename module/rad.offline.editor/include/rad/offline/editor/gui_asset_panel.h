@@ -26,6 +26,8 @@ class GuiAssetPanel : public GuiObject {
   std::string NewAssetName;
   int NewAssetType;
   std::string NewAssetLocation;
+
+  std::string SelectedAsset;
 };
 
 }  // namespace Rad

@@ -36,7 +36,7 @@ void GuiAssetPanel::OnGui() {
     return;
   }
   ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar;
-  ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_Once);
+  ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_Once);
   ScopeGuard _([]() { ImGui::End(); });
   if (ImGui::Begin(_app->I18n("asset_panel.title"), &IsOpen, flags)) {
     if (ImGui::BeginMenuBar()) {
@@ -70,7 +70,7 @@ void GuiAssetPanel::OnGui() {
           wrapper->OnSelected = [&](GuiFileBrowserWrapper& wrapper) {
             auto&& b = wrapper.GetBrowser();
             auto path = b.GetSelected();
-            NewAssetLocation = path.string();
+            NewAssetLocation = std::filesystem::relative(path, _app->GetWorkRoot()).string();
           };
           _app->AddGui(std::move(wrapper));
         }
@@ -93,6 +93,63 @@ void GuiAssetPanel::OnGui() {
       ImGui::EndMenuBar();
     }
   }
+  ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+  ImGuiWindowFlags listFlag = ImGuiWindowFlags_HorizontalScrollbar;
+  {
+    auto region = ImGui::GetContentRegionAvail();
+    if (ImGui::BeginChild("_List1", ImVec2(region.x * 0.5f, region.y), true, listFlag)) {
+      ImGui::BeginTable("_title", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings);
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", _app->I18n("asset_panel.name"));
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", _app->I18n("asset_panel.type"));
+      for (auto&& i : _app->GetAssets()) {
+        auto&& [name, ins] = i;
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        bool isSelected = SelectedAsset == name;
+        bool isClick = ImGui::Selectable(name.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns);
+        ImGui::TableNextColumn();
+        ImGui::Text("%s", AssetNames()[ins->Type]);
+        if (isClick) {
+          if (isSelected) {
+            SelectedAsset.clear();
+          } else {
+            SelectedAsset = name;
+          }
+        }
+      }
+      ImGui::EndTable();
+    }
+    ImGui::EndChild();
+  }
+  ImGui::SameLine();
+  {
+    auto region = ImGui::GetContentRegionAvail();
+    if (ImGui::BeginChild("_List2", ImVec2(region.x, region.y), true, listFlag)) {
+      if (SelectedAsset.size() > 0) {
+        auto iter = _app->GetAssets().find(SelectedAsset);
+        if (iter != _app->GetAssets().end()) {
+          auto&& assIns = iter->second;
+          ImGui::Text("%s: ", _app->I18n("asset_panel.name"));
+          ImGui::SameLine();
+          ImGui::Text("%s", assIns->Name.c_str());
+          ImGui::Text("%s: ", _app->I18n("asset_panel.type"));
+          ImGui::SameLine();
+          ImGui::Text("%s", AssetNames()[assIns->Type]);
+          ImGui::Text("%s: ", _app->I18n("asset_panel.location"));
+          ImGui::SameLine();
+          ImGui::Text("%s", assIns->Loaction.string().c_str());
+          ImGui::Text("%s: ", _app->I18n("asset_panel.ref"));
+          ImGui::SameLine();
+          ImGui::Text("%d", assIns->Reference);
+        }
+      }
+    }
+    ImGui::EndChild();
+  }
+  ImGui::PopStyleVar();
 }
 
 }  // namespace Rad

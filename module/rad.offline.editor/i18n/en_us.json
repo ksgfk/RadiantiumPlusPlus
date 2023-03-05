@@ -19,5 +19,9 @@
   "asset_panel.load.location": "Location: {}",
   "asset_panel.clear": "Clear",
   "asset_panel.load.fail": "Asset Load Failed",
-  "asset_panel.load.reason": "Reason: {}"
+  "asset_panel.load.reason": "Reason: {}",
+  "asset_panel.name": "Name",
+  "asset_panel.type": "Type",
+  "asset_panel.location": "Location",
+  "asset_panel.ref": "Reference"
 }

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <optional>
 
@@ -33,6 +34,37 @@ struct ImGuiRenderData {
   GLuint fontTex;
 };
 
+struct GLVertex {
+  Vector3f Position;
+  Vector3f Normal;
+  Vector2f UV;
+};
+
+class EditorAsset {
+ public:
+  EditorAsset(int type);
+  virtual ~EditorAsset() noexcept = default;
+
+  virtual std::pair<bool, std::string> Load(Application*) = 0;
+
+  std::string Name;
+  std::filesystem::path Loaction;
+  int Type;
+  int Reference;
+};
+
+class ObjMeshAsset : public EditorAsset {
+ public:
+  ObjMeshAsset();
+  ~ObjMeshAsset() noexcept override;
+
+  std::pair<bool, std::string> Load(Application*) override;
+
+  GLuint VAO;
+  GLuint VBO;
+  GLuint IBO;
+};
+
 class Application {
  public:
   Application(int argc, char** argv);
@@ -45,6 +77,8 @@ class Application {
   Vector3f& GetBackgroundColor() { return _backgroundColor; }
   const std::filesystem::path& GetWorkRoot() const { return _workRoot; }
   bool HasWorkspace() const { return _hasWorkspace; }
+  const FactoryManager& GetFactoryManager() { return *_factories; }
+  const std::map<std::string, std::unique_ptr<EditorAsset>>& GetAssets() { return _nameToAsset; }
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
@@ -77,12 +111,14 @@ class Application {
   std::vector<Unique<GuiObject>> _activeGui;
   std::vector<Unique<GuiObject>> _iterGuiCache;
   std::unordered_map<std::string, std::string> _i18n;
+  std::unique_ptr<FactoryManager> _factories;
   bool _hasWorkspace{false};
   bool _hasRequestNewScene{false};
   std::filesystem::path _requestNewScenePath;
   std::filesystem::path _workRoot;
   std::string _sceneName;
   Vector3f _backgroundColor;
+  std::map<std::string, std::unique_ptr<EditorAsset>> _nameToAsset;
 };
 
 }  // namespace Rad
