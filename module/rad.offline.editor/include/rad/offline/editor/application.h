@@ -43,6 +43,14 @@ struct GLVertex {
   Vector2f UV;
 };
 
+struct PreviewFrameBuffer {
+  GLuint Fbo{0};
+  GLuint ColorTex{0};
+  GLuint Rbo{0};
+  int Width{0};
+  int Height{0};
+};
+
 class EditorAsset {
  public:
   EditorAsset(int type);
@@ -152,6 +160,7 @@ class Application {
 
   void InitGraphics();
   void InitImGui();
+  void InitPreviewFrameBuffer();
   void UpdateImGui();
   void DrawStartPass();
   void DrawImGuiPass();
@@ -187,6 +196,7 @@ class Application {
   std::vector<ShapeNode*> _renderItems;
   PerspCamera _camera;
   std::mt19937 _rng;
+  PreviewFrameBuffer _prevFbo;
 };
 
 }  // namespace Rad

@@ -381,6 +381,7 @@ ShapeNode Application::NewNode() {
 void Application::Start() {
   InitGraphics();
   InitImGui();
+  InitPreviewFrameBuffer();
   InitBasicGuiObject();
 }
 
@@ -512,6 +513,30 @@ void Application::InitImGui() {
   _imRender = {vao, vbo, ibo, ubo, prog, fontTexture};
 
   ImGui_ImplGlfw_InitForOpenGL(_window, true);
+}
+
+void Application::InitPreviewFrameBuffer() {
+  glCreateFramebuffers(1, &_prevFbo.Fbo);
+  glCreateTextures(GL_TEXTURE_2D, 1, &_prevFbo.ColorTex);
+  glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_MAX_LEVEL, 0);
+  glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  int width, height;
+  glfwGetFramebufferSize(_window, &width, &height);
+  glTextureStorage2D(_prevFbo.ColorTex, 1, GL_RGBA8, width, height);
+  glNamedFramebufferTexture(_prevFbo.Fbo, GL_COLOR_ATTACHMENT0, _prevFbo.ColorTex, 0);
+  glCreateRenderbuffers(1, &_prevFbo.Rbo);
+  glNamedRenderbufferStorage(_prevFbo.Rbo, GL_DEPTH_COMPONENT, width, height);
+  glNamedFramebufferRenderbuffer(_prevFbo.Fbo, GL_DEPTH_ATTACHMENT, _prevFbo.Rbo, 0);
+  auto status = glCheckNamedFramebufferStatus(_prevFbo.Fbo, GL_FRAMEBUFFER);
+  if (status != GL_FRAMEBUFFER_COMPLETE) {
+    _logger->error("cannot create preview fbo, {}", status);
+    int colName;
+    glGetNamedFramebufferAttachmentParameteriv(_prevFbo.Fbo, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &colName);
+    int depName;
+    glGetNamedFramebufferAttachmentParameteriv(_prevFbo.Fbo, GL_DEPTH_COMPONENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &depName);
+    _logger->error("attached color0: {}, depth: {}", colName, depName);
+  }
 }
 
 void Application::UpdateImGui() {
