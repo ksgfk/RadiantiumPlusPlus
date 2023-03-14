@@ -372,16 +372,17 @@ inline void ImGui::FileBrowser::Display()
             ImVec2(static_cast<float>(width_), static_cast<float>(height_)),
             ImGuiCond_FirstUseEver);
     }
+    ImGuiWindowFlags baseFlags = ImGuiWindowFlags_NoSavedSettings;
     if(flags_ & ImGuiFileBrowserFlags_NoModal)
     {
-        if(!BeginPopup(openLabel_.c_str()))
+        if(!BeginPopup(openLabel_.c_str(), baseFlags))
         {
             return;
         }
     }
     else if(!BeginPopupModal(openLabel_.c_str(), nullptr,
-                             flags_ & ImGuiFileBrowserFlags_NoTitleBar ?
-                                ImGuiWindowFlags_NoTitleBar : 0))
+                             (flags_ & ImGuiFileBrowserFlags_NoTitleBar ?
+                                ImGuiWindowFlags_NoTitleBar : 0) | baseFlags))
     {
         return;
     }

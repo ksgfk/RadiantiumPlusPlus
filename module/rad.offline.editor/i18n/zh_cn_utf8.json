@@ -34,5 +34,6 @@
   "camera.title": "摄像机",
   "camera.fovy": "视角",
   "camera.near_z": "近平面",
-  "camera.far_z": "远平面"
+  "camera.far_z": "远平面",
+  "preview_scene.title": "场景预览"
 }

@@ -7,6 +7,8 @@
 #include <rad/offline/editor/gui_file_browser_wrapper.h>
 #include <rad/offline/editor/gui_asset_panel.h>
 #include <rad/offline/editor/gui_hierarchy.h>
+#include <rad/offline/editor/gui_preview_scene.h>
+#include <rad/offline/editor/gui_camera.h>
 
 namespace Rad {
 
@@ -98,6 +100,24 @@ void GuiMainBar::OnGui() {
           if (hierarchyPanel) {
             auto ptr = static_cast<GuiHierarchy*>(*hierarchyPanel);
             if (ImGui::MenuItem(_app->I18n("hierarchy.title"), nullptr, ptr->IsOpen)) {
+              ptr->IsOpen = !ptr->IsOpen;
+            }
+          }
+        }
+        {
+          auto camera = _app->FindUi("camera_panel");
+          if (camera) {
+            auto ptr = static_cast<GuiCamera*>(*camera);
+            if (ImGui::MenuItem(_app->I18n("camera.title"), nullptr, ptr->IsOpen)) {
+              ptr->IsOpen = !ptr->IsOpen;
+            }
+          }
+        }
+        {
+          auto previewPanel = _app->FindUi("preview_scene");
+          if (previewPanel) {
+            auto ptr = static_cast<GuiPreviewScene*>(*previewPanel);
+            if (ImGui::MenuItem(_app->I18n("preview_scene.title"), nullptr, ptr->IsOpen)) {
               ptr->IsOpen = !ptr->IsOpen;
             }
           }

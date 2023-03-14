@@ -146,6 +146,7 @@ class Application {
   ShapeNode& GetRoot() { return *_root; }
   PerspCamera& GetCamera() { return _camera; }
   std::mt19937& GetRng() { return _rng; }
+  const PreviewFrameBuffer& GetPreviewFb() { return _prevFbo; }
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
@@ -163,6 +164,7 @@ class Application {
   void InitPreviewFrameBuffer();
   void UpdateImGui();
   void DrawStartPass();
+  void DrawItemPass();
   void DrawImGuiPass();
   void GLDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message) const;
   bool GLCompileShader(const char* source, GLenum type, GLuint* shader);

@@ -22,6 +22,7 @@
 #include <rad/offline/editor/gui_asset_panel.h>
 #include <rad/offline/editor/gui_hierarchy.h>
 #include <rad/offline/editor/gui_camera.h>
+#include <rad/offline/editor/gui_preview_scene.h>
 
 namespace Rad {
 
@@ -51,6 +52,20 @@ layout (binding = 0) uniform sampler2D Texture;
 layout (location = 0) out vec4 out_Color;
 void main() {
   out_Color = Frag_Color * texture(Texture, Frag_UV.st);
+}
+)";
+
+const char* normalVert = R"(
+#version 450 core
+layout (location = 0) in vec3 _Position;
+layout (location = 1) in vec3 _Normal;
+layout (location = 2) in vec2 _UV;
+layout (std140, binding = 0) uniform PerFrameData {
+  uniform mat4 MVP;
+};
+out vec3 Frag_Normal;
+void main() {
+  gl_Position = MVP * vec4(_Position, 1);
 }
 )";
 
@@ -390,6 +405,7 @@ void Application::Update() {
     CollectRenderItem();
     UpdateImGui();
     DrawStartPass();
+    DrawItemPass();
     DrawImGuiPass();
     ExecuteRequestNewScene();
     glfwSwapBuffers(_window);
@@ -527,7 +543,7 @@ void Application::InitPreviewFrameBuffer() {
   glNamedFramebufferTexture(_prevFbo.Fbo, GL_COLOR_ATTACHMENT0, _prevFbo.ColorTex, 0);
   glCreateRenderbuffers(1, &_prevFbo.Rbo);
   glNamedRenderbufferStorage(_prevFbo.Rbo, GL_DEPTH_COMPONENT, width, height);
-  glNamedFramebufferRenderbuffer(_prevFbo.Fbo, GL_DEPTH_ATTACHMENT, _prevFbo.Rbo, 0);
+  glNamedFramebufferRenderbuffer(_prevFbo.Fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _prevFbo.Rbo);
   auto status = glCheckNamedFramebufferStatus(_prevFbo.Fbo, GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     _logger->error("cannot create preview fbo, {}", status);
@@ -537,6 +553,8 @@ void Application::InitPreviewFrameBuffer() {
     glGetNamedFramebufferAttachmentParameteriv(_prevFbo.Fbo, GL_DEPTH_COMPONENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &depName);
     _logger->error("attached color0: {}, depth: {}", colName, depName);
   }
+  _prevFbo.Width = width;
+  _prevFbo.Height = height;
 }
 
 void Application::UpdateImGui() {
@@ -554,9 +572,30 @@ void Application::DrawStartPass() {
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
+void Application::DrawItemPass() {
+  glDisable(GL_BLEND);
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  glDisable(GL_STENCIL_TEST);
+  glDisable(GL_SCISSOR_TEST);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, _prevFbo.Fbo);
+  glViewport(0, 0, _prevFbo.Width, _prevFbo.Height);
+  glClearColor(1 - _backgroundColor.x(), 1 - _backgroundColor.y(), 1 - _backgroundColor.z(), 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // for (auto&& i : _renderItems) {
+  //   auto shape = static_cast<ObjMeshAsset*>(i->ShapeAsset.Ptr);
+  //   glBindVertexArray(shape->VAO);
+  // }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void Application::DrawImGuiPass() {
   int width, height;
   glfwGetFramebufferSize(_window, &width, &height);
+  glViewport(0, 0, width, height);
   glEnable(GL_BLEND);
   glBlendEquation(GL_FUNC_ADD);
   glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -733,6 +772,7 @@ void Application::ExecuteRequestNewScene() {
   AddGui(std::make_unique<GuiAssetPanel>(this));
   AddGui(std::make_unique<GuiHierarchy>(this));
   AddGui(std::make_unique<GuiCamera>(this));
+  AddGui(std::make_unique<GuiPreviewScene>(this));
 
   _root = std::make_unique<ShapeNode>();
   _root->Name = _sceneName;

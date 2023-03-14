@@ -34,5 +34,6 @@
   "camera.title": "Camera",
   "camera.fovy": "FOV",
   "camera.near_z": "Near Z",
-  "camera.far_z": "Far Z"
+  "camera.far_z": "Far Z",
+  "preview_scene.title": "Scene Preview"
 }

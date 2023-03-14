@@ -10,7 +10,8 @@ add_executable(${RAD_OFFLINE_EDITOR_MODULE_NAME}
     src/gui_file_browser_wrapper.cpp
     src/gui_asset_panel.cpp
     src/gui_hierarchy.cpp
-    src/gui_camera.cpp)
+    src/gui_camera.cpp
+    src/gui_preview_scene.cpp)
 target_include_directories(${RAD_OFFLINE_EDITOR_MODULE_NAME} PUBLIC
     "include")
 target_link_libraries(${RAD_OFFLINE_EDITOR_MODULE_NAME}
