@@ -308,6 +308,10 @@ void ShapeNode::AfterAddChild(std::list<ShapeNode>::iterator& childIter) {
   auto&& child = *childIter;
   child.Parent = this;
   child.InParentIter = childIter;
+  //子节点持有父节点地址, 因此父节点被移动走之后, 要更新所有子节点保存的地址
+  for (auto&& i : child.Children) {
+    i.Parent = &child;
+  }
 }
 
 Application::Application(int argc, char** argv)
@@ -628,7 +632,7 @@ void Application::DrawItemPass() {
     // Vector3f front = (rot * Vector3f(0, 0, -1)).normalized();
     // Vector3f up = (rot * Vector3f(0, 1, 0)).normalized();
     // _camera.ToView = LookAt(_camera.Position, _camera.Position + front, up);
-    
+
     _camera.ToView = LookAt(_camera.Position, _camera.Target, _camera.Up);
     _camera.ToPersp = Perspective(_camera.Fovy, (float)_prevFbo.Width / _prevFbo.Height, _camera.NearZ, _camera.FarZ);
   }

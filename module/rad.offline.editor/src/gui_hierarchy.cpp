@@ -25,8 +25,7 @@ void GuiHierarchy::OnGui() {
         ShapeNode* target = NowSelect == nullptr ? &_app->GetRoot() : NowSelect;
         ShapeNode newNode = _app->NewNode();
         newNode.Name = fmt::format("node {}", newNode.Id);
-        ShapeNode& added = target->AddChildLast(std::move(newNode));
-        NowSelect = &added;
+        target->AddChildLast(std::move(newNode));
       }
       ImGui::SameLine();
       ImGui::BeginDisabled(NowSelect == nullptr);
