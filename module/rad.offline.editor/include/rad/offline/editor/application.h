@@ -43,12 +43,23 @@ struct GLVertex {
   Vector2f UV;
 };
 
-struct PreviewFrameBuffer {
+struct PerFrameData {
+  Matrix4f Model;
+  Matrix4f View;
+  Matrix4f Persp;
+  Matrix4f MVP;
+  Matrix4f InvModel;
+};
+
+struct PreviewRenderData {
   GLuint Fbo{0};
   GLuint ColorTex{0};
   GLuint Rbo{0};
   int Width{0};
   int Height{0};
+  PerFrameData PerFrame{};
+  GLuint ShaderProgram{0};
+  GLuint UboPerFrame{0};
 };
 
 class EditorAsset {
@@ -74,6 +85,7 @@ class ObjMeshAsset : public EditorAsset {
   GLuint VAO;
   GLuint VBO;
   GLuint IBO;
+  int Indices;
 };
 
 class EditorAssetGuard {
@@ -120,8 +132,9 @@ class ShapeNode {
 class PerspCamera {
  public:
   Vector3f Position{Vector3f::Zero()};
-  Vector3f Scale{Vector3f::Constant(1)};
   Eigen::Quaternionf Rotation{Eigen::Quaternionf::Identity()};
+  Vector3f Target{Vector3f::Zero()};
+  Vector3f Up{Vector3f::Zero()};
   Matrix4f ToView{Matrix4f::Identity()};
   float Fovy{30.0f};
   float NearZ{0.001f};
@@ -146,7 +159,7 @@ class Application {
   ShapeNode& GetRoot() { return *_root; }
   PerspCamera& GetCamera() { return _camera; }
   std::mt19937& GetRng() { return _rng; }
-  const PreviewFrameBuffer& GetPreviewFb() { return _prevFbo; }
+  const PreviewRenderData& GetPreviewFb() { return _prevFbo; }
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
@@ -198,7 +211,7 @@ class Application {
   std::vector<ShapeNode*> _renderItems;
   PerspCamera _camera;
   std::mt19937 _rng;
-  PreviewFrameBuffer _prevFbo;
+  PreviewRenderData _prevFbo;
 };
 
 }  // namespace Rad

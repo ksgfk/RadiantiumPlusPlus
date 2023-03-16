@@ -36,8 +36,8 @@ void GuiAssetPanel::OnGui() {
     return;
   }
   ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar;
-  ImGui::SetNextWindowPos(ImVec2(520, 580), ImGuiCond_Once);
-  ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_Once);
+  ImGui::SetNextWindowPos(ImVec2(520, 580), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_FirstUseEver);
   ScopeGuard _([]() { ImGui::End(); });
   if (ImGui::Begin(_app->I18n("asset_panel.title"), &IsOpen, flags)) {
     if (ImGui::BeginMenuBar()) {

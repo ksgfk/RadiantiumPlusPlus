@@ -14,8 +14,8 @@ void GuiHierarchy::OnGui() {
   if (!IsOpen) {
     return;
   }
-  ImGui::SetNextWindowPos(ImVec2(0, 50), ImGuiCond_Once);
-  ImGui::SetNextWindowSize(ImVec2(350, 700), ImGuiCond_Once);
+  ImGui::SetNextWindowPos(ImVec2(0, 50), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(350, 700), ImGuiCond_FirstUseEver);
   ScopeGuard _([]() { ImGui::End(); });
   if (ImGui::Begin(_app->I18n("hierarchy.title"), &IsOpen, 0)) {
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);

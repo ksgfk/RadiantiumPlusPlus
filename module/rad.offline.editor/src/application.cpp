@@ -34,14 +34,14 @@ layout (location = 0) in vec2 Position;
 layout (location = 1) in vec2 UV;
 layout (location = 2) in vec4 Color;
 layout (std140, binding = 0) uniform PerFrameData {
-  uniform mat4 MVP;
-};
+  mat4 MVP;
+} _PerFrame;
 out vec2 Frag_UV;
 out vec4 Frag_Color;
 void main() {
   Frag_UV = UV;
   Frag_Color = Color;
-  gl_Position = MVP * vec4(Position.xy,0,1);
+  gl_Position = _PerFrame.MVP * vec4(Position.xy,0,1);
 }
 )";
 const char* imguiFragShader = R"(
@@ -57,43 +57,60 @@ void main() {
 
 const char* normalVert = R"(
 #version 450 core
-layout (location = 0) in vec3 _Position;
-layout (location = 1) in vec3 _Normal;
-layout (location = 2) in vec2 _UV;
+layout (location = 0) in vec3 a_Position;
+layout (location = 1) in vec3 a_Normal;
+layout (location = 2) in vec2 a_UV;
 layout (std140, binding = 0) uniform PerFrameData {
-  uniform mat4 MVP;
-};
-out vec3 Frag_Normal;
+  mat4 Model;
+  mat4 View;
+  mat4 Persp;
+  mat4 MVP;
+  mat4 InvModel;
+} _PerFrame;
+out vec3 v_worldNormal;
 void main() {
-  gl_Position = MVP * vec4(_Position, 1);
+  gl_Position = _PerFrame.MVP * vec4(a_Position, 1);
+  v_worldNormal = transpose(mat3(_PerFrame.InvModel)) * a_Normal;
+}
+)";
+const char* normalFrag = R"(
+#version 450 core
+in vec3 v_worldNormal;
+layout (location = 0) out vec4 out_Color;
+void main() {
+  vec3 normal = normalize(v_worldNormal);
+  vec3 color = (normal + vec3(1.0)) * vec3(0.5);
+  out_Color = vec4(color, 1.0);
 }
 )";
 
 Matrix4f LookAt(const Vector3f& eye, const Vector3f& target, const Vector3f& up) {
-  Vector3f f = (target - eye).normalized();
-  Vector3f u = up.normalized();
-  Vector3f s = f.cross(u).normalized();
-  u = s.cross(f);
-  Matrix4f mat = Matrix4f::Zero();
+  Eigen::Vector3f f(target - eye);
+  Eigen::Vector3f s(f.cross(up));
+  Eigen::Vector3f u(s.cross(f));
+  f.normalize();
+  s.normalize();
+  u.normalize();
+
+  Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
   mat(0, 0) = s.x();
   mat(0, 1) = s.y();
   mat(0, 2) = s.z();
-  mat(0, 3) = -s.dot(eye);
   mat(1, 0) = u.x();
   mat(1, 1) = u.y();
   mat(1, 2) = u.z();
-  mat(1, 3) = -u.dot(eye);
   mat(2, 0) = -f.x();
   mat(2, 1) = -f.y();
   mat(2, 2) = -f.z();
+  mat(0, 3) = -s.dot(eye);
+  mat(1, 3) = -u.dot(eye);
   mat(2, 3) = f.dot(eye);
-  mat.row(3) << 0, 0, 0, 1;
   return mat;
 }
 
 Matrix4f Perspective(float fovy, float aspect, float zNear, float zFar) {
   Matrix4f tr = Matrix4f::Zero();
-  float radf = PI * fovy / 180.0f;
+  float radf = fovy * PI / 180.0f;
   float tanHalfFovy = std::tan(radf / 2.0f);
   tr(0, 0) = 1.0f / (aspect * tanHalfFovy);
   tr(1, 1) = 1.0f / (tanHalfFovy);
@@ -221,6 +238,7 @@ std::pair<bool, std::string> ObjMeshAsset::Load(Application* app) {
     VAO = vao;
     VBO = vbo;
     IBO = ibo;
+    Indices = model.IndexCount();
     result.first = true;
   }
   return result;
@@ -390,6 +408,7 @@ std::pair<bool, std::string> Application::LoadAsset(const std::string& name, con
 ShapeNode Application::NewNode() {
   ShapeNode node{};
   node.Id = _nodeIdPool++;
+  node.App = this;
   return node;
 }
 
@@ -555,6 +574,24 @@ void Application::InitPreviewFrameBuffer() {
   }
   _prevFbo.Width = width;
   _prevFbo.Height = height;
+
+  GLuint shaders[2];
+  bool isVsPass = GLCompileShader(normalVert, GL_VERTEX_SHADER, &shaders[0]);
+  bool isFsPass = GLCompileShader(normalFrag, GL_FRAGMENT_SHADER, &shaders[1]);
+  if (!isVsPass || !isFsPass) {
+    throw RadInvalidOperationException("cannot compile preview shaders");
+  }
+  GLuint prog;
+  bool isLink = GLLinkProgram(shaders, 2, &prog);
+  if (!isLink) {
+    throw RadInvalidOperationException("cannot linke preview program");
+  }
+  _prevFbo.ShaderProgram = prog;
+  GLuint ubo;
+  glCreateBuffers(1, &ubo);
+  glNamedBufferStorage(ubo, sizeof(PerFrameData), nullptr, GL_DYNAMIC_STORAGE_BIT);
+  _prevFbo.UboPerFrame = ubo;
+  _prevFbo.PerFrame = {};
 }
 
 void Application::UpdateImGui() {
@@ -573,6 +610,8 @@ void Application::DrawStartPass() {
 }
 
 void Application::DrawItemPass() {
+  glUseProgram(_prevFbo.ShaderProgram);
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, _prevFbo.UboPerFrame);
   glDisable(GL_BLEND);
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
@@ -584,10 +623,29 @@ void Application::DrawItemPass() {
   glClearColor(1 - _backgroundColor.x(), 1 - _backgroundColor.y(), 1 - _backgroundColor.z(), 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // for (auto&& i : _renderItems) {
-  //   auto shape = static_cast<ObjMeshAsset*>(i->ShapeAsset.Ptr);
-  //   glBindVertexArray(shape->VAO);
-  // }
+  {
+    // auto rot = _camera.Rotation.toRotationMatrix();
+    // Vector3f front = (rot * Vector3f(0, 0, -1)).normalized();
+    // Vector3f up = (rot * Vector3f(0, 1, 0)).normalized();
+    // _camera.ToView = LookAt(_camera.Position, _camera.Position + front, up);
+    
+    _camera.ToView = LookAt(_camera.Position, _camera.Target, _camera.Up);
+    _camera.ToPersp = Perspective(_camera.Fovy, (float)_prevFbo.Width / _prevFbo.Height, _camera.NearZ, _camera.FarZ);
+  }
+
+  auto& perFrame = _prevFbo.PerFrame;
+  perFrame.View = _camera.ToView;
+  perFrame.Persp = _camera.ToPersp;
+
+  for (auto&& i : _renderItems) {
+    auto shape = static_cast<ObjMeshAsset*>(i->ShapeAsset.Ptr);
+    glBindVertexArray(shape->VAO);
+    perFrame.Model = i->ToWorld;
+    perFrame.InvModel = i->ToLocal;
+    perFrame.MVP = perFrame.Persp * perFrame.View * perFrame.Model;
+    glNamedBufferSubData(_prevFbo.UboPerFrame, 0, sizeof(PerFrameData), &perFrame);
+    glDrawElementsBaseVertex(GL_TRIANGLES, shape->Indices, GL_UNSIGNED_INT, nullptr, 0);
+  }
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -783,12 +841,21 @@ void Application::CollectRenderItem() {
   if (!_hasWorkspace) {
     return;
   }
+  _renderItems.clear();
   _recTemp.emplace(_root.get());
   while (!_recTemp.empty()) {
     auto node = _recTemp.front();
     _recTemp.pop();
     if (node->Parent != nullptr) {
+      {
+        Eigen::Translation<Float, 3> t(node->Position);
+        Eigen::DiagonalMatrix<Float, 3> s(node->Scale);
+        auto r = node->Rotation.toRotationMatrix();
+        Eigen::Transform<Float, 3, Eigen::Affine> affine = t * r * s;
+        node->ToWorld = affine.matrix();
+      }
       node->ToWorld = node->ToWorld * node->Parent->ToWorld;
+      node->ToLocal = node->ToWorld.inverse();
     }
     if (node->ShapeAsset.Ptr != nullptr) {
       _renderItems.emplace_back(node);
@@ -797,10 +864,6 @@ void Application::CollectRenderItem() {
       _recTemp.emplace(&i);
     }
   }
-  // Vector3f front = (_camera.Rotation * Vector3f(0, 0, 1)).normalized();
-  // Vector3f up = (_camera.Rotation * Vector3f(0, 1, 0)).normalized();
-  // _camera.ToView = LookAt(_camera.Position, _camera.Position + front, up);
-  // _camera.ToPersp = Perspective(_camera.Fovy, 0, 0, 0);
 }
 
 }  // namespace Rad
