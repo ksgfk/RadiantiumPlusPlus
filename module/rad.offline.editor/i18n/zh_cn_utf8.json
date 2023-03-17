@@ -17,7 +17,7 @@
   "main_menu_bar.setting.switch_language": "切换语言",
   "main_menu_bar.window": "窗口",
   "asset_panel.title": "资产",
-  "asset_panel.load": "加载",
+  "asset_panel.load": "加载资产",
   "asset_panel.load.unique_name": "唯一名称",
   "asset_panel.load.type": "类型",
   "asset_panel.load.location": "位置: {}",

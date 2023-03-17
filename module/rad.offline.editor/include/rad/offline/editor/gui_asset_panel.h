@@ -15,6 +15,18 @@ class GuiAssetLoadFailMessageBox : public GuiObject {
   std::string Message;
 };
 
+class GuiLoadAsset : public GuiObject {
+ public:
+  explicit GuiLoadAsset(Application* app);
+  ~GuiLoadAsset() noexcept override = default;
+
+  void OnGui() override;
+
+  std::string NewAssetName;
+  int NewAssetType;
+  std::string NewAssetLocation;
+};
+
 class GuiAssetPanel : public GuiObject {
  public:
   explicit GuiAssetPanel(Application* app);

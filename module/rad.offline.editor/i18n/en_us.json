@@ -17,7 +17,7 @@
   "main_menu_bar.setting.switch_language": "Language",
   "main_menu_bar.window": "Window",
   "asset_panel.title": "Assets",
-  "asset_panel.load": "Load",
+  "asset_panel.load": "Load Asset",
   "asset_panel.load.unique_name": "Unique Name",
   "asset_panel.load.type": "Type",
   "asset_panel.load.location": "Location: {}",
