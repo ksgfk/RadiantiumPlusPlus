@@ -42,7 +42,22 @@ void GuiMainBar::OnGui() {
         _app->AddGui(std::move(wrapper));
       }
       if (ImGui::MenuItem(_app->I18n("main_menu_bar.file.open_scene"))) {
-        _logger->info("open");
+        _logger->debug("open scene");
+        ImGui::FileBrowser browser(0);
+        browser.SetPwd(_app->GetWorkRoot());
+        browser.SetTitle(_app->I18n("main_menu_bar.file.open_scene.file_dialog_title"));
+        browser.SetInpuTextHint(_app->I18n("main_menu_bar.file.open_scene.file_dialog_filename"));
+        browser.SetButtonOkHint(_app->I18n("ok"));
+        browser.SetButtonCancelHint(_app->I18n("cancel"));
+        browser.SetTypeFilters({".json"});
+        auto wrapper = std::make_unique<GuiFileBrowserWrapper>(_app, std::move(browser));
+        wrapper->OnSelected = [=](GuiFileBrowserWrapper& wrapper) {
+          auto&& b = wrapper.GetBrowser();
+          auto path = b.GetSelected();
+          _logger->info("select {}", path.string());
+          _app->OpenScene(path);
+        };
+        _app->AddGui(std::move(wrapper));
       }
       if (ImGui::MenuItem(_app->I18n("main_menu_bar.file.save_scene"))) {
         _logger->info("save");

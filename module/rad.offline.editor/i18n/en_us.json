@@ -6,6 +6,7 @@
   "position": "Position",
   "scale": "Scale",
   "rotation": "Rotation",
+  "error": "Error",
   "main_menu_bar.file": "File",
   "main_menu_bar.file.new_scene": "New Scene",
   "main_menu_bar.file.open_scene.file_dialog_title": "Select a directory and enter the scene name",

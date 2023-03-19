@@ -131,15 +131,39 @@ class ShapeNode {
 
 class PerspCamera {
  public:
-  Vector3f Position{Vector3f::Zero()};
+  Vector3f Position{0, 0, 5};
   Eigen::Quaternionf Rotation{Eigen::Quaternionf::Identity()};
   Vector3f Target{Vector3f::Zero()};
-  Vector3f Up{Vector3f::Zero()};
+  Vector3f Up{0, 1, 0};
   Matrix4f ToView{Matrix4f::Identity()};
   float Fovy{30.0f};
   float NearZ{0.001f};
   float FarZ{100.0f};
   Matrix4f ToPersp{Matrix4f::Identity()};
+};
+
+struct BuiltinGeo {
+  GLuint VAO;
+  GLuint VBO;
+  GLuint IBO;
+  int Indices;
+};
+
+struct BuiltinShapes {
+  BuiltinGeo Sphere;
+  BuiltinGeo Cube;
+  BuiltinGeo Rect;
+};
+
+class DefaultMessageBox : public GuiObject {
+ public:
+  explicit DefaultMessageBox(Application* app, const std::string& msg);
+  ~DefaultMessageBox() noexcept override = default;
+
+  void OnStart() override;
+  void OnGui() override;
+
+  std::string Message;
 };
 
 class Application {
@@ -163,6 +187,8 @@ class Application {
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
+  void OpenScene(const std::filesystem::path& sceneFile);
+  void CloseScene();
   std::optional<GuiObject*> FindUi(const std::string& name);
   std::pair<bool, std::string> LoadAsset(const std::string& name, const std::filesystem::path& loaction, int type);
   ShapeNode NewNode();
@@ -175,6 +201,7 @@ class Application {
   void InitGraphics();
   void InitImGui();
   void InitPreviewFrameBuffer();
+  void InitBuiltinShapes();
   void UpdateImGui();
   void DrawStartPass();
   void DrawItemPass();
@@ -187,8 +214,11 @@ class Application {
   void OnGui();
 
   void ExecuteRequestNewScene();
+  void ExecuteCloseScene();
 
   void CollectRenderItem();
+
+  void BuildScene(const nlohmann::json&);
 
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
@@ -200,6 +230,8 @@ class Application {
   std::unique_ptr<FactoryManager> _factories;
   bool _hasWorkspace{false};
   bool _hasRequestNewScene{false};
+  bool _isOpenScene{false};
+  bool _isCloseScene{false};
   std::filesystem::path _requestNewScenePath;
   std::filesystem::path _workRoot;
   std::string _sceneName;
@@ -212,6 +244,11 @@ class Application {
   PerspCamera _camera;
   std::mt19937 _rng;
   PreviewRenderData _prevFbo;
+  BuiltinShapes _builtinShape;
 };
+
+TriangleModel CreateSphere(float radius, int numberSlices);
+TriangleModel CreateCube(float halfExtend);
+TriangleModel CreateRect(float halfExtend);
 
 }  // namespace Rad

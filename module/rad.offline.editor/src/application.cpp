@@ -308,9 +308,27 @@ void ShapeNode::AfterAddChild(std::list<ShapeNode>::iterator& childIter) {
   auto&& child = *childIter;
   child.Parent = this;
   child.InParentIter = childIter;
-  //子节点持有父节点地址, 因此父节点被移动走之后, 要更新所有子节点保存的地址
+  // 子节点持有父节点地址, 因此父节点被移动走之后, 要更新所有子节点保存的地址
   for (auto&& i : child.Children) {
     i.Parent = &child;
+  }
+}
+
+DefaultMessageBox::DefaultMessageBox(Application* app, const std::string& msg) : GuiObject(app, -999, true, "default_msg_box"), Message(msg) {}
+
+void DefaultMessageBox::OnStart() {
+  ImGui::OpenPopup(_app->I18n("error"));
+}
+
+void DefaultMessageBox::OnGui() {
+  ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_Appearing);
+  if (ImGui::BeginPopupModal(_app->I18n("error"), nullptr)) {
+    auto format = fmt::format(_app->I18n("asset_panel.load.reason"), Message.c_str());
+    ImGui::Text("%s", format.c_str());
+    if (ImGui::Button(_app->I18n("close"))) {
+      _isAlive = false;
+    }
+    ImGui::EndPopup();
   }
 }
 
@@ -363,6 +381,17 @@ void Application::AddGui(Unique<GuiObject> ui) {
 void Application::NewScene(const std::filesystem::path& sceneFile) {
   _hasRequestNewScene = true;
   _requestNewScenePath = sceneFile;
+  _isOpenScene = false;
+}
+
+void Application::OpenScene(const std::filesystem::path& sceneFile) {
+  _hasRequestNewScene = true;
+  _requestNewScenePath = sceneFile;
+  _isOpenScene = true;
+}
+
+void Application::CloseScene() {
+  _isCloseScene = true;
 }
 
 std::optional<GuiObject*> Application::FindUi(const std::string& name) {
@@ -420,6 +449,7 @@ void Application::Start() {
   InitGraphics();
   InitImGui();
   InitPreviewFrameBuffer();
+  InitBuiltinShapes();
   InitBasicGuiObject();
 }
 
@@ -430,6 +460,7 @@ void Application::Update() {
     DrawStartPass();
     DrawItemPass();
     DrawImGuiPass();
+    ExecuteCloseScene();
     ExecuteRequestNewScene();
     glfwSwapBuffers(_window);
     glfwPollEvents();
@@ -596,6 +627,9 @@ void Application::InitPreviewFrameBuffer() {
   glNamedBufferStorage(ubo, sizeof(PerFrameData), nullptr, GL_DYNAMIC_STORAGE_BIT);
   _prevFbo.UboPerFrame = ubo;
   _prevFbo.PerFrame = {};
+}
+
+void Application::InitBuiltinShapes() {
 }
 
 void Application::UpdateImGui() {
@@ -818,19 +852,14 @@ void Application::ExecuteRequestNewScene() {
     return;
   }
   _hasRequestNewScene = false;
-
-  if (_hasWorkspace) {
-    // TODO: 提示储存场景
-  }
+  _isCloseScene = true;
+  ExecuteCloseScene();
   _hasWorkspace = true;
+
   auto workDir = _requestNewScenePath.parent_path();
   _workRoot = workDir;
   _sceneName = _requestNewScenePath.filename().replace_extension("").string();
 
-  _iterGuiCache.clear();
-  _activeGui.clear();
-  _firstUseGui.clear();
-  InitBasicGuiObject();
   AddGui(std::make_unique<GuiAssetPanel>(this));
   AddGui(std::make_unique<GuiHierarchy>(this));
   AddGui(std::make_unique<GuiCamera>(this));
@@ -839,6 +868,36 @@ void Application::ExecuteRequestNewScene() {
   _root = std::make_unique<ShapeNode>();
   _root->Name = _sceneName;
   _nodeIdPool = 1;
+
+  if (_isOpenScene) {
+    nlohmann::json cfg;
+    {
+      std::ifstream cfgStream(_requestNewScenePath);
+      if (!cfgStream.is_open()) {
+        AddGui(std::make_unique<DefaultMessageBox>(this, fmt::format("cannot open file {}", _requestNewScenePath.string())));
+        return;
+      }
+      cfg = nlohmann::json::parse(cfgStream);
+    }
+    BuildScene(cfg);
+  }
+}
+
+void Application::ExecuteCloseScene() {
+  if (!_isCloseScene) {
+    return;
+  }
+  _isCloseScene = false;
+  _hasWorkspace = false;
+  if (_hasWorkspace) {
+    // TODO: 提示储存场景
+  }
+  _iterGuiCache.clear();
+  _activeGui.clear();
+  _firstUseGui.clear();
+  _nameToAsset.clear();
+  _root = nullptr;
+  InitBasicGuiObject();
 }
 
 void Application::CollectRenderItem() {
@@ -868,6 +927,180 @@ void Application::CollectRenderItem() {
       _recTemp.emplace(&i);
     }
   }
+}
+
+void Application::BuildScene(const nlohmann::json& cfg) {
+  if (cfg.contains("assets")) {
+    const auto& assets = cfg["assets"];
+    for (const auto& assetNode : assets) {
+      std::string type = assetNode["type"];
+      std::string name = assetNode["name"];
+      std::string location = assetNode["location"];
+      std::filesystem::path pathLocal(location);
+      _logger->debug("load asset: {}, {}, {}", type, name, location);
+      if (!std::filesystem::exists(pathLocal)) {
+        pathLocal = _workRoot / pathLocal;
+        if (!std::filesystem::exists(pathLocal)) {
+          AddGui(std::make_unique<DefaultMessageBox>(this, fmt::format("cannot load file {}", location)));
+          return;
+        }
+      }
+      if (type == "model_obj") {
+        LoadAsset(name, pathLocal, 0);
+      } else {
+      }
+    }
+  }
+  if (cfg.contains("scene")) {
+    // auto&& scene = cfg["scene"];
+    // std::queue<nlohmann::json*> q;
+    // for (auto& i : scene) {
+    //   q.emplace(&i);
+    // }
+    // while (!q.empty()) {
+    //   auto& i = *q.front();
+    //   q.pop();
+    //   if (i.contains("shape")) {
+    //   }
+    // }
+  }
+}
+
+TriangleModel CreateSphere(float radius, int numberSlices) {
+  const Vector3f axisX = {1.0f, 0.0f, 0.0f};
+
+  uint32_t numberParallels = numberSlices / 2;
+  uint32_t numberVertices = (numberParallels + 1) * (numberSlices + 1);
+  uint32_t numberIndices = numberParallels * numberSlices * 6;
+
+  float angleStep = (2.0f * PI) / ((float)numberSlices);
+
+  std::vector<Vector3f> vertices(numberVertices, Vector3f{});
+  std::vector<Vector3f> normals(numberVertices, Vector3f{});
+  std::vector<Vector2f> texCoords(numberVertices, Vector2f{});
+
+  for (uint32_t i = 0; i < numberParallels + 1; i++) {
+    for (uint32_t j = 0; j < (uint32_t)(numberSlices + 1); j++) {
+      uint32_t vertexIndex = (i * (numberSlices + 1) + j);
+      uint32_t normalIndex = (i * (numberSlices + 1) + j);
+      uint32_t texCoordsIndex = (i * (numberSlices + 1) + j);
+
+      float px = radius * std::sin(angleStep * (float)i) * std::sin(angleStep * (float)j);
+      float py = radius * std::cos(angleStep * (float)i);
+      float pz = radius * std::sin(angleStep * (float)i) * std::cos(angleStep * (float)j);
+      vertices[vertexIndex] = {px, py, pz};
+
+      float nx = vertices[vertexIndex].x() / radius;
+      float ny = vertices[vertexIndex].y() / radius;
+      float nz = vertices[vertexIndex].z() / radius;
+      normals[normalIndex] = {nx, ny, nz};
+
+      float tx = (float)j / (float)numberSlices;
+      float ty = 1.0f - (float)i / (float)numberParallels;
+      texCoords[texCoordsIndex] = {tx, ty};
+    }
+  }
+
+  uint32_t indexIndices = 0;
+  std::vector<uint32_t> indices(numberIndices, uint32_t{});
+  for (uint32_t i = 0; i < numberParallels; i++) {
+    for (uint32_t j = 0; j < (uint32_t)(numberSlices); j++) {
+      indices[indexIndices++] = i * ((uint32_t)numberSlices + 1) + j;
+      indices[indexIndices++] = ((uint32_t)i + 1) * ((uint32_t)numberSlices + 1) + j;
+      indices[indexIndices++] = ((uint32_t)i + 1) * ((uint32_t)numberSlices + 1) + ((uint32_t)j + 1);
+
+      indices[indexIndices++] = i * ((uint32_t)numberSlices + 1) + j;
+      indices[indexIndices++] = ((uint32_t)i + 1) * ((uint32_t)numberSlices + 1) + ((uint32_t)j + 1);
+      indices[indexIndices++] = (uint32_t)i * ((uint32_t)numberSlices + 1) + ((uint32_t)j + 1);
+    }
+  }
+  return TriangleModel(vertices.data(), numberVertices, indices.data(), numberIndices, normals.data(), texCoords.data());
+}
+
+TriangleModel CreateCube(float halfExtend) {
+  const float cubeVertices[] =
+      {-1.0f, -1.0f, -1.0f, +1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f, -1.0f, +1.0f, +1.0f, +1.0f, -1.0f, -1.0f, +1.0f,
+       -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, -1.0f, +1.0f,
+       -1.0f, -1.0f, -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f, +1.0f, +1.0f, -1.0f, +1.0f, +1.0f, -1.0f, -1.0f, +1.0f,
+       -1.0f, -1.0f, +1.0f, +1.0f, -1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, -1.0f, +1.0f, +1.0f,
+       -1.0f, -1.0f, -1.0f, +1.0f, -1.0f, -1.0f, +1.0f, +1.0f, -1.0f, +1.0f, +1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f,
+       +1.0f, -1.0f, -1.0f, +1.0f, +1.0f, -1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, -1.0f, +1.0f};
+  const float cubeNormals[] =
+      {0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+       0.0f, +1.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f, +1.0f, 0.0f,
+       0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f,
+       0.0f, 0.0f, +1.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f, +1.0f,
+       -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+       +1.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f};
+  const float cubeTexCoords[] =
+      {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+       0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+       1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+       0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+       0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+       1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+  const uint32_t cubeIndices[] =
+      {0, 2, 1, 0, 3, 2,
+       4, 5, 6, 4, 6, 7,
+       8, 9, 10, 8, 10, 11,
+       12, 15, 14, 12, 14, 13,
+       16, 17, 18, 16, 18, 19,
+       20, 23, 22, 20, 22, 21};
+
+  constexpr const uint32_t numberVertices = 24;
+  constexpr const uint32_t numberIndices = 36;
+
+  std::vector<Vector3f> vertices(numberVertices, Vector3f{});
+  std::vector<Vector3f> normals(numberVertices, Vector3f{});
+  std::vector<Vector2f> texCoords(numberVertices, Vector2f{});
+  for (uint32_t i = 0; i < numberVertices; i++) {
+    vertices[i] = {cubeVertices[i * 4 + 0] * halfExtend,
+                   cubeVertices[i * 4 + 1] * halfExtend,
+                   cubeVertices[i * 4 + 2] * halfExtend};
+    normals[i] = {cubeNormals[i * 3 + 0],
+                  cubeNormals[i * 3 + 1],
+                  cubeNormals[i * 3 + 2]};
+    texCoords[i] = {cubeTexCoords[i * 2 + 0],
+                    cubeTexCoords[i * 2 + 1]};
+  }
+  return TriangleModel(vertices.data(), numberVertices, cubeIndices, numberIndices, normals.data(), texCoords.data());
+}
+
+TriangleModel CreateRect(float halfExtend) {
+  const float quadVertices[] =
+      {-1.0f, -1.0f, 0.0f, +1.0f,
+       +1.0f, -1.0f, 0.0f, +1.0f,
+       -1.0f, +1.0f, 0.0f, +1.0f,
+       +1.0f, +1.0f, 0.0f, +1.0f};
+  const float quadNormal[] =
+      {0.0f, 0.0f, 1.0f,
+       0.0f, 0.0f, 1.0f,
+       0.0f, 0.0f, 1.0f,
+       0.0f, 0.0f, 1.0f};
+  const float quadTex[] =
+      {0.0f, 0.0f,
+       1.0f, 0.0f,
+       0.0f, 1.0f,
+       1.0f, 1.0f};
+  const uint32_t quadIndices[] =
+      {0, 1, 2,
+       1, 3, 2};
+  constexpr const uint32_t numberVertices = 4;
+  constexpr const uint32_t numberIndices = 6;
+  std::vector<Vector3f> vertices(numberVertices, Vector3f{});
+  std::vector<Vector3f> normals(numberVertices, Vector3f{});
+  std::vector<Vector2f> texCoords(numberVertices, Vector2f{});
+  for (uint32_t i = 0; i < numberVertices; i++) {
+    vertices[i] = {quadVertices[i * 4 + 0] * halfExtend,
+                   quadVertices[i * 4 + 1] * halfExtend,
+                   quadVertices[i * 4 + 2]};
+    normals[i] = {quadNormal[i * 3 + 0],
+                  quadNormal[i * 3 + 1],
+                  quadNormal[i * 3 + 2]};
+    texCoords[i] = {quadTex[i * 2 + 0],
+                    quadTex[i * 2 + 1]};
+  }
+  return TriangleModel(vertices.data(), numberVertices, quadIndices, numberIndices, normals.data(), texCoords.data());
 }
 
 }  // namespace Rad
