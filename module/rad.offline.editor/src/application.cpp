@@ -131,6 +131,35 @@ Matrix4f Ortho(float left, float right, float bottom, float top, float zNear, fl
   return mat;
 }
 
+std::tuple<Vector3f, Eigen::Quaternionf, Vector3f> DecomposeTransform(const Matrix4f& m) {
+  Eigen::Affine3f aff(m);
+  Vector3f t = aff.translation();
+  Matrix3f ro, sc;
+  aff.computeRotationScaling(&ro, &sc);
+  Eigen::Quaternionf q(ro);
+  return {t, q, sc.diagonal()};
+}
+
+Matrix4f GetMat4(const nlohmann::json& data) {
+  Matrix4f mat;
+  int k = 0;
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      mat(i, j) = data[k].get<float>();
+      k++;
+    }
+  }
+  return mat;
+}
+
+Vector3f GetVec3(const nlohmann::json& data) {
+  Vector3f vec;
+  for (int i = 0; i < 3; i++) {
+    vec[i] = data[i];
+  }
+  return vec;
+}
+
 const char* _assetNamesArray[] = {
     "Wavefront Obj Model",
     "OpenEXR Image",
@@ -194,6 +223,14 @@ EditorAssetGuard& EditorAssetGuard::operator=(EditorAssetGuard&& other) {
   return *this;
 }
 
+EditorAssetGuard& EditorAssetGuard::operator=(nullptr_t) {
+  if (Ptr != nullptr) {
+    Ptr->Reference--;
+    Ptr = nullptr;
+  }
+  return *this;
+}
+
 EditorAssetGuard::~EditorAssetGuard() noexcept {
   if (Ptr != nullptr) {
     Ptr->Reference--;
@@ -201,44 +238,78 @@ EditorAssetGuard::~EditorAssetGuard() noexcept {
   }
 }
 
+static std::tuple<GLuint, GLuint, GLuint, int> UploadToGpu(TriangleModel& model) {
+  if (!model.HasNormal()) {
+    model.AllocNormal();
+    // 不是很好的法线计算方法, 但应该够用
+    std::vector<int> cnt;
+    cnt.resize(model.VertexCount());
+    auto pt = model.GetPosition();
+    auto nt = model.GetNormal();
+    for (uint32_t i = 0; i < model.VertexCount(); i++) {
+      nt[i] = Vector3f::Zero();
+    }
+    auto ind = model.GetIndices();
+    for (uint32_t i = 0; i < model.IndexCount(); i += 3) {
+      auto px = pt[ind[i]];
+      auto py = pt[ind[i + 1]];
+      auto pz = pt[ind[i + 2]];
+      auto n = (px - py).cross(px - pz);
+      nt[ind[i]] += n;
+      nt[ind[i + 1]] += n;
+      nt[ind[i + 2]] += n;
+      cnt[ind[i]]++;
+      cnt[ind[i + 1]]++;
+      cnt[ind[i + 2]]++;
+    }
+    for (uint32_t i = 0; i < model.VertexCount(); i++) {
+      nt[i] = (nt[i] / cnt[i]).normalized();
+    }
+  }
+  if (!model.HasUV()) {
+    model.AllocUV();
+    for (uint32_t i = 0; i < model.VertexCount(); i++) {
+      model.GetUV()[i] = Vector2f{};
+    }
+  }
+  std::vector<GLVertex> vertices;
+  vertices.reserve(model.VertexCount());
+  for (size_t i = 0; i < model.VertexCount(); i++) {
+    vertices.emplace_back(GLVertex{model.GetPosition()[i], model.GetNormal()[i], model.GetUV()[i]});
+  }
+  const auto& indices = model.GetIndices();
+  GLuint vao;
+  glCreateVertexArrays(1, &vao);
+  GLuint vbo;
+  glCreateBuffers(1, &vbo);
+  glNamedBufferStorage(vbo, sizeof(GLVertex) * vertices.size(), vertices.data(), 0);
+  GLuint ibo;
+  glCreateBuffers(1, &ibo);
+  glNamedBufferStorage(ibo, sizeof(UInt32) * model.IndexCount(), indices.get(), 0);
+  glVertexArrayElementBuffer(vao, ibo);
+  glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(GLVertex));
+  glEnableVertexArrayAttrib(vao, 0);
+  glEnableVertexArrayAttrib(vao, 1);
+  glEnableVertexArrayAttrib(vao, 2);
+  glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(GLVertex, Position));
+  glVertexArrayAttribFormat(vao, 1, 3, GL_FLOAT, GL_FALSE, offsetof(GLVertex, Normal));
+  glVertexArrayAttribFormat(vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(GLVertex, UV));
+  glVertexArrayAttribBinding(vao, 0, 0);
+  glVertexArrayAttribBinding(vao, 1, 0);
+  glVertexArrayAttribBinding(vao, 2, 0);
+  return {vao, vbo, ibo, model.IndexCount()};
+}
+
 std::pair<bool, std::string> ObjMeshAsset::Load(Application* app) {
   WavefrontObjReader reader(std::make_unique<std::ifstream>(app->GetWorkRoot() / Loaction));
   reader.Read();
+  auto model = reader.ToModel();
   std::pair<bool, std::string> result;
   if (reader.HasError()) {
     result.first = false;
     result.second = reader.Error();
   } else {
-    auto model = reader.ToModel();
-    std::vector<GLVertex> vertices;
-    vertices.reserve(model.VertexCount());
-    for (size_t i = 0; i < model.VertexCount(); i++) {
-      vertices.emplace_back(GLVertex{model.GetPosition()[i], model.GetNormal()[i], model.GetUV()[i]});
-    }
-    auto indices = model.GetIndices();
-    GLuint vao;
-    glCreateVertexArrays(1, &vao);
-    GLuint vbo;
-    glCreateBuffers(1, &vbo);
-    glNamedBufferStorage(vbo, sizeof(GLVertex) * vertices.size(), vertices.data(), 0);
-    GLuint ibo;
-    glCreateBuffers(1, &ibo);
-    glNamedBufferStorage(ibo, sizeof(UInt32) * model.IndexCount(), indices.get(), 0);
-    glVertexArrayElementBuffer(vao, ibo);
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(GLVertex));
-    glEnableVertexArrayAttrib(vao, 0);
-    glEnableVertexArrayAttrib(vao, 1);
-    glEnableVertexArrayAttrib(vao, 2);
-    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(GLVertex, Position));
-    glVertexArrayAttribFormat(vao, 1, 3, GL_FLOAT, GL_FALSE, offsetof(GLVertex, Normal));
-    glVertexArrayAttribFormat(vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(GLVertex, UV));
-    glVertexArrayAttribBinding(vao, 0, 0);
-    glVertexArrayAttribBinding(vao, 1, 0);
-    glVertexArrayAttribBinding(vao, 2, 0);
-    VAO = vao;
-    VBO = vbo;
-    IBO = ibo;
-    Indices = model.IndexCount();
+    std::tie(VAO, VBO, IBO, Indices) = UploadToGpu(model);
     result.first = true;
   }
   return result;
@@ -630,6 +701,24 @@ void Application::InitPreviewFrameBuffer() {
 }
 
 void Application::InitBuiltinShapes() {
+  {
+    auto sphere = CreateSphere(1, 32);
+    auto& s = _builtinShape.Sphere;
+    std::tie(s.VAO, s.VBO, s.IBO, s.Indices) = UploadToGpu(sphere);
+    s.Name = "sphere";
+  }
+  {
+    auto cube = CreateCube(1);
+    auto& s = _builtinShape.Cube;
+    std::tie(s.VAO, s.VBO, s.IBO, s.Indices) = UploadToGpu(cube);
+    s.Name = "cube";
+  }
+  {
+    auto rect = CreateRect(1);
+    auto& s = _builtinShape.Rect;
+    std::tie(s.VAO, s.VBO, s.IBO, s.Indices) = UploadToGpu(rect);
+    s.Name = "rectangle";
+  }
 }
 
 void Application::UpdateImGui() {
@@ -651,7 +740,7 @@ void Application::DrawItemPass() {
   glUseProgram(_prevFbo.ShaderProgram);
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, _prevFbo.UboPerFrame);
   glDisable(GL_BLEND);
-  glEnable(GL_CULL_FACE);
+  glDisable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glDisable(GL_STENCIL_TEST);
   glDisable(GL_SCISSOR_TEST);
@@ -676,13 +765,22 @@ void Application::DrawItemPass() {
   perFrame.Persp = _camera.ToPersp;
 
   for (auto&& i : _renderItems) {
-    auto shape = static_cast<ObjMeshAsset*>(i->ShapeAsset.Ptr);
-    glBindVertexArray(shape->VAO);
+    GLuint vao;
+    GLsizei indcnt;
+    if (i->ShapeAsset.Ptr == nullptr) {
+      vao = i->ShapeBuildin->VAO;
+      indcnt = i->ShapeBuildin->Indices;
+    } else {
+      auto shape = static_cast<ObjMeshAsset*>(i->ShapeAsset.Ptr);
+      vao = shape->VAO;
+      indcnt = shape->Indices;
+    }
+    glBindVertexArray(vao);
     perFrame.Model = i->ToWorld;
     perFrame.InvModel = i->ToLocal;
     perFrame.MVP = perFrame.Persp * perFrame.View * perFrame.Model;
     glNamedBufferSubData(_prevFbo.UboPerFrame, 0, sizeof(PerFrameData), &perFrame);
-    glDrawElementsBaseVertex(GL_TRIANGLES, shape->Indices, GL_UNSIGNED_INT, nullptr, 0);
+    glDrawElementsBaseVertex(GL_TRIANGLES, indcnt, GL_UNSIGNED_INT, nullptr, 0);
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -920,7 +1018,7 @@ void Application::CollectRenderItem() {
       node->ToWorld = node->ToWorld * node->Parent->ToWorld;
       node->ToLocal = node->ToWorld.inverse();
     }
-    if (node->ShapeAsset.Ptr != nullptr) {
+    if (node->ShapeAsset.Ptr != nullptr || node->ShapeBuildin != nullptr) {
       _renderItems.emplace_back(node);
     }
     for (auto&& i : node->Children) {
@@ -947,22 +1045,88 @@ void Application::BuildScene(const nlohmann::json& cfg) {
       }
       if (type == "model_obj") {
         LoadAsset(name, pathLocal, 0);
-      } else {
       }
     }
   }
   if (cfg.contains("scene")) {
-    // auto&& scene = cfg["scene"];
-    // std::queue<nlohmann::json*> q;
-    // for (auto& i : scene) {
-    //   q.emplace(&i);
-    // }
-    // while (!q.empty()) {
-    //   auto& i = *q.front();
-    //   q.pop();
-    //   if (i.contains("shape")) {
-    //   }
-    // }
+    auto&& scene = cfg["scene"];
+    std::queue<std::pair<const nlohmann::json*, ShapeNode*>> q;
+    for (auto& i : scene) {
+      q.emplace(std::make_pair(&i, _root.get()));
+    }
+    while (!q.empty()) {
+      auto [data, parent] = q.front();
+      q.pop();
+      auto&& i = *data;
+      auto&& node = parent->AddChildLast(NewNode());
+      if (i.contains("__name")) {
+        node.Name = i["__name"];
+      } else {
+        node.Name = fmt::format("node {}", node.Id);
+      }
+      if (i.contains("to_world")) {
+        auto toWorld = i["to_world"];
+        if (toWorld.is_array()) {
+          auto mat = GetMat4(toWorld);
+          std::tie(node.Position, node.Rotation, node.Scale) = DecomposeTransform(mat);
+        } else if (toWorld.is_object()) {
+          if (toWorld.contains("position")) {
+            node.Position = GetVec3(toWorld["position"]);
+          }
+          if (toWorld.contains("scale")) {
+            node.Scale = GetVec3(toWorld["scale"]);
+          }
+          if (toWorld.contains("rotate")) {
+            auto& rotateNode = toWorld["rotate"];
+            Vector3f axis{0, 1, 0};
+            float angle{0};
+            if (rotateNode.contains("axis")) {
+              axis = GetVec3(rotateNode["axis"]);
+            }
+            if (rotateNode.contains("angle")) {
+              angle = rotateNode["angle"];
+            }
+            Eigen::AngleAxisf aa(Math::Radian(angle), axis);
+            node.Rotation = Eigen::Quaternionf(aa);
+          }
+        }
+      }
+      if (i.contains("shape")) {
+        const auto& shape = i["shape"];
+        std::string type = shape["type"];
+        if (type == "sphere") {
+          node.ShapeBuildin = &_builtinShape.Sphere;
+          if (shape.contains("center")) {
+            Vector3f center{0, 0, 0};
+            if (shape.contains("center")) {
+              const auto& cnode = shape["center"];
+              center[0] = cnode[0];
+              center[1] = cnode[1];
+              center[2] = cnode[2];
+            }
+            float radius{1};
+            if (shape.contains("radius")) {
+              radius = shape["radius"];
+            }
+            node.Position += center;
+            node.Scale = Vector3f::Constant(radius);
+          }
+        } else if (type == "cube") {
+          node.ShapeBuildin = &_builtinShape.Cube;
+        } else if (type == "rectangle") {
+          node.ShapeBuildin = &_builtinShape.Rect;
+        } else {
+          std::string assetName = shape["asset_name"];
+          node.ShapeAsset = EditorAssetGuard(GetAssets().at(assetName).get());
+        }
+      }
+      if (i.contains("children")) {
+        auto children = i["children"];
+        for (auto& child : children) {
+          q.emplace(std::make_pair(&child, &node));
+        }
+      }
+    }
   }
 }
 
@@ -1068,23 +1232,23 @@ TriangleModel CreateCube(float halfExtend) {
 
 TriangleModel CreateRect(float halfExtend) {
   const float quadVertices[] =
-      {-1.0f, -1.0f, 0.0f, +1.0f,
-       +1.0f, -1.0f, 0.0f, +1.0f,
-       -1.0f, +1.0f, 0.0f, +1.0f,
-       +1.0f, +1.0f, 0.0f, +1.0f};
+      {-1.0f, 0.0f, -1.0f, +1.0f,
+       +1.0f, 0.f, -1.0f, +1.0f,
+       -1.0f, 0.f, +1.0f, +1.0f,
+       +1.0f, 0.f, +1.0f, +1.0f};
   const float quadNormal[] =
-      {0.0f, 0.0f, 1.0f,
-       0.0f, 0.0f, 1.0f,
-       0.0f, 0.0f, 1.0f,
-       0.0f, 0.0f, 1.0f};
+      {0.0f, 1.0f, 0.0f,
+       0.0f, 1.0f, 0.0f,
+       0.0f, 1.0f, 0.0f,
+       0.0f, 1.0f, 0.0f};
   const float quadTex[] =
       {0.0f, 0.0f,
        1.0f, 0.0f,
        0.0f, 1.0f,
        1.0f, 1.0f};
   const uint32_t quadIndices[] =
-      {0, 1, 2,
-       1, 3, 2};
+      {0, 2, 1,
+       1, 2, 3};
   constexpr const uint32_t numberVertices = 4;
   constexpr const uint32_t numberIndices = 6;
   std::vector<Vector3f> vertices(numberVertices, Vector3f{});

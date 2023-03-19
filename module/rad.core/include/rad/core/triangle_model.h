@@ -30,6 +30,9 @@ class RAD_EXPORT_API TriangleModel {
   bool HasUV() const { return _uv != nullptr; }
   bool HasTangent() const { return _tangent != nullptr; }
 
+  void AllocNormal();
+  void AllocUV();
+
   static TriangleModel CreateSphere(Float32 radius, Int32 numberSlices);
   static TriangleModel CreateCube(Float32 halfExtend);
   static TriangleModel CreateQuad(Float32 halfExtend);

@@ -38,6 +38,18 @@ TriangleModel::TriangleModel(
   }
 }
 
+void TriangleModel::AllocNormal() {
+  if (_normal == nullptr) {
+    _normal = Share<Eigen::Vector3f[]>(new Eigen::Vector3f[VertexCount()]);
+  }
+}
+
+void TriangleModel::AllocUV() {
+  if (_uv == nullptr) {
+    _uv = Share<Eigen::Vector2f[]>(new Eigen::Vector2f[VertexCount()]);
+  }
+}
+
 TriangleModel TriangleModel::CreateSphere(Float32 radius, Int32 numberSlices) {
   const Vector3f axisX = {1.0f, 0.0f, 0.0f};
 

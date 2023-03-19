@@ -25,6 +25,9 @@ namespace Rad {
 Matrix4f LookAt(const Vector3f& pos, const Vector3f& target, const Vector3f& up);
 Matrix4f Perspective(float fovy, float aspect, float near, float far);
 Matrix4f Ortho(float left, float right, float bottom, float top, float zNear, float zFar);
+std::tuple<Vector3f, Eigen::Quaternionf, Vector3f> DecomposeTransform(const Matrix4f&);
+Matrix4f GetMat4(const nlohmann::json&);
+Vector3f GetVec3(const nlohmann::json&);
 const char** AssetNames();
 size_t AssetNameCount();
 
@@ -95,9 +98,24 @@ class EditorAssetGuard {
   EditorAssetGuard(EditorAssetGuard&&);
   EditorAssetGuard& operator=(const EditorAssetGuard&);
   EditorAssetGuard& operator=(EditorAssetGuard&&);
+  EditorAssetGuard& operator=(nullptr_t);
   ~EditorAssetGuard() noexcept;
 
   EditorAsset* Ptr{nullptr};
+};
+
+struct BuiltinGeo {
+  GLuint VAO;
+  GLuint VBO;
+  GLuint IBO;
+  int Indices;
+  std::string Name;
+};
+
+struct BuiltinShapes {
+  BuiltinGeo Sphere;
+  BuiltinGeo Cube;
+  BuiltinGeo Rect;
 };
 
 class ShapeNode {
@@ -124,6 +142,8 @@ class ShapeNode {
   std::list<ShapeNode>::iterator InParentIter{};
 
   EditorAssetGuard ShapeAsset{nullptr};
+  BuiltinGeo* ShapeBuildin{nullptr};
+  nlohmann::json Config{};
 
  private:
   void AfterAddChild(std::list<ShapeNode>::iterator&);
@@ -140,19 +160,6 @@ class PerspCamera {
   float NearZ{0.001f};
   float FarZ{100.0f};
   Matrix4f ToPersp{Matrix4f::Identity()};
-};
-
-struct BuiltinGeo {
-  GLuint VAO;
-  GLuint VBO;
-  GLuint IBO;
-  int Indices;
-};
-
-struct BuiltinShapes {
-  BuiltinGeo Sphere;
-  BuiltinGeo Cube;
-  BuiltinGeo Rect;
 };
 
 class DefaultMessageBox : public GuiObject {
@@ -184,6 +191,7 @@ class Application {
   PerspCamera& GetCamera() { return _camera; }
   std::mt19937& GetRng() { return _rng; }
   const PreviewRenderData& GetPreviewFb() { return _prevFbo; }
+  std::array<BuiltinGeo*, 3> GetBuiltinShapes() { return {&_builtinShape.Sphere, &_builtinShape.Cube, &_builtinShape.Rect}; }
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);

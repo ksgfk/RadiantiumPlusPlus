@@ -112,7 +112,7 @@ void GuiHierarchy::OnGui() {
         DrawPSR(&NowSelect->Position, &NowSelect->Scale, &NowSelect->Rotation);
         {
           auto shape = NowSelect->ShapeAsset.Ptr;
-          auto comboPreview = shape == nullptr ? "" : shape->Name.c_str();
+          auto comboPreview = shape == nullptr ? (NowSelect->ShapeBuildin == nullptr ? "" : NowSelect->ShapeBuildin->Name.c_str()) : shape->Name.c_str();
           if (ImGui::BeginCombo(_app->I18n("hierarchy.shape"), comboPreview)) {
             auto&& assets = _app->GetAssets();
             TempFilter.clear();
@@ -125,6 +125,18 @@ void GuiHierarchy::OnGui() {
               bool isSelected = (i == shape);
               if (ImGui::Selectable(i->Name.c_str(), isSelected)) {
                 NowSelect->ShapeAsset = EditorAssetGuard(i);
+                NowSelect->ShapeBuildin = nullptr;
+              }
+              if (isSelected) {
+                ImGui::SetItemDefaultFocus();
+              }
+            }
+            auto builtinShapes = _app->GetBuiltinShapes();
+            for (size_t i = 0; i < builtinShapes.size(); i++) {
+              bool isSelected = (builtinShapes[i] == NowSelect->ShapeBuildin);
+              if (ImGui::Selectable(builtinShapes[i]->Name.c_str(), isSelected)) {
+                NowSelect->ShapeBuildin = builtinShapes[i];
+                NowSelect->ShapeAsset = nullptr;
               }
               if (isSelected) {
                 ImGui::SetItemDefaultFocus();
