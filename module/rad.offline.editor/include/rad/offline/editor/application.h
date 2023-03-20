@@ -22,10 +22,13 @@ struct GLFWwindow;
 
 namespace Rad {
 
+// TODO: 将新建, 打开, 关闭, 保存流程重置一下, 不然有bug
+
 Matrix4f LookAt(const Vector3f& pos, const Vector3f& target, const Vector3f& up);
 Matrix4f Perspective(float fovy, float aspect, float near, float far);
 Matrix4f Ortho(float left, float right, float bottom, float top, float zNear, float zFar);
 std::tuple<Vector3f, Eigen::Quaternionf, Vector3f> DecomposeTransform(const Matrix4f&);
+Matrix3f GetMat3(const nlohmann::json&);
 Matrix4f GetMat4(const nlohmann::json&);
 Vector3f GetVec3(const nlohmann::json&);
 const char** AssetNames();
@@ -171,6 +174,17 @@ class DefaultMessageBox : public GuiObject {
   void OnGui() override;
 
   std::string Message;
+  std::function<void(Application*)> OnOk;
+  std::function<void(Application*)> OnCancel;
+};
+
+class LateUpdateCallback {
+ public:
+  LateUpdateCallback(int id, std::function<void(Application*)>&& callback);
+  ~LateUpdateCallback() noexcept = default;
+
+  int Id;
+  std::function<void(Application*)> Callback;
 };
 
 class Application {
@@ -196,10 +210,12 @@ class Application {
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
   void OpenScene(const std::filesystem::path& sceneFile);
+  void SaveScene();
   void CloseScene();
   std::optional<GuiObject*> FindUi(const std::string& name);
   std::pair<bool, std::string> LoadAsset(const std::string& name, const std::filesystem::path& loaction, int type);
   ShapeNode NewNode();
+  void AddLateUpdate(const LateUpdateCallback& cb);
 
  private:
   void Start();
@@ -220,13 +236,14 @@ class Application {
 
   void InitBasicGuiObject();
   void OnGui();
-
-  void ExecuteRequestNewScene();
-  void ExecuteCloseScene();
+  void OnLateUpdate();
 
   void CollectRenderItem();
 
   void BuildScene(const nlohmann::json&);
+
+  void CreateWorkspace(const std::filesystem::path& sceneFile, bool isBuild);
+  void ClearWorkspace();
 
   Share<spdlog::logger> _logger;
   GLFWwindow* _window;
@@ -237,12 +254,9 @@ class Application {
   std::unordered_map<std::string, std::string> _i18n;
   std::unique_ptr<FactoryManager> _factories;
   bool _hasWorkspace{false};
-  bool _hasRequestNewScene{false};
-  bool _isOpenScene{false};
-  bool _isCloseScene{false};
-  std::filesystem::path _requestNewScenePath;
   std::filesystem::path _workRoot;
   std::string _sceneName;
+  nlohmann::json _workConfig;
   Vector3f _backgroundColor;
   std::map<std::string, std::unique_ptr<EditorAsset>> _nameToAsset;
   Unique<ShapeNode> _root;
@@ -253,6 +267,7 @@ class Application {
   std::mt19937 _rng;
   PreviewRenderData _prevFbo;
   BuiltinShapes _builtinShape;
+  std::vector<LateUpdateCallback> _lateUpdate;
 };
 
 TriangleModel CreateSphere(float radius, int numberSlices);

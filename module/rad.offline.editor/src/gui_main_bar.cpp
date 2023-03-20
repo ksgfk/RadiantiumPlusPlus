@@ -59,9 +59,16 @@ void GuiMainBar::OnGui() {
         };
         _app->AddGui(std::move(wrapper));
       }
+      ImGui::BeginDisabled(!_app->HasWorkspace());
       if (ImGui::MenuItem(_app->I18n("main_menu_bar.file.save_scene"))) {
         _logger->info("save");
+        _app->SaveScene();
       }
+      if (ImGui::MenuItem(_app->I18n("main_menu_bar.file.close_scene"))) {
+        _logger->info("close");
+        _app->CloseScene();
+      }
+      ImGui::EndDisabled();
       ImGui::EndMenu();
     }
     if (ImGui::BeginMenu(_app->I18n("main_menu_bar.setting"))) {

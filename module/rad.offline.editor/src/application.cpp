@@ -140,6 +140,18 @@ std::tuple<Vector3f, Eigen::Quaternionf, Vector3f> DecomposeTransform(const Matr
   return {t, q, sc.diagonal()};
 }
 
+Matrix3f GetMat3(const nlohmann::json& data) {
+  Matrix3f mat;
+  int k = 0;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      mat(i, j) = data[k].get<float>();
+      k++;
+    }
+  }
+  return mat;
+}
+
 Matrix4f GetMat4(const nlohmann::json& data) {
   Matrix4f mat;
   int k = 0;
@@ -393,15 +405,28 @@ void DefaultMessageBox::OnStart() {
 
 void DefaultMessageBox::OnGui() {
   ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_Appearing);
+  ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
   if (ImGui::BeginPopupModal(_app->I18n("error"), nullptr)) {
     auto format = fmt::format(_app->I18n("asset_panel.load.reason"), Message.c_str());
     ImGui::Text("%s", format.c_str());
+    if (OnOk != nullptr) {
+      if (ImGui::Button(_app->I18n("ok"))) {
+        _isAlive = false;
+        OnOk(_app);
+      }
+      ImGui::SameLine();
+    }
     if (ImGui::Button(_app->I18n("close"))) {
       _isAlive = false;
+      if (OnCancel != nullptr) {
+        OnCancel(_app);
+      }
     }
     ImGui::EndPopup();
   }
 }
+
+LateUpdateCallback::LateUpdateCallback(int id, std::function<void(Application*)>&& callback) : Id(id), Callback(callback) {}
 
 Application::Application(int argc, char** argv)
     : _logger(Logger::GetCategory("app")),
@@ -450,19 +475,29 @@ void Application::AddGui(Unique<GuiObject> ui) {
 }
 
 void Application::NewScene(const std::filesystem::path& sceneFile) {
-  _hasRequestNewScene = true;
-  _requestNewScenePath = sceneFile;
-  _isOpenScene = false;
+  CreateWorkspace(sceneFile, false);
 }
 
 void Application::OpenScene(const std::filesystem::path& sceneFile) {
-  _hasRequestNewScene = true;
-  _requestNewScenePath = sceneFile;
-  _isOpenScene = true;
+  CreateWorkspace(sceneFile, true);
+}
+
+void Application::SaveScene() {
+  // TODO:
+  _logger->info("app::save scene");
 }
 
 void Application::CloseScene() {
-  _isCloseScene = true;
+  if (_hasWorkspace) {
+    auto msgbox = std::make_unique<DefaultMessageBox>(this, "Save now scene?");
+    msgbox->OnOk = [](Application* app2) {
+      app2->SaveScene();
+      app2->AddLateUpdate({0, [](Application* app3) { app3->ClearWorkspace(); }});
+    };
+    AddGui(std::move(msgbox));
+  } else {
+    AddLateUpdate({0, [](Application* app) { app->ClearWorkspace(); }});
+  }
 }
 
 std::optional<GuiObject*> Application::FindUi(const std::string& name) {
@@ -516,6 +551,10 @@ ShapeNode Application::NewNode() {
   return node;
 }
 
+void Application::AddLateUpdate(const LateUpdateCallback& cb) {
+  _lateUpdate.emplace_back(cb);
+}
+
 void Application::Start() {
   InitGraphics();
   InitImGui();
@@ -531,8 +570,7 @@ void Application::Update() {
     DrawStartPass();
     DrawItemPass();
     DrawImGuiPass();
-    ExecuteCloseScene();
-    ExecuteRequestNewScene();
+    OnLateUpdate();
     glfwSwapBuffers(_window);
     glfwPollEvents();
     std::this_thread::yield();
@@ -945,64 +983,18 @@ void Application::OnGui() {
   ImGui::ShowDemoWindow();
 }
 
-void Application::ExecuteRequestNewScene() {
-  if (!_hasRequestNewScene) {
-    return;
+void Application::OnLateUpdate() {
+  for (auto& i : _lateUpdate) {
+    i.Callback(this);
   }
-  _hasRequestNewScene = false;
-  _isCloseScene = true;
-  ExecuteCloseScene();
-  _hasWorkspace = true;
-
-  auto workDir = _requestNewScenePath.parent_path();
-  _workRoot = workDir;
-  _sceneName = _requestNewScenePath.filename().replace_extension("").string();
-
-  AddGui(std::make_unique<GuiAssetPanel>(this));
-  AddGui(std::make_unique<GuiHierarchy>(this));
-  AddGui(std::make_unique<GuiCamera>(this));
-  AddGui(std::make_unique<GuiPreviewScene>(this));
-
-  _root = std::make_unique<ShapeNode>();
-  _root->Name = _sceneName;
-  _nodeIdPool = 1;
-
-  if (_isOpenScene) {
-    nlohmann::json cfg;
-    {
-      std::ifstream cfgStream(_requestNewScenePath);
-      if (!cfgStream.is_open()) {
-        AddGui(std::make_unique<DefaultMessageBox>(this, fmt::format("cannot open file {}", _requestNewScenePath.string())));
-        return;
-      }
-      cfg = nlohmann::json::parse(cfgStream);
-    }
-    BuildScene(cfg);
-  }
-}
-
-void Application::ExecuteCloseScene() {
-  if (!_isCloseScene) {
-    return;
-  }
-  _isCloseScene = false;
-  _hasWorkspace = false;
-  if (_hasWorkspace) {
-    // TODO: 提示储存场景
-  }
-  _iterGuiCache.clear();
-  _activeGui.clear();
-  _firstUseGui.clear();
-  _nameToAsset.clear();
-  _root = nullptr;
-  InitBasicGuiObject();
+  _lateUpdate.clear();
 }
 
 void Application::CollectRenderItem() {
+  _renderItems.clear();
   if (!_hasWorkspace) {
     return;
   }
-  _renderItems.clear();
   _recTemp.emplace(_root.get());
   while (!_recTemp.empty()) {
     auto node = _recTemp.front();
@@ -1059,6 +1051,7 @@ void Application::BuildScene(const nlohmann::json& cfg) {
       q.pop();
       auto&& i = *data;
       auto&& node = parent->AddChildLast(NewNode());
+      node.Config = i;
       if (i.contains("__name")) {
         node.Name = i["__name"];
       } else {
@@ -1128,6 +1121,97 @@ void Application::BuildScene(const nlohmann::json& cfg) {
       }
     }
   }
+  if (cfg.contains("camera")) {
+    auto cameraNode = cfg["camera"];
+    Vector3f origin{0, 0, -1};
+    Vector3f target{0, 0, 0};
+    Vector3f up{0, 1, 0};
+    if (cameraNode.is_object()) {
+      if (cameraNode.contains("origin")) {
+        origin = GetVec3(cameraNode["origin"]);
+      }
+      if (cameraNode.contains("target")) {
+        target = GetVec3(cameraNode["target"]);
+      }
+      if (cameraNode.contains("up")) {
+        up = GetVec3(cameraNode["up"]);
+      }
+    } else {
+      Matrix4f mat = GetMat4(cameraNode);
+      Eigen::Affine3f aff(mat);
+      origin = aff.translation();
+      target = (aff.linear() * Vector3f(0, 0, 1)).normalized() + origin;
+      up = (aff.linear() * Vector3f(0, 1, 0)).normalized();
+    }
+    _camera.Position = origin;
+    _camera.Target = target;
+    _camera.Up = up;
+    if (cameraNode.contains("near")) {
+      _camera.NearZ = cameraNode["near"];
+    }
+    if (cameraNode.contains("far")) {
+      _camera.FarZ = cameraNode["far"];
+    }
+    if (cameraNode.contains("fov")) {
+      _camera.Fovy = cameraNode["fov"];
+    }
+  }
+  _workConfig = cfg;
+}
+
+void Application::CreateWorkspace(const std::filesystem::path& sceneFile, bool isBuild) {
+  auto crtWs = [=](Application* app3) {
+    app3->ClearWorkspace();
+    app3->_hasWorkspace = true;
+    auto workDir = sceneFile.parent_path();
+    app3->_workRoot = workDir;
+    app3->_sceneName = sceneFile.filename().replace_extension("").string();
+
+    app3->AddGui(std::make_unique<GuiAssetPanel>(app3));
+    app3->AddGui(std::make_unique<GuiHierarchy>(app3));
+    app3->AddGui(std::make_unique<GuiCamera>(app3));
+    app3->AddGui(std::make_unique<GuiPreviewScene>(app3));
+
+    app3->_root = std::make_unique<ShapeNode>();
+    app3->_root->Name = app3->_sceneName;
+    app3->_nodeIdPool = 1;
+    if (isBuild) {
+      nlohmann::json cfg;
+      {
+        std::ifstream cfgStream(sceneFile);
+        if (!cfgStream.is_open()) {
+          app3->AddGui(std::make_unique<DefaultMessageBox>(app3, fmt::format("cannot open file {}", sceneFile.string())));
+          return;
+        }
+        cfg = nlohmann::json::parse(cfgStream);
+      }
+      app3->BuildScene(cfg);
+    }
+  };
+
+  if (_hasWorkspace) {
+    auto msgbox = std::make_unique<DefaultMessageBox>(this, "Save now scene?");
+    msgbox->OnOk = [sceneFile, crtWs](Application* app2) {
+      app2->SaveScene();
+      app2->_hasWorkspace = false;
+      app2->AddLateUpdate({1, crtWs});
+    };
+    AddGui(std::move(msgbox));
+  } else {
+    AddLateUpdate({0, crtWs});
+  }
+}
+
+void Application::ClearWorkspace() {
+  _hasWorkspace = {false};
+
+  _hasWorkspace = false;
+  _iterGuiCache.clear();
+  _activeGui.clear();
+  _firstUseGui.clear();
+  _nameToAsset.clear();
+  _root = nullptr;
+  InitBasicGuiObject();
 }
 
 TriangleModel CreateSphere(float radius, int numberSlices) {
