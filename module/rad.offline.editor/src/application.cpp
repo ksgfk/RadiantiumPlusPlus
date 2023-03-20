@@ -1126,7 +1126,7 @@ void Application::BuildScene(const nlohmann::json& cfg) {
     Vector3f origin{0, 0, -1};
     Vector3f target{0, 0, 0};
     Vector3f up{0, 1, 0};
-    if (cameraNode.is_object()) {
+    if (cameraNode.contains("origin")) {
       if (cameraNode.contains("origin")) {
         origin = GetVec3(cameraNode["origin"]);
       }
@@ -1137,7 +1137,7 @@ void Application::BuildScene(const nlohmann::json& cfg) {
         up = GetVec3(cameraNode["up"]);
       }
     } else {
-      Matrix4f mat = GetMat4(cameraNode);
+      Matrix4f mat = GetMat4(cameraNode["to_world"]);
       Eigen::Affine3f aff(mat);
       origin = aff.translation();
       target = (aff.linear() * Vector3f(0, 0, 1)).normalized() + origin;
