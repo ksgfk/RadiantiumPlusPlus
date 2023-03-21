@@ -12,7 +12,6 @@ class GuiOfflineRenderPanel : public GuiObject {
   void OnGui() override;
 
   bool IsOpen{true};
-  bool IsRendering{false};
 };
 
 }  // namespace Rad

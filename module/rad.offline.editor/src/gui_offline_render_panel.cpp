@@ -17,29 +17,29 @@ void GuiOfflineRenderPanel::OnGui() {
   ScopeGuard _([]() { ImGui::End(); });
   if (ImGui::Begin(_app->I18n("offline_render.title"), &IsOpen, 0)) {
     auto&& workCfg = _app->GetWorkspaceConfig();
-    int RenderAlgo;
+    int renderAlgo;
     if (workCfg.contains("renderer")) {
       std::string type = workCfg["renderer"]["type"];
       if (type == "ao") {
-        RenderAlgo = 0;
+        renderAlgo = 0;
       } else if (type == "path") {
-        RenderAlgo = 1;
+        renderAlgo = 1;
       } else if (type == "") {
-        RenderAlgo = 2;
+        renderAlgo = 2;
       } else if (type == "bdpt") {
-        RenderAlgo = 3;
+        renderAlgo = 3;
       } else {
-        RenderAlgo = -1;
+        renderAlgo = -1;
       }
     } else {
-      RenderAlgo = -1;
+      renderAlgo = -1;
     }
-    const char* prev = RenderAlgo == -1 ? "" : RendererNames()[RenderAlgo];
+    const char* prev = renderAlgo == -1 ? "" : RendererNames()[renderAlgo];
     if (ImGui::BeginCombo(_app->I18n("offline_render.algorithm"), prev)) {
       for (int i = 0; i < RendererNameCount(); i++) {
-        bool isSelected = (i == RenderAlgo);
+        bool isSelected = (i == renderAlgo);
         if (ImGui::Selectable(RendererNames()[i], isSelected)) {
-          RenderAlgo = i;
+          renderAlgo = i;
         }
         if (isSelected) {
           ImGui::SetItemDefaultFocus();
@@ -59,7 +59,23 @@ void GuiOfflineRenderPanel::OnGui() {
     }
     ImGui::InputInt(_app->I18n("offline_render.spp"), &spp);
     workCfg["sampler"]["sample_count"] = spp;
-    if (IsRendering) {
+    ImGui::BeginDisabled(_app->IsOfflineRendering());
+    if (ImGui::Button(_app->I18n("offline_render.start"))) {
+      _app->StartOfflineRender();
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!_app->IsOfflineRendering());
+    if (ImGui::Button(_app->I18n("offline_render.stop"))) {
+      _app->StartOfflineRender();
+    }
+    ImGui::EndDisabled();
+    auto& data = _app->GetOfflineRender();
+    if (data.ResultTex != 0) {
+      auto tex = (size_t)data.ResultTex;
+      ImGui::Image(
+          reinterpret_cast<void*>(tex),
+          ImVec2((float)data.Width, (float)data.Height));
     }
   }
 }

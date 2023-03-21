@@ -15,6 +15,7 @@
 #include <rad/core/logger.h>
 #include <rad/core/factory.h>
 #include <rad/core/asset.h>
+#include <rad/offline/render/renderer.h>
 
 #include "gui_object.h"
 
@@ -67,6 +68,14 @@ struct PreviewRenderData {
   PerFrameData PerFrame{};
   GLuint ShaderProgram{0};
   GLuint UboPerFrame{0};
+};
+
+struct OfflineRenderData {
+  GLuint ResultTex{0};
+  GLuint CS{0};
+  Unique<Renderer> Renderer;
+  int Width{0};
+  int Height{0};
 };
 
 class EditorAsset {
@@ -209,6 +218,8 @@ class Application {
   const PreviewRenderData& GetPreviewFb() { return _prevFbo; }
   std::array<BuiltinGeo*, 3> GetBuiltinShapes() { return {&_builtinShape.Sphere, &_builtinShape.Cube, &_builtinShape.Rect}; }
   nlohmann::json& GetWorkspaceConfig() { return _workConfig; }
+  bool IsOfflineRendering() { return _isOfflineRendering; }
+  OfflineRenderData& GetOfflineRender() { return _offlineRenderingData; }
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
@@ -221,6 +232,8 @@ class Application {
   ShapeNode NewNode();
   void AddLateUpdate(const LateUpdateCallback& cb);
   void ChangePreviewResolution();
+  void StartOfflineRender();
+  void StopOfflineRender();
 
  private:
   void Start();
@@ -231,10 +244,12 @@ class Application {
   void InitImGui();
   void InitPreviewFrameBuffer(int width, int height);
   void InitBuiltinShapes();
+  void InitOfflineRenderData();
   void UpdateImGui();
   void DrawStartPass();
   void DrawItemPass();
   void DrawImGuiPass();
+  void DispatchToSrgb();
   void GLDebugMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message) const;
   bool GLCompileShader(const char* source, GLenum type, GLuint* shader);
   bool GLLinkProgram(const GLuint* shader, int count, GLuint* program);
@@ -273,6 +288,8 @@ class Application {
   PreviewRenderData _prevFbo{};
   BuiltinShapes _builtinShape;
   std::vector<LateUpdateCallback> _lateUpdate;
+  bool _isOfflineRendering{false};
+  OfflineRenderData _offlineRenderingData;
 };
 
 TriangleModel CreateSphere(float radius, int numberSlices);

@@ -44,11 +44,13 @@ void GuiPreviewScene::OnGui() {
     //     ImVec2((float)imgWidth, (float)imgHeight),
     //     ImVec2(0, 1), ImVec2(1, 0));
     auto&& fb = _app->GetPreviewFb();
-    auto tex = (size_t)fb.ColorTex;
-    ImGui::Image(
-        reinterpret_cast<void*>(tex),
-        ImVec2((float)fb.Width, (float)fb.Height),
-        ImVec2(0, 1), ImVec2(1, 0));
+    if (fb.ColorTex > 0) {
+      auto tex = (size_t)fb.ColorTex;
+      ImGui::Image(
+          reinterpret_cast<void*>(tex),
+          ImVec2((float)fb.Width, (float)fb.Height),
+          ImVec2(0, 1), ImVec2(1, 0));
+    }
   }
 }
 

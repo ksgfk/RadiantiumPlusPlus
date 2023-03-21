@@ -18,6 +18,7 @@
 
 #include <rad/core/wavefront_obj_reader.h>
 #include <rad/offline/build/factory.h>
+#include <rad/offline/build/build_context.h>
 #include <rad/offline/editor/gui_main_bar.h>
 #include <rad/offline/editor/gui_asset_panel.h>
 #include <rad/offline/editor/gui_hierarchy.h>
@@ -84,6 +85,20 @@ void main() {
   out_Color = vec4(color, 1.0);
 }
 )";
+
+const char* toSrgbSource =
+    "#version 450 core\n"
+    "layout(local_size_x = 1, local_size_y = 1) in;\n"
+    "layout(rgba32f, binding = 0) uniform image2D fb;\n"
+    "float toSrgb(float v) {\n"
+    "  return (v <= 0.0031308f) ? (12.92f * v) : ((1.0f + 0.055f) * pow(v, 1.0f / 2.4f) - 0.055f);\n"
+    "}\n"
+    "void main() {\n"
+    "  ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);\n"
+    "  vec3 raw = imageLoad(fb, texelCoord).xyz;"
+    "  vec4 res = vec4(toSrgb(raw.x), toSrgb(raw.y), toSrgb(raw.z), 1.0f);"
+    "  imageStore(fb, texelCoord, res);\n"
+    "}";
 
 Matrix4f LookAt(const Vector3f& eye, const Vector3f& target, const Vector3f& up) {
   Eigen::Vector3f f(target - eye);
@@ -583,6 +598,20 @@ void Application::ChangePreviewResolution() {
        }});
 }
 
+void Application::StartOfflineRender() {
+  AddLateUpdate(
+      {0, [](Application* app) {
+         app->_isOfflineRendering = true;
+         app->InitOfflineRenderData();
+         app->_offlineRenderingData.Renderer->Start();
+       }});
+}
+
+void Application::StopOfflineRender() {
+  _isOfflineRendering = false;
+  _offlineRenderingData.Renderer->Stop();
+}
+
 void Application::Start() {
   InitGraphics();
   InitImGui();
@@ -597,6 +626,7 @@ void Application::Update() {
     DrawStartPass();
     DrawItemPass();
     DrawImGuiPass();
+    DispatchToSrgb();
     OnLateUpdate();
     glfwSwapBuffers(_window);
     glfwPollEvents();
@@ -797,6 +827,55 @@ void Application::InitBuiltinShapes() {
   }
 }
 
+void Application::InitOfflineRenderData() {
+  BuildContext ctx{};
+  ctx.SetFromJson(_workConfig);
+  ctx.SetDefaultFactoryManager();
+  ctx.SetDefaultAssetManager(_workRoot);
+  _offlineRenderingData.Renderer = ctx.Build();
+  auto renderer = _offlineRenderingData.Renderer.get();
+  auto&& scene = renderer->GetScene();
+  auto&& rendererFb = scene.GetCamera().GetFrameBuffer();
+
+  auto crt = [&]() {
+    glCreateTextures(GL_TEXTURE_2D, 1, &_offlineRenderingData.ResultTex);
+    auto tex = _offlineRenderingData.ResultTex;
+    auto res = _camera.Resolution;
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureStorage2D(tex, 1, GL_RGBA32F, (GLsizei)rendererFb.rows(), (GLsizei)rendererFb.cols());
+    glTextureSubImage2D(
+        tex,
+        0,
+        0, 0,
+        (GLsizei)rendererFb.rows(), (GLsizei)rendererFb.cols(),
+        GL_RGB, GL_FLOAT,
+        rendererFb.data());
+    _offlineRenderingData.Width = (int)rendererFb.rows();
+    _offlineRenderingData.Height = (int)rendererFb.cols();
+  };
+
+  if (_offlineRenderingData.ResultTex == 0) {
+    crt();
+    GLuint shader;
+    bool isValid = GLCompileShader(toSrgbSource, GL_COMPUTE_SHADER, &shader);
+    if (!isValid) {
+      throw RadInvalidOperationException("cannot compile to srgb shader");
+    }
+    GLuint prog;
+    isValid = GLLinkProgram(&shader, 1, &prog);
+    if (!isValid) {
+      throw RadInvalidOperationException("cannot link to srgb shader");
+    }
+    _offlineRenderingData.CS = prog;
+  } else {
+    glDeleteTextures(1, &_offlineRenderingData.ResultTex);
+    crt();
+  }
+}
+
 void Application::UpdateImGui() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
@@ -909,6 +988,24 @@ void Application::DrawImGuiPass() {
     }
   }
   glScissor(0, 0, width, height);
+}
+
+void Application::DispatchToSrgb() {
+  auto&& d = _offlineRenderingData;
+  if (d.ResultTex == 0) {
+    return;
+  }
+  glTextureSubImage2D(
+      d.ResultTex,
+      0,
+      0, 0,
+      d.Width, d.Height,
+      GL_RGB, GL_FLOAT,
+      d.Renderer->GetScene().GetCamera().GetFrameBuffer().data());
+  glUseProgram(d.CS);
+  glBindImageTexture(0, d.ResultTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+  glDispatchCompute(d.Width, d.Height, 1);
+  glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 void Application::GLDebugMessage(

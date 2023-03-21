@@ -42,5 +42,7 @@
   "preview_scene.title": "场景预览",
   "offline_render.title": "渲染预览",
   "offline_render.algorithm": "渲染算法",
-  "offline_render.spp": "每像素采样"
+  "offline_render.spp": "每像素采样",
+  "offline_render.start": "开始渲染",
+  "offline_render.stop": "停止渲染"
 }

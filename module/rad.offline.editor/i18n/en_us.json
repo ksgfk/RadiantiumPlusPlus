@@ -42,5 +42,7 @@
   "preview_scene.title": "Scene Preview",
   "offline_render.title": "Render Preview",
   "offline_render.algorithm": "Rendering Algorithm",
-  "offline_render.spp": "SPP"
+  "offline_render.spp": "SPP",
+  "offline_render.start": "Start Rendering",
+  "offline_render.stop": "Stop Rendering"
 }
