@@ -13,7 +13,7 @@ void GuiCamera::OnGui() {
     return;
   }
   ImGui::SetNextWindowPos(ImVec2(1080, 100), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(360, 240), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(360, 300), ImGuiCond_FirstUseEver);
   ScopeGuard _([]() { ImGui::End(); });
   if (ImGui::Begin(_app->I18n("camera.title"), &IsOpen, 0)) {
     auto& cam = _app->GetCamera();
@@ -62,6 +62,10 @@ void GuiCamera::OnGui() {
     ImGui::DragFloat(_app->I18n("camera.far_z"), &cam.FarZ, dist(_app->GetRng()), cam.NearZ + 0.001f, fmx);
     if (cam.FarZ <= cam.NearZ) {
       cam.FarZ = cam.NearZ + 0.001f;
+    }
+    ImGui::DragInt2(_app->I18n("camera.resolution"), cam.Resolution.data());
+    if (ImGui::Button(_app->I18n("camera.resolution.apply"))) {
+      _app->ChangePreviewResolution();
     }
   }
 }

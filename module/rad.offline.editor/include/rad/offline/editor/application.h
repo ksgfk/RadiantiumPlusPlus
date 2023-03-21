@@ -22,17 +22,18 @@ struct GLFWwindow;
 
 namespace Rad {
 
-// TODO: 将新建, 打开, 关闭, 保存流程重置一下, 不然有bug
-
 Matrix4f LookAt(const Vector3f& pos, const Vector3f& target, const Vector3f& up);
 Matrix4f Perspective(float fovy, float aspect, float near, float far);
 Matrix4f Ortho(float left, float right, float bottom, float top, float zNear, float zFar);
 std::tuple<Vector3f, Eigen::Quaternionf, Vector3f> DecomposeTransform(const Matrix4f&);
 Matrix3f GetMat3(const nlohmann::json&);
 Matrix4f GetMat4(const nlohmann::json&);
+Vector2f GetVec2(const nlohmann::json&);
 Vector3f GetVec3(const nlohmann::json&);
 const char** AssetNames();
 size_t AssetNameCount();
+const char** RendererNames();
+size_t RendererNameCount();
 
 struct ImGuiRenderData {
   GLuint vao;
@@ -163,6 +164,7 @@ class PerspCamera {
   float NearZ{0.001f};
   float FarZ{100.0f};
   Matrix4f ToPersp{Matrix4f::Identity()};
+  Vector2i Resolution{1280, 720};
 };
 
 class DefaultMessageBox : public GuiObject {
@@ -206,16 +208,19 @@ class Application {
   std::mt19937& GetRng() { return _rng; }
   const PreviewRenderData& GetPreviewFb() { return _prevFbo; }
   std::array<BuiltinGeo*, 3> GetBuiltinShapes() { return {&_builtinShape.Sphere, &_builtinShape.Cube, &_builtinShape.Rect}; }
+  nlohmann::json& GetWorkspaceConfig() { return _workConfig; }
 
   void AddGui(Unique<GuiObject> ui);
   void NewScene(const std::filesystem::path& sceneFile);
   void OpenScene(const std::filesystem::path& sceneFile);
   void SaveScene();
   void CloseScene();
+  void RenderWorkspace();
   std::optional<GuiObject*> FindUi(const std::string& name);
   std::pair<bool, std::string> LoadAsset(const std::string& name, const std::filesystem::path& loaction, int type);
   ShapeNode NewNode();
   void AddLateUpdate(const LateUpdateCallback& cb);
+  void ChangePreviewResolution();
 
  private:
   void Start();
@@ -224,7 +229,7 @@ class Application {
 
   void InitGraphics();
   void InitImGui();
-  void InitPreviewFrameBuffer();
+  void InitPreviewFrameBuffer(int width, int height);
   void InitBuiltinShapes();
   void UpdateImGui();
   void DrawStartPass();
@@ -265,7 +270,7 @@ class Application {
   std::vector<ShapeNode*> _renderItems;
   PerspCamera _camera;
   std::mt19937 _rng;
-  PreviewRenderData _prevFbo;
+  PreviewRenderData _prevFbo{};
   BuiltinShapes _builtinShape;
   std::vector<LateUpdateCallback> _lateUpdate;
 };

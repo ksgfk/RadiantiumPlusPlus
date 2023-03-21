@@ -23,6 +23,7 @@
 #include <rad/offline/editor/gui_hierarchy.h>
 #include <rad/offline/editor/gui_camera.h>
 #include <rad/offline/editor/gui_preview_scene.h>
+#include <rad/offline/editor/gui_offline_render_panel.h>
 
 namespace Rad {
 
@@ -164,6 +165,14 @@ Matrix4f GetMat4(const nlohmann::json& data) {
   return mat;
 }
 
+Vector2f GetVec2(const nlohmann::json& data) {
+  Vector2f vec;
+  for (int i = 0; i < 2; i++) {
+    vec[i] = data[i];
+  }
+  return vec;
+}
+
 Vector3f GetVec3(const nlohmann::json& data) {
   Vector3f vec;
   for (int i = 0; i < 3; i++) {
@@ -181,6 +190,18 @@ const char** AssetNames() {
 }
 size_t AssetNameCount() {
   return Math::ArrayLength(_assetNamesArray);
+}
+
+const char* _renderAlgosArray[] = {
+    "ao",
+    "path",
+    "ptracer",
+    "bdpt"};
+const char** RendererNames() {
+  return _renderAlgosArray;
+}
+size_t RendererNameCount() {
+  return 4;
 }
 
 EditorAsset::EditorAsset(int type) : Type(type), Reference(0) {}
@@ -555,10 +576,16 @@ void Application::AddLateUpdate(const LateUpdateCallback& cb) {
   _lateUpdate.emplace_back(cb);
 }
 
+void Application::ChangePreviewResolution() {
+  AddLateUpdate(
+      {0, [](Application* app) {
+         app->InitPreviewFrameBuffer(app->_camera.Resolution.x(), app->_camera.Resolution.y());
+       }});
+}
+
 void Application::Start() {
   InitGraphics();
   InitImGui();
-  InitPreviewFrameBuffer();
   InitBuiltinShapes();
   InitBasicGuiObject();
 }
@@ -674,7 +701,7 @@ void Application::InitImGui() {
       "fonts/SourceHanSerifCN-Medium.ttf",
       cfg.SizePixels,
       &cfg,
-      io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+      io.Fonts->GetGlyphRangesChineseFull());
   unsigned char* pixels = nullptr;
   int width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
@@ -694,48 +721,59 @@ void Application::InitImGui() {
   ImGui_ImplGlfw_InitForOpenGL(_window, true);
 }
 
-void Application::InitPreviewFrameBuffer() {
-  glCreateFramebuffers(1, &_prevFbo.Fbo);
-  glCreateTextures(GL_TEXTURE_2D, 1, &_prevFbo.ColorTex);
-  glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_MAX_LEVEL, 0);
-  glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  int width, height;
-  glfwGetFramebufferSize(_window, &width, &height);
-  glTextureStorage2D(_prevFbo.ColorTex, 1, GL_RGBA8, width, height);
-  glNamedFramebufferTexture(_prevFbo.Fbo, GL_COLOR_ATTACHMENT0, _prevFbo.ColorTex, 0);
-  glCreateRenderbuffers(1, &_prevFbo.Rbo);
-  glNamedRenderbufferStorage(_prevFbo.Rbo, GL_DEPTH_COMPONENT, width, height);
-  glNamedFramebufferRenderbuffer(_prevFbo.Fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _prevFbo.Rbo);
-  auto status = glCheckNamedFramebufferStatus(_prevFbo.Fbo, GL_FRAMEBUFFER);
-  if (status != GL_FRAMEBUFFER_COMPLETE) {
-    _logger->error("cannot create preview fbo, {}", status);
-    int colName;
-    glGetNamedFramebufferAttachmentParameteriv(_prevFbo.Fbo, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &colName);
-    int depName;
-    glGetNamedFramebufferAttachmentParameteriv(_prevFbo.Fbo, GL_DEPTH_COMPONENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &depName);
-    _logger->error("attached color0: {}, depth: {}", colName, depName);
-  }
-  _prevFbo.Width = width;
-  _prevFbo.Height = height;
+void Application::InitPreviewFrameBuffer(int width, int height) {
+  auto crtfbo = [&]() {
+    glCreateFramebuffers(1, &_prevFbo.Fbo);
+    glCreateTextures(GL_TEXTURE_2D, 1, &_prevFbo.ColorTex);
+    glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_MAX_LEVEL, 0);
+    glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(_prevFbo.ColorTex, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // int width, height;
+    // glfwGetFramebufferSize(_window, &width, &height);
+    glTextureStorage2D(_prevFbo.ColorTex, 1, GL_RGBA8, width, height);
+    glNamedFramebufferTexture(_prevFbo.Fbo, GL_COLOR_ATTACHMENT0, _prevFbo.ColorTex, 0);
+    glCreateRenderbuffers(1, &_prevFbo.Rbo);
+    glNamedRenderbufferStorage(_prevFbo.Rbo, GL_DEPTH_COMPONENT, width, height);
+    glNamedFramebufferRenderbuffer(_prevFbo.Fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _prevFbo.Rbo);
+    auto status = glCheckNamedFramebufferStatus(_prevFbo.Fbo, GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+      _logger->error("cannot create preview fbo, {}", status);
+      int colName;
+      glGetNamedFramebufferAttachmentParameteriv(_prevFbo.Fbo, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &colName);
+      int depName;
+      glGetNamedFramebufferAttachmentParameteriv(_prevFbo.Fbo, GL_DEPTH_COMPONENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &depName);
+      _logger->error("attached color0: {}, depth: {}", colName, depName);
+    }
+    _prevFbo.Width = width;
+    _prevFbo.Height = height;
+  };
 
-  GLuint shaders[2];
-  bool isVsPass = GLCompileShader(normalVert, GL_VERTEX_SHADER, &shaders[0]);
-  bool isFsPass = GLCompileShader(normalFrag, GL_FRAGMENT_SHADER, &shaders[1]);
-  if (!isVsPass || !isFsPass) {
-    throw RadInvalidOperationException("cannot compile preview shaders");
+  if (_prevFbo.Fbo == 0) {
+    crtfbo();
+
+    GLuint shaders[2];
+    bool isVsPass = GLCompileShader(normalVert, GL_VERTEX_SHADER, &shaders[0]);
+    bool isFsPass = GLCompileShader(normalFrag, GL_FRAGMENT_SHADER, &shaders[1]);
+    if (!isVsPass || !isFsPass) {
+      throw RadInvalidOperationException("cannot compile preview shaders");
+    }
+    GLuint prog;
+    bool isLink = GLLinkProgram(shaders, 2, &prog);
+    if (!isLink) {
+      throw RadInvalidOperationException("cannot linke preview program");
+    }
+    _prevFbo.ShaderProgram = prog;
+    GLuint ubo;
+    glCreateBuffers(1, &ubo);
+    glNamedBufferStorage(ubo, sizeof(PerFrameData), nullptr, GL_DYNAMIC_STORAGE_BIT);
+    _prevFbo.UboPerFrame = ubo;
+    _prevFbo.PerFrame = {};
+  } else {
+    glDeleteFramebuffers(1, &_prevFbo.Fbo);
+    glDeleteTextures(1, &_prevFbo.ColorTex);
+    glDeleteRenderbuffers(1, &_prevFbo.Rbo);
+    crtfbo();
   }
-  GLuint prog;
-  bool isLink = GLLinkProgram(shaders, 2, &prog);
-  if (!isLink) {
-    throw RadInvalidOperationException("cannot linke preview program");
-  }
-  _prevFbo.ShaderProgram = prog;
-  GLuint ubo;
-  glCreateBuffers(1, &ubo);
-  glNamedBufferStorage(ubo, sizeof(PerFrameData), nullptr, GL_DYNAMIC_STORAGE_BIT);
-  _prevFbo.UboPerFrame = ubo;
-  _prevFbo.PerFrame = {};
 }
 
 void Application::InitBuiltinShapes() {
@@ -775,6 +813,9 @@ void Application::DrawStartPass() {
 }
 
 void Application::DrawItemPass() {
+  if (_prevFbo.Fbo == 0) {
+    return;
+  }
   glUseProgram(_prevFbo.ShaderProgram);
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, _prevFbo.UboPerFrame);
   glDisable(GL_BLEND);
@@ -1155,6 +1196,14 @@ void Application::BuildScene(const nlohmann::json& cfg) {
     if (cameraNode.contains("fov")) {
       _camera.Fovy = cameraNode["fov"];
     }
+    if (cameraNode.contains("resolution")) {
+      auto v = GetVec2(cameraNode["resolution"]).cast<int>();
+      _camera.Resolution = v;
+    }
+  }
+  if (cfg.contains("renderer")) {
+    auto rendererNode = cfg["renderer"];
+    std::string type = rendererNode["type"];
   }
   _workConfig = cfg;
 }
@@ -1171,6 +1220,7 @@ void Application::CreateWorkspace(const std::filesystem::path& sceneFile, bool i
     app3->AddGui(std::make_unique<GuiHierarchy>(app3));
     app3->AddGui(std::make_unique<GuiCamera>(app3));
     app3->AddGui(std::make_unique<GuiPreviewScene>(app3));
+    app3->AddGui(std::make_unique<GuiOfflineRenderPanel>(app3));
 
     app3->_root = std::make_unique<ShapeNode>();
     app3->_root->Name = app3->_sceneName;
@@ -1186,6 +1236,7 @@ void Application::CreateWorkspace(const std::filesystem::path& sceneFile, bool i
         cfg = nlohmann::json::parse(cfgStream);
       }
       app3->BuildScene(cfg);
+      app3->InitPreviewFrameBuffer(_camera.Resolution.x(), _camera.Resolution.y());
     }
   };
 

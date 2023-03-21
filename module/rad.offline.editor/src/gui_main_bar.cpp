@@ -9,6 +9,7 @@
 #include <rad/offline/editor/gui_hierarchy.h>
 #include <rad/offline/editor/gui_preview_scene.h>
 #include <rad/offline/editor/gui_camera.h>
+#include <rad/offline/editor/gui_offline_render_panel.h>
 
 namespace Rad {
 
@@ -139,6 +140,15 @@ void GuiMainBar::OnGui() {
           auto previewPanel = _app->FindUi("preview_scene");
           if (previewPanel) {
             auto ptr = static_cast<GuiPreviewScene*>(*previewPanel);
+            if (ImGui::MenuItem(_app->I18n("preview_scene.title"), nullptr, ptr->IsOpen)) {
+              ptr->IsOpen = !ptr->IsOpen;
+            }
+          }
+        }
+        {
+          auto offline = _app->FindUi("offline_render");
+          if (offline) {
+            auto ptr = static_cast<GuiOfflineRenderPanel*>(*offline);
             if (ImGui::MenuItem(_app->I18n("preview_scene.title"), nullptr, ptr->IsOpen)) {
               ptr->IsOpen = !ptr->IsOpen;
             }

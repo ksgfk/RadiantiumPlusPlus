@@ -37,5 +37,10 @@
   "camera.fovy": "视角",
   "camera.near_z": "近平面",
   "camera.far_z": "远平面",
-  "preview_scene.title": "场景预览"
+  "camera.resolution": "分辨率",
+  "camera.resolution.apply": "应用分辨率",
+  "preview_scene.title": "场景预览",
+  "offline_render.title": "渲染预览",
+  "offline_render.algorithm": "渲染算法",
+  "offline_render.spp": "每像素采样"
 }

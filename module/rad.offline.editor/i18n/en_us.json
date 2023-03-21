@@ -37,5 +37,10 @@
   "camera.fovy": "FOV",
   "camera.near_z": "Near Z",
   "camera.far_z": "Far Z",
-  "preview_scene.title": "Scene Preview"
+  "camera.resolution": "Resolution",
+  "camera.resolution.apply": "Apply Resolution",
+  "preview_scene.title": "Scene Preview",
+  "offline_render.title": "Render Preview",
+  "offline_render.algorithm": "Rendering Algorithm",
+  "offline_render.spp": "SPP"
 }
