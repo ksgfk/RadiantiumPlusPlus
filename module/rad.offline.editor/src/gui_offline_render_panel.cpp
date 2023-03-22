@@ -59,17 +59,9 @@ void GuiOfflineRenderPanel::OnGui() {
     }
     ImGui::InputInt(_app->I18n("offline_render.spp"), &spp);
     workCfg["sampler"]["sample_count"] = spp;
-    ImGui::BeginDisabled(_app->IsOfflineRendering());
     if (ImGui::Button(_app->I18n("offline_render.start"))) {
       _app->StartOfflineRender();
     }
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    ImGui::BeginDisabled(!_app->IsOfflineRendering());
-    if (ImGui::Button(_app->I18n("offline_render.stop"))) {
-      _app->StartOfflineRender();
-    }
-    ImGui::EndDisabled();
     auto& data = _app->GetOfflineRender();
     if (data.ResultTex != 0) {
       auto tex = (size_t)data.ResultTex;

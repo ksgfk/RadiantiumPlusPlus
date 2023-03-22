@@ -156,6 +156,7 @@ class ShapeNode {
 
   EditorAssetGuard ShapeAsset{nullptr};
   BuiltinGeo* ShapeBuildin{nullptr};
+  float Radius{1};
   nlohmann::json Config{};
 
  private:
@@ -260,7 +261,7 @@ class Application {
 
   void CollectRenderItem();
 
-  void BuildScene(const nlohmann::json&);
+  void BuildScene(nlohmann::json&);
 
   void CreateWorkspace(const std::filesystem::path& sceneFile, bool isBuild);
   void ClearWorkspace();

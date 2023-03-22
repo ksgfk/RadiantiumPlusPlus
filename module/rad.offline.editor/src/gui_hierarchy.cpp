@@ -145,6 +145,10 @@ void GuiHierarchy::OnGui() {
             ImGui::EndCombo();
           }
         }
+        if (NowSelect->ShapeBuildin == _app->GetBuiltinShapes()[0]) {
+          ImGui::DragFloat("radius", &NowSelect->Radius);
+          NowSelect->Scale = Vector3f::Constant(NowSelect->Radius);
+        }
       }
     }
     ImGui::EndChild();

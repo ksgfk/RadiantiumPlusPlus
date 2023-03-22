@@ -519,8 +519,48 @@ void Application::OpenScene(const std::filesystem::path& sceneFile) {
 }
 
 void Application::SaveScene() {
-  // TODO:
   _logger->info("app::save scene");
+  nlohmann::json scene;
+  _workConfig.erase("scene");
+  std::queue<ShapeNode*> q;
+  q.emplace(_root.get());
+  while (!q.empty()) {
+    auto n = q.front();
+    q.pop();
+    for (auto&& ch : n->Children) {
+      q.emplace(&ch);
+    }
+    if (n->Parent == nullptr) {
+      continue;
+    }
+    n->Config["__name"] = n->Name;
+    Eigen::AngleAxisf axis(n->Rotation);
+    nlohmann::json rot;
+    rot["angle"] = Math::Degree(axis.angle());
+    rot["axis"] = std::vector<float>(axis.axis().data(), axis.axis().data() + 3);
+    n->Config["to_world"] = {{"translate", n->Position}, {"scale", n->Scale}, {"rotate", rot}};
+    if (n->ShapeAsset.Ptr == nullptr) {
+      if (n->ShapeBuildin == &_builtinShape.Sphere) {
+        n->Config["shape"] = {
+            {"type", "sphere"},
+            {"radius", n->Radius},
+            {"center", std::vector<float>(n->Position.data(), n->Position.data() + 3)}};
+        n->Config.erase("to_world");
+      }
+      if (n->ShapeBuildin == &_builtinShape.Cube) {
+        n->Config["shape"] = {
+            {"type", "cube"}};
+      }
+      if (n->ShapeBuildin == &_builtinShape.Rect) {
+        n->Config["shape"] = {
+            {"type", "rectangle"}};
+      }
+    }
+    scene.emplace_back(n->Config);
+  }
+  _workConfig["scene"] = scene;
+  std::ofstream f(_workRoot / fmt::format("{}.json", _sceneName));
+  f << _workConfig;
 }
 
 void Application::CloseScene() {
@@ -1157,7 +1197,7 @@ void Application::CollectRenderItem() {
   }
 }
 
-void Application::BuildScene(const nlohmann::json& cfg) {
+void Application::BuildScene(nlohmann::json& cfg) {
   if (cfg.contains("assets")) {
     const auto& assets = cfg["assets"];
     for (const auto& assetNode : assets) {
@@ -1180,7 +1220,7 @@ void Application::BuildScene(const nlohmann::json& cfg) {
   }
   if (cfg.contains("scene")) {
     auto&& scene = cfg["scene"];
-    std::queue<std::pair<const nlohmann::json*, ShapeNode*>> q;
+    std::queue<std::pair<nlohmann::json*, ShapeNode*>> q;
     for (auto& i : scene) {
       q.emplace(std::make_pair(&i, _root.get()));
     }
@@ -1241,6 +1281,7 @@ void Application::BuildScene(const nlohmann::json& cfg) {
             }
             node.Position += center;
             node.Scale = Vector3f::Constant(radius);
+            node.Radius = radius;
           }
         } else if (type == "cube") {
           node.ShapeBuildin = &_builtinShape.Cube;
@@ -1302,7 +1343,7 @@ void Application::BuildScene(const nlohmann::json& cfg) {
     auto rendererNode = cfg["renderer"];
     std::string type = rendererNode["type"];
   }
-  _workConfig = cfg;
+  _workConfig = std::move(cfg);
 }
 
 void Application::CreateWorkspace(const std::filesystem::path& sceneFile, bool isBuild) {
